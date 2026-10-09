@@ -1,0 +1,44 @@
+# Marketcoins
+
+Marché de prédiction sur les KOLs crypto, style Polymarket. « Quel KOL fera le plus de profit sur 7 jours ? »
+
+**État actuel : interface complète avec données mock.** Aucun backend, aucun smart contract, aucune API : le wallet, le solde et les positions sont simulés côté navigateur (localStorage) pour valider le design et l'UX.
+
+## Lancer en local
+
+```bash
+npm install
+npm run dev        # http://localhost:3000
+```
+
+Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`.
+
+## Pages
+
+| Route | Contenu |
+|---|---|
+| `/` | Accueil : défi en vedette, sidebar de filtres (7D / 30D), cartes de marchés, marchés Oui/Non |
+| `/market/kol-top-profit-7d` | Page marché : course au PnL, cotes par KOL, panneau d'achat, podium, carnet d'ordres, activité, règles, wallets |
+| `/market/kol-top-profit-30d` | Même chose sur 30 jours |
+| `/compte` | Portefeuille : solde, dépôt / retrait USDC, positions, historique |
+| `/comment-ca-marche` | Explication du fonctionnement |
+| `/conditions` | Conditions d'utilisation |
+
+## Structure
+
+```
+src/data/kols.ts        les 7 KOLs (nom, handle X, wallet Solana, PnL mock, séries)
+src/data/markets.ts     les marchés et leurs cotes
+src/lib/wallet.tsx      état wallet simulé (à remplacer par @solana/wallet-adapter)
+src/components/         Nav, cartes, graphique PnL, panneau de trade, modales, podium…
+src/app/                pages (App Router, Next 16)
+public/kols/            avatars des KOLs
+```
+
+## Prochaines étapes
+
+1. **Wallet réel** : `@solana/wallet-adapter-react` + Phantom/Solflare/Backpack, lecture du solde USDC.
+2. **Données KOL réelles** : cron qui lit le PnL des wallets (Solana Tracker, Birdeye ou kolscan) et l'écrit dans Supabase.
+3. **Smart contract** : programme Anchor parimutuel ou AMM simple, résolution par multisig.
+4. **Backend Supabase** : tables `kols`, `markets`, `outcomes`, `pnl_snapshots`, `positions` ; RLS en lecture publique.
+5. **Déploiement** : Railway ou Vercel, variables d'environnement pour Supabase et le RPC Solana.
