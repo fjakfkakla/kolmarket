@@ -139,7 +139,7 @@ export function openNonce(token: string | undefined): SiwsFields | null {
 // ---------------------------------------------------------------
 
 /** Origines autorisées : APP_URL (plusieurs possibles, séparées par des virgules) et domaines fournis par Vercel / Railway. */
-function allowedOrigins(): string[] {
+export function allowedOrigins(): string[] {
   const hosts = [
     process.env.VERCEL_PROJECT_PRODUCTION_URL,
     process.env.VERCEL_BRANCH_URL,
@@ -160,21 +160,25 @@ function allowedOrigins(): string[] {
 
 /**
  * Adresse du site pour cette requête, ou null si la requête vient d'ailleurs (CSRF, site imitateur).
- * En production, seules les origines configurées sont acceptées, jamais l'en-tête Host :
- * sinon un site imitateur pourrait faire signer un message à son propre nom.
+ * En production, on accepte les origines configurées, et sur Vercel l'adresse par laquelle la requête
+ * est arrivée : Vercel ne fait parvenir à notre déploiement que les domaines rattachés au projet
+ * (un projet a souvent plusieurs adresses *.vercel.app). Ailleurs, on ne se fie jamais à l'en-tête Host :
+ * un site imitateur pourrait sinon faire signer un message à son propre nom.
  */
 export function siteUrl(req: Request): URL | null {
   const origin = req.headers.get("origin");
-  const allowed = allowedOrigins();
-  if (allowed.length === 0) {
-    if (process.env.NODE_ENV === "production") {
-      console.error("[auth] aucune origine configurée : définir APP_URL");
-      return null;
-    }
+  if (!origin) return null;
+  if (allowedOrigins().includes(origin)) return new URL(origin);
+  // Seulement l'en-tête Host (jamais X-Forwarded-Host, qu'un intermédiaire peut inventer) :
+  // pour que Vercel route la requête jusqu'ici, il doit valoir un des domaines du projet.
+  const host = req.headers.get("host");
+  if (process.env.VERCEL === "1" && host && origin === `https://${host}`) return new URL(origin);
+  if (process.env.NODE_ENV !== "production") {
     const local = new URL(req.url).origin; // dev
-    return origin === local ? new URL(local) : null;
+    if (origin === local) return new URL(local);
   }
-  return origin && allowed.includes(origin) ? new URL(origin) : null;
+  console.error(`[auth] origine refusée : ${origin} (autorisées : ${allowedOrigins().join(", ") || "aucune, définir APP_URL"})`);
+  return null;
 }
 
 export const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
