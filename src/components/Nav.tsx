@@ -4,24 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CircleHelp, Search } from "lucide-react";
 import { Logo } from "./Logo";
-import { useWallet, markPrice } from "@/lib/wallet";
-import { useNow } from "@/lib/useNow";
+import { useWallet } from "@/lib/wallet";
 import { usd } from "@/lib/format";
 
 const CATEGORIES = [
   { label: "Tendances", href: "/app" },
   { label: "KOL", href: "/app?cat=kol" },
   { label: "Memecoins", href: "/app?cat=memes" },
-  { label: "Top KOL 7 jours", href: "/market/kol-top-profit-7d" },
-  { label: "Top KOL 30 jours", href: "/market/kol-top-profit-30d" },
+  { label: "Défi 7 jours", href: "/market/kol-top-profit-7d" },
+  { label: "Défi 30 jours", href: "/market/kol-top-profit-30d" },
   { label: "Course à 1 Md$", href: "/market/premier-1md-fdv" },
 ];
 
 export function Nav() {
   const w = useWallet();
-  const now = useNow();
   const pathname = usePathname();
-  const positionsValue = w.positions.reduce((s, p) => s + p.shares * markPrice(p, now || p.createdAt), 0);
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-md">
@@ -48,10 +45,10 @@ export function Nav() {
               >
                 <span className="text-right leading-tight">
                   <span className="block text-[12px] font-bold text-faint">Portefeuille</span>
-                  <span className="num block font-display text-[16px] font-extrabold text-ink">{usd(w.balance + positionsValue, { cents: true })}</span>
+                  <span className="num block font-display text-[16px] font-extrabold text-ink">{usd(w.balance + w.inPlay + w.excess, { cents: true })}</span>
                 </span>
                 <span className="text-right leading-tight">
-                  <span className="block text-[12px] font-bold text-faint">Cash</span>
+                  <span className="block text-[12px] font-bold text-faint">Disponible</span>
                   <span className="num block font-display text-[16px] font-extrabold text-up">{usd(w.balance, { cents: true })}</span>
                 </span>
               </Link>

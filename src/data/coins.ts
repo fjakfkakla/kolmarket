@@ -1,6 +1,7 @@
 /**
- * Marchés « memecoins » (données mock) : la course d'un coin vers un palier de market cap.
- * Même grammaire que les défis KOL : chaque part Oui gagnante paie 1 $.
+ * Marchés « memecoins » (données mock, pas encore en base) : la course d'un coin vers un palier
+ * de market cap. Même règle que les défis KOL : un pot commun, 0 frais, et ceux qui ont misé
+ * sur le bon résultat se partagent tout le pot.
  */
 
 export type CoinOutcome = {
@@ -13,13 +14,15 @@ export type CoinOutcome = {
   mark: string;
   /** Dégradé de la pièce [clair, milieu, profond] ; la couleur de sa ligne est celle du milieu. */
   tint: [string, string, string];
+  /** Part du pot misée sur ce résultat, 0..1 */
   prob: number;
-  /** Variation sur 24 h, en points de probabilité */
+  /** Montant misé sur ce résultat, en USD. */
+  pool: number;
+  /** Variation sur 24 h, en points */
   change24h: number;
-  volume: number;
   /** FDV actuelle en dollars (null pour « Aucun ») */
   fdv: number | null;
-  /** Historique de la probabilité, 0..1 */
+  /** Historique de la part du pot, 0..1 */
   series: number[];
 };
 
@@ -30,7 +33,8 @@ export type CoinMarket = {
   category: "MEME";
   target: string;
   closesAt: string;
-  volume: number;
+  /** Pot commun : total misé, en USD. */
+  pool: number;
   traders: number;
   rules: string[];
   outcomes: CoinOutcome[];
@@ -68,13 +72,13 @@ export const COIN_MARKETS: CoinMarket[] = [
     category: "MEME",
     target: "1 Md$",
     closesAt: "2026-12-25T23:59:00+01:00",
-    volume: 398269,
+    pool: 398269,
     traders: 2140,
     rules: [
       "Le marché se résout sur le premier token de la liste dont la FDV (valeur totalement diluée) dépasse 1 milliard de dollars, mesurée sur DexScreener, avant le 25 décembre 2026 à 23:59 (heure de Paris).",
       "La FDV doit tenir au-dessus de 1 Md$ pendant au moins une heure pleine pour compter.",
       "Si aucun des tokens n'y arrive avant la date, le résultat « Aucun » gagne.",
-      "Chaque part gagnante paie 1 $ à la résolution. Avant, tu peux revendre ta position au prix du marché.",
+      "Pot commun, 0 frais : ceux qui ont misé sur le résultat gagnant se partagent tout le pot, au prorata de leur mise. Si personne n'a misé dessus, tout le monde est remboursé.",
     ],
     outcomes: [
       {
@@ -84,8 +88,8 @@ export const COIN_MARKETS: CoinMarket[] = [
         mark: "",
         tint: ["#5b80ff", "#2e5cff", "#1f45e0"],
         prob: 0.88,
+        pool: 0,
         change24h: 3.7,
-        volume: 83168,
         fdv: null,
         series: path([[0, 0.5], [0.08, 0.68], [0.16, 0.62], [0.22, 0.71], [0.34, 0.86], [0.7, 0.84], [0.82, 0.85], [1, 0.88]], N, 7, 0.02),
       },
@@ -96,8 +100,8 @@ export const COIN_MARKETS: CoinMarket[] = [
         mark: "AI",
         tint: ["#ffc35c", "#f59e0b", "#d97706"],
         prob: 0.06,
+        pool: 0,
         change24h: -4.5,
-        volume: 114977,
         fdv: 412_000_000,
         series: path([[0, 0.5], [0.06, 0.12], [0.3, 0.07], [0.48, 0.11], [0.84, 0.11], [1, 0.06]], N, 11, 0.012),
       },
@@ -108,8 +112,8 @@ export const COIN_MARKETS: CoinMarket[] = [
         mark: "C",
         tint: ["#f9a8d4", "#ec4899", "#be185d"],
         prob: 0.033,
+        pool: 0,
         change24h: -4.7,
-        volume: 73768,
         fdv: 236_000_000,
         series: path([[0, 0.5], [0.05, 0.08], [0.3, 0.05], [0.6, 0.03], [1, 0.033]], N, 17, 0.01),
       },
@@ -120,8 +124,8 @@ export const COIN_MARKETS: CoinMarket[] = [
         mark: "A",
         tint: ["#6fe8b9", "#10b981", "#059669"],
         prob: 0.014,
+        pool: 0,
         change24h: -4.9,
-        volume: 71509,
         fdv: 148_000_000,
         series: path([[0, 0.5], [0.04, 0.05], [0.3, 0.02], [1, 0.014]], N, 23, 0.006),
       },
@@ -132,13 +136,16 @@ export const COIN_MARKETS: CoinMarket[] = [
         mark: "N",
         tint: ["#ffd45c", "#f0b429", "#dc9a06"],
         prob: 0.006,
+        pool: 0,
         change24h: -0.4,
-        volume: 54847,
         fdv: 71_000_000,
         series: path([[0, 0.5], [0.03, 0.04], [0.4, 0.012], [1, 0.006]], N, 29, 0.004),
       },
     ],
   },
 ];
+
+// La part de chaque résultat donne ce qui est misé dessus.
+for (const m of COIN_MARKETS) for (const o of m.outcomes) o.pool = Math.round(o.prob * m.pool);
 
 export const coinMarketBySlug = (slug: string) => COIN_MARKETS.find((m) => m.slug === slug);

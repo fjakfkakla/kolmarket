@@ -5,7 +5,8 @@ import type { Market } from "@/data/markets";
 import { Avatar } from "../Avatar";
 import { LineChart } from "../LineChart";
 import { LogoMark } from "../Logo";
-import { cents, pct, usd } from "@/lib/format";
+import { odds } from "@/lib/pot";
+import { fmtOdds, pct, usd } from "@/lib/format";
 
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
@@ -60,71 +61,68 @@ export function Ticket({
   visual,
   question,
   name,
-  prob,
+  cote,
+  share,
   toast,
   compact = false,
 }: {
   visual: ReactNode;
   question: string;
   name: string;
-  prob: number;
+  /** La cote actuelle, déjà écrite (« ×3,3 »). */
+  cote: string;
+  /** « 30 % · $9,6K misés » */
+  share: string;
   toast: ReactNode;
   compact?: boolean;
 }) {
   return (
     <div className="relative rounded-[20px] border border-line bg-white p-4 shadow-[0_18px_40px_-30px_rgba(13,32,84,.38)]">
-      {!compact && (
-        <div className="mb-3 flex items-center gap-2.5">
-          {visual}
-          <div className="min-w-0">
-            <div className="truncate text-[12.5px] font-semibold text-muted">{question}</div>
-            <div className="truncate font-display text-[17px] font-extrabold tracking-[-0.02em]">{name}</div>
-          </div>
+      <div className="mb-3 flex items-center gap-2.5">
+        {visual}
+        <div className="min-w-0 flex-1">
+          {!compact && <div className="truncate text-[12.5px] font-semibold text-muted">{question}</div>}
+          <div className="truncate font-display text-[17px] font-extrabold tracking-[-0.02em]">{name}</div>
         </div>
-      )}
-      {!compact && (
-        <div className="mb-3 flex items-end gap-4 border-b border-line text-[14px] font-bold">
-          <span className="relative pb-2 text-ink after:absolute after:inset-x-0 after:-bottom-px after:h-[2.5px] after:rounded after:bg-ink">Acheter</span>
-          <span className="pb-2 text-faint">Vendre</span>
+        <div className="text-right">
+          <div className="num font-display text-[22px] font-extrabold leading-none tracking-[-0.03em] text-blue">{cote}</div>
+          <div className="mt-0.5 text-[12px] font-bold text-faint">cote</div>
         </div>
-      )}
-      <div className="grid grid-cols-2 gap-2">
-        <span data-yes className="ks-yes soft-up h-11 text-[15px]">
-          Oui <span className="num">{cents(prob)}</span>
-        </span>
-        <span className="soft-down h-11 text-[15px]">
-          Non <span className="num">{cents(1 - prob)}</span>
-        </span>
+      </div>
+      <div data-yes className="ks-share flex items-center justify-between rounded-2xl bg-paper-2 px-3 py-2 text-[13px]">
+        <span className="font-semibold text-muted">Part du pot</span>
+        <span className="num font-bold">{share}</span>
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-[14px] font-bold">Montant</span>
+        <span className="text-[14px] font-bold">Ta mise</span>
         <span className="num font-display text-[34px] font-extrabold leading-none tracking-[-0.03em]">
           $<span data-amount>0</span>
         </span>
       </div>
       <div className="mt-2 flex justify-end gap-1.5">
-        {[1, 5, 10, 100].map((v) => (
+        {[10, 50, 100].map((v) => (
           <span key={v} data-chip={v} className="ghost h-7 rounded-full px-2.5 text-[12.5px]">
             +${v}
           </span>
         ))}
+        <span className="ghost h-7 rounded-full px-2.5 text-[12.5px]">Max</span>
       </div>
       <div data-summary className="ks-summary mt-3 space-y-1 rounded-2xl bg-paper-2 p-3 text-[13px]">
         <div className="flex justify-between">
-          <span className="text-muted">Parts</span>
-          <span data-shares className="num font-bold">0</span>
+          <span className="text-muted">Cote après ta mise</span>
+          <span data-shares className="num font-bold">{cote}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted">Frais</span>
           <span className="font-bold text-blue">0 %</span>
         </div>
         <div className="flex items-end justify-between border-t border-line pt-1.5">
-          <span className="font-bold">Gain si Oui gagne</span>
+          <span className="font-bold">Gain estimé s&apos;il gagne</span>
           <span data-payout className="num font-display text-[19px] font-extrabold leading-none text-up">$0</span>
         </div>
       </div>
       <span data-press className="ks-press plaque mt-3 h-11 w-full text-[15px]">
-        Négocier
+        Miser <span data-press-label>sur {name}</span>
       </span>
       <div data-toast className={`ks-toast absolute inset-x-3 flex ${compact ? "bottom-2" : "top-[calc(100%+12px)]"} items-center gap-2 rounded-2xl bg-ink px-3.5 py-2.5 text-[13px] font-semibold text-white shadow-[0_18px_30px_-16px_rgba(5,18,60,.7)]`}>
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-up">
@@ -136,32 +134,24 @@ export function Ticket({
   );
 }
 
-function Row({ kol, prob, change, rank }: { kol: Kol; prob: number; change: number; rank: number }) {
+function Row({ kol, prob, pool, cote, rank }: { kol: Kol; prob: number; pool: number; cote: string; rank: number }) {
   return (
-    <div data-row={kol.id} className="ks-row grid grid-cols-[1fr_92px_196px] items-center gap-3 px-4 py-2.5">
+    <div data-row={kol.id} className="ks-row grid grid-cols-[1fr_110px_150px] items-center gap-3 px-4 py-2.5">
       <div className="flex min-w-0 items-center gap-2.5">
         <span className="num w-3 text-center text-[12.5px] font-bold text-faint">{rank}</span>
         <Avatar kol={kol} size={36} />
         <div className="min-w-0">
           <div className="truncate text-[14.5px] font-bold">{kol.name}</div>
-          <div className="num text-[12.5px] font-semibold text-up">{usd(kol.pnl7d, { compact: true, sign: true })} PnL</div>
+          <div className={`num text-[12.5px] font-semibold ${kol.pnl7d >= 0 ? "text-up" : "text-down"}`}>{usd(kol.pnl7d, { compact: true, sign: true })} PnL</div>
         </div>
       </div>
-      <div className="flex items-center justify-center gap-1.5">
-        <span className="num font-display text-[22px] font-extrabold leading-none tracking-[-0.03em]">{pct(prob)}</span>
-        <span className={`num text-[12px] font-bold ${change >= 0 ? "text-up" : "text-down"}`}>
-          {change >= 0 ? "▲" : "▼"}
-          {Math.abs(change).toFixed(1).replace(".", ",")}
-        </span>
+      <div className="text-center">
+        <div className="num font-display text-[22px] font-extrabold leading-none tracking-[-0.03em]">{pct(prob)}</div>
+        <div className="num text-[12px] font-semibold text-muted">{usd(pool, { compact: true })} misés</div>
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
-        <span data-row-yes className="soft-up h-9 rounded-[11px] text-[13px]">
-          Oui <span className="num">{cents(prob)}</span>
-        </span>
-        <span className="soft-down h-9 rounded-[11px] text-[13px]">
-          Non <span className="num">{cents(1 - prob)}</span>
-        </span>
-      </div>
+      <span data-row-yes className="soft-up h-9 rounded-[11px] text-[13px]">
+        Miser <span className="num">{cote}</span>
+      </span>
     </div>
   );
 }
@@ -209,7 +199,7 @@ export function KolScreenDesktop({ market, kols }: { market: Market; kols: Kol[]
           <div className="overflow-hidden rounded-[20px] border border-line">
             <div className="divide-y divide-line">
               {market.outcomes.slice(0, 4).map((o, i) => (
-                <Row key={o.kol.id} kol={o.kol} prob={o.prob} change={o.change24h} rank={i + 1} />
+                <Row key={o.kol.id} kol={o.kol} prob={o.prob} pool={o.pool} cote={fmtOdds(odds(market.pool, o.pool))} rank={i + 1} />
               ))}
             </div>
           </div>
@@ -217,10 +207,11 @@ export function KolScreenDesktop({ market, kols }: { market: Market; kols: Kol[]
         <div>
           <Ticket
             visual={<Avatar kol={lead.kol} size={38} ring />}
-            question="Quel KOL fera le plus de profit ?"
+            question={market.question}
             name={lead.kol.name}
-            prob={lead.prob}
-            toast={<>Position ouverte : <span data-toast-shares>333</span> parts Oui sur {lead.kol.name}</>}
+            cote={fmtOdds(odds(market.pool, lead.pool))}
+            share={`${pct(lead.prob)} · ${usd(lead.pool, { compact: true })} misés`}
+            toast={<>Mise de $100 sur {lead.kol.name} enregistrée</>}
           />
         </div>
       </div>
@@ -256,17 +247,18 @@ export function KolScreenPhone({ market, kols }: { market: Market; kols: Kol[] }
               <Avatar kol={o.kol} size={32} />
               <span className="flex-1 text-[14px] font-bold">{o.kol.name}</span>
               <span className="num font-display text-[19px] font-extrabold">{pct(o.prob)}</span>
-              <span data-row-yes className="soft-up h-8 rounded-[10px] px-2.5 text-[12.5px]">Oui {cents(o.prob)}</span>
+              <span data-row-yes className="soft-up h-8 rounded-[10px] px-2.5 text-[12.5px]">Miser {fmtOdds(odds(market.pool, o.pool))}</span>
             </div>
           ))}
         </div>
         <Ticket
           compact
-          visual={null}
+          visual={<Avatar kol={lead.kol} size={30} />}
           question=""
           name={lead.kol.name}
-          prob={lead.prob}
-          toast={<>Position ouverte : <span data-toast-shares>333</span> parts Oui</>}
+          cote={fmtOdds(odds(market.pool, lead.pool))}
+          share={`${pct(lead.prob)} · ${usd(lead.pool, { compact: true })} misés`}
+          toast={<>Mise de $100 enregistrée</>}
         />
       </div>
       <span data-cursor className="ks-cursor ks-tap" aria-hidden />

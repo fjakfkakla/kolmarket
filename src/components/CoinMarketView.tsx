@@ -6,13 +6,15 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 import type { CoinMarket, CoinOutcome } from "@/data/coins";
 import type { Market } from "@/data/markets";
 import { Avatar } from "./Avatar";
+import { BetPanel } from "./BetPanel";
 import { OutcomeCoin } from "./Coin";
 import { Countdown } from "./Countdown";
 import { LineChart } from "./LineChart";
 import { RaceCard } from "./RaceCard";
 import { ShareButtons } from "./ShareButtons";
-import { TradePanel } from "./TradePanel";
-import { cents, dateFr, pct, usd } from "@/lib/format";
+import { useWallet } from "@/lib/wallet";
+import { odds } from "@/lib/pot";
+import { dateFr, fmtOdds, pct, usd } from "@/lib/format";
 
 const RANGES = [
   { id: "1S", label: "1S", points: 8 },
@@ -28,21 +30,23 @@ function axisLabels(n: number, every: number) {
   );
 }
 
-export function CoinOutcomeRow({
-  o,
-  active,
-  side,
-  onPick,
-}: {
-  o: CoinOutcome;
-  active: boolean;
-  side: "OUI" | "NON";
-  onPick: (side: "OUI" | "NON") => void;
-}) {
+/** Ajoute les mises de démo du joueur au pot (le marché memecoin n'existe pas encore en base). */
+function withMyBets(market: CoinMarket, bets: { marketSlug: string; kolId: string; amount: number }[]): CoinMarket {
+  const mine = bets.filter((b) => b.marketSlug === market.slug);
+  if (mine.length === 0) return market;
+  const pool = market.pool + mine.reduce((s, b) => s + b.amount, 0);
+  const outcomes = market.outcomes.map((o) => {
+    const p = o.pool + mine.filter((b) => b.kolId === o.id).reduce((s, b) => s + b.amount, 0);
+    return { ...o, pool: p, prob: pool > 0 ? p / pool : 0 };
+  });
+  return { ...market, pool, outcomes };
+}
+
+function CoinOutcomeRow({ o, pot, active, onPick }: { o: CoinOutcome; pot: number; active: boolean; onPick: (scroll: boolean) => void }) {
   return (
     <li
-      onClick={() => onPick(side)}
-      className={`grid cursor-pointer grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-3.5 transition md:grid-cols-[1fr_130px_290px] md:px-5 ${
+      onClick={() => onPick(false)}
+      className={`grid cursor-pointer grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-3.5 transition md:grid-cols-[1fr_130px_160px] md:px-5 ${
         active ? "bg-blue-soft/60" : "hover:bg-paper-2"
       }`}
     >
@@ -53,7 +57,7 @@ export function CoinOutcomeRow({
             {o.name}
             {o.ticker && <span className="ml-1.5 text-[14px] font-semibold text-muted">${o.ticker}</span>}
           </div>
-          <div className="num text-[13px] font-semibold text-muted">{usd(o.volume)} Vol.</div>
+          <div className="num text-[13px] font-semibold text-muted">{usd(o.pool)} misés</div>
         </div>
       </div>
       <div className="flex items-center justify-end gap-2 md:justify-center">
@@ -63,33 +67,27 @@ export function CoinOutcomeRow({
           {Math.abs(o.change24h).toFixed(1).replace(".", ",")}
         </span>
       </div>
-      <div className="col-span-2 grid grid-cols-2 gap-2 md:col-span-1">
+      <div className="col-span-2 md:col-span-1">
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onPick("OUI");
+            onPick(true);
           }}
-          className={`h-11 ${active && side === "OUI" ? "plaque plaque-up" : "soft-up"}`}
+          className={`h-11 w-full ${active ? "plaque" : "soft-up"}`}
         >
-          Acheter Oui <span className="num">{cents(o.prob)}</span>
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onPick("NON");
-          }}
-          className={`h-11 ${active && side === "NON" ? "plaque plaque-down" : "soft-down"}`}
-        >
-          Acheter Non <span className="num">{cents(1 - o.prob)}</span>
+          Miser <span className="num">{fmtOdds(odds(pot, o.pool))}</span>
         </button>
       </div>
     </li>
   );
 }
 
-export function CoinMarketView({ market, related }: { market: CoinMarket; related: Market[] }) {
-  const [selected, setSelected] = useState(market.outcomes[0]);
-  const [side, setSide] = useState<"OUI" | "NON">("OUI");
+export function CoinMarketView({ market: base, related }: { market: CoinMarket; related: Market[] }) {
+  const w = useWallet();
+  // Pas encore en base : en démo, les mises du joueur s'ajoutent au pot.
+  const market = useMemo(() => (w.live ? base : withMyBets(base, w.bets)), [base, w.bets, w.live]);
+  const [selectedId, setSelectedId] = useState(base.outcomes[0].id);
+  const selected = market.outcomes.find((o) => o.id === selectedId) ?? market.outcomes[0];
   const [range, setRange] = useState<(typeof RANGES)[number]["id"]>("ALL");
 
   const { series, labels } = useMemo(() => {
@@ -116,6 +114,8 @@ export function CoinMarketView({ market, related }: { market: CoinMarket; relate
               <div className="mb-2 flex flex-wrap items-center gap-1.5">
                 <span className="chip-blue">Memecoins</span>
                 <span className="chip">Course à {market.target}</span>
+                <span className="chip">Pot commun · 0 frais</span>
+                {w.live && <span className="chip">Ouverture prochaine</span>}
               </div>
               <h1 className="display text-[28px] md:text-[34px]">{market.title}</h1>
             </div>
@@ -123,7 +123,7 @@ export function CoinMarketView({ market, related }: { market: CoinMarket; relate
           </div>
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5">
             {market.outcomes.map((o) => (
-              <button key={o.id} onClick={() => setSelected(o)} className="flex items-center gap-1.5 text-[14px] font-semibold text-ink-2 hover:text-ink">
+              <button key={o.id} onClick={() => setSelectedId(o.id)} className="flex items-center gap-1.5 text-[14px] font-semibold text-ink-2 hover:text-ink">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: o.tint[1] }} />
                 {o.ticker ? `$${o.ticker}` : "Aucun"} <span className="num font-bold text-ink">{pct(o.prob)}</span>
               </button>
@@ -131,7 +131,7 @@ export function CoinMarketView({ market, related }: { market: CoinMarket; relate
           </div>
         </header>
 
-        <section className="card p-4 fade-up md:p-5">
+        <section className="card fade-up p-4 md:p-5">
           <LineChart
             series={series}
             domain={[0, 1]}
@@ -142,8 +142,12 @@ export function CoinMarketView({ market, related }: { market: CoinMarket; relate
             height={300}
           />
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-3.5 text-[14px] font-semibold text-muted">
-            <span><span className="num font-bold text-ink">{usd(market.volume)}</span> Vol.</span>
-            <span><span className="num font-bold text-ink">{market.traders.toLocaleString("fr-FR")}</span> traders</span>
+            <span>
+              Pot <span className="num font-bold text-ink">{usd(market.pool)}</span>
+            </span>
+            <span>
+              <span className="num font-bold text-ink">{market.traders.toLocaleString("fr-FR")}</span> joueurs
+            </span>
             <Countdown to={market.closesAt} compact />
             <div className="seg ml-auto">
               {RANGES.map((r) => (
@@ -159,29 +163,29 @@ export function CoinMarketView({ market, related }: { market: CoinMarket; relate
           <RaceCard outcomes={market.outcomes} label={market.target} />
         </section>
 
-        <section className="card overflow-hidden fade-up">
-          <div className="hidden grid-cols-[1fr_130px_290px] gap-4 border-b border-line px-5 py-3 text-[13px] font-bold text-faint md:grid">
+        <section className="card fade-up overflow-hidden">
+          <div className="hidden grid-cols-[1fr_130px_160px] gap-4 border-b border-line px-5 py-3 text-[13px] font-bold text-faint md:grid">
             <span>Résultat</span>
-            <span className="text-center">Chances</span>
-            <span className="text-center">Acheter</span>
+            <span className="text-center">Part du pot</span>
+            <span className="text-center">Miser</span>
           </div>
           <ul className="divide-y divide-line">
             {market.outcomes.map((o) => (
               <CoinOutcomeRow
                 key={o.id}
                 o={o}
+                pot={market.pool}
                 active={selected.id === o.id}
-                side={side}
-                onPick={(s) => {
-                  setSelected(o);
-                  setSide(s);
+                onPick={(scroll) => {
+                  setSelectedId(o.id);
+                  if (scroll && window.innerWidth < 1024) document.getElementById("miser")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
               />
             ))}
           </ul>
         </section>
 
-        <section className="card p-5 fade-up" id="regles">
+        <section className="card fade-up p-5" id="regles">
           <h2 className="mb-3 font-display text-[19px] font-extrabold tracking-[-0.02em]">Règles</h2>
           <ol className="space-y-2.5 text-[15px] text-ink-2">
             {market.rules.map((r, i) => (
@@ -199,19 +203,20 @@ export function CoinMarketView({ market, related }: { market: CoinMarket; relate
       </div>
 
       <aside className="space-y-4">
-        <TradePanel
+        <BetPanel
           marketSlug={market.slug}
           marketTitle={market.title}
           question={market.question}
+          pot={market.pool}
+          open
+          soon
           choice={{
             id: selected.id,
-            name: selected.ticker ? `${selected.name} ($${selected.ticker})` : selected.name,
+            name: selected.ticker ? `$${selected.ticker}` : "Aucun",
+            pool: selected.pool,
             prob: selected.prob,
             visual: <OutcomeCoin outcome={selected} size={46} />,
-            media: { kind: "coin", mark: selected.mark, tint: selected.tint },
           }}
-          side={side}
-          onSide={setSide}
         />
         {related.map((m) => (
           <Link key={m.slug} href={`/market/${m.slug}`} className="card card-hover flex items-center gap-3 p-4">
@@ -222,7 +227,7 @@ export function CoinMarketView({ market, related }: { market: CoinMarket; relate
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[14px] font-bold">{m.title}</div>
-              <div className="num text-[13px] font-semibold text-muted">{usd(m.volume, { compact: true })} Vol.</div>
+              <div className="num text-[13px] font-semibold text-muted">Pot {usd(m.pool, { compact: true })}</div>
             </div>
             <span className="num font-display text-[20px] font-extrabold text-blue">{pct(m.outcomes[0].prob)}</span>
           </Link>

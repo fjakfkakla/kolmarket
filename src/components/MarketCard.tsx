@@ -3,21 +3,33 @@ import type { Market } from "@/data/markets";
 import type { CoinMarket } from "@/data/coins";
 import { Avatar } from "./Avatar";
 import { OutcomeCoin } from "./Coin";
-import { pct, usd } from "@/lib/format";
+import { odds } from "@/lib/pot";
+import { fmtOdds, pct, usd } from "@/lib/format";
+import { type Phase, marketPhase } from "@/lib/challenge-calendar";
 
-function Row({ visual, name, prob }: { visual: React.ReactNode; name: string; prob: number }) {
+/** Où en est le défi : une chip d'état, sans pastille qui clignote. */
+export const PHASE: Record<Phase, { label: string; chip: string }> = {
+  betting: { label: "Mises ouvertes", chip: "chip-up" },
+  live: { label: "Défi en cours", chip: "chip-blue" },
+  counting: { label: "Résultat en cours", chip: "chip" },
+  proposed: { label: "Résultat proposé", chip: "chip" },
+  resolved: { label: "Terminé", chip: "chip" },
+  cancelled: { label: "Annulé, remboursé", chip: "chip" },
+};
+
+function Row({ visual, name, prob, cote }: { visual: React.ReactNode; name: string; prob: number; cote: number | null }) {
   return (
     <li className="flex items-center gap-2.5 text-[14px]">
       {visual}
       <span className="min-w-0 flex-1 truncate font-semibold">{name}</span>
       <span className="num w-11 text-right font-display text-[16px] font-extrabold">{pct(prob)}</span>
-      <span className="soft-up h-8 rounded-[10px] px-2.5 text-[13px]">Oui</span>
-      <span className="soft-down h-8 rounded-[10px] px-2.5 text-[13px]">Non</span>
+      <span className="soft-up num h-8 w-[68px] rounded-[10px] px-2 text-[13px]">{fmtOdds(cote)}</span>
     </li>
   );
 }
 
-export function MarketCard({ market }: { market: Market }) {
+export function MarketCard({ market, now }: { market: Market; now: number }) {
+  const phase = PHASE[marketPhase(market, now)];
   return (
     <Link href={`/market/${market.slug}`} className="card card-hover group flex flex-col p-4">
       <div className="mb-4 flex items-start gap-3">
@@ -30,12 +42,12 @@ export function MarketCard({ market }: { market: Market }) {
       </div>
       <ul className="space-y-2">
         {market.outcomes.slice(0, 3).map((o) => (
-          <Row key={o.kol.id} visual={<Avatar kol={o.kol} size={24} />} name={o.kol.name} prob={o.prob} />
+          <Row key={o.kol.id} visual={<Avatar kol={o.kol} size={24} />} name={o.kol.name} prob={o.prob} cote={odds(market.pool, o.pool)} />
         ))}
       </ul>
       <div className="mt-auto flex items-center gap-2 pt-4 text-[13px] font-semibold text-muted">
-        <span className="num">{usd(market.volume, { compact: true })} Vol.</span>
-        <span className="chip ml-auto">{market.period === "7D" ? "7 jours" : "30 jours"}</span>
+        <span className="num">Pot {usd(market.pool, { compact: true })}</span>
+        <span className={`${phase.chip} ml-auto`}>{phase.label}</span>
       </div>
     </Link>
   );
@@ -56,11 +68,11 @@ export function CoinMarketCard({ market }: { market: CoinMarket }) {
       </div>
       <ul className="space-y-2">
         {market.outcomes.slice(0, 3).map((o) => (
-          <Row key={o.id} visual={<OutcomeCoin outcome={o} size={24} />} name={o.ticker ? `$${o.ticker}` : "Aucun"} prob={o.prob} />
+          <Row key={o.id} visual={<OutcomeCoin outcome={o} size={24} />} name={o.ticker ? `$${o.ticker}` : "Aucun"} prob={o.prob} cote={odds(market.pool, o.pool)} />
         ))}
       </ul>
       <div className="mt-auto flex items-center gap-2 pt-4 text-[13px] font-semibold text-muted">
-        <span className="num">{usd(market.volume, { compact: true })} Vol.</span>
+        <span className="num">Pot {usd(market.pool, { compact: true })}</span>
         <span className="chip-blue ml-auto">Memecoins</span>
       </div>
     </Link>

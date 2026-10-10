@@ -1,14 +1,21 @@
 import { KOLS, type Kol } from "./kols";
+import { type Period, challengeSpec } from "@/lib/challenge-calendar";
+import type { MarketStatus } from "@/lib/challenge-calendar";
 
-export type Period = "7D" | "30D";
+export type { MarketStatus, Period } from "@/lib/challenge-calendar";
 
 export type Outcome = {
   kol: Kol;
-  /** Probabilité implicite, 0..1 */
+  /** Part du pot misée sur ce KOL, 0..1 (le « % » affiché). */
   prob: number;
-  /** Variation de la probabilité sur 24h, en points */
+  /** Montant misé sur ce KOL, en USD. */
+  pool: number;
+  /** Variation de la part du pot sur 24h, en points */
   change24h: number;
 };
+
+/** Mise récente affichée dans « Activité » (adresse raccourcie). */
+export type MarketActivity = { id: string; who: string; kolId: string; amount: number; at: string };
 
 export type Market = {
   slug: string;
@@ -22,85 +29,86 @@ export type Market = {
   endsAt: string;
   closesAt: string;
   volume: number;
+  /** Pot commun : total misé sur le marché, en USD. */
   pool: number;
   traders: number;
   rules: string[];
   outcomes: Outcome[];
   featured?: boolean;
+  /** Dernières vraies mises ; absent avec les données mock. */
+  activity?: MarketActivity[];
+  status: MarketStatus;
+  /** Premier et dernier jour UTC comptés dans le défi. */
+  dataStart?: string;
+  dataEnd?: string;
+  /** KOL gagnant, proposé (PROPOSED) ou définitif (RESOLVED). */
+  winnerId?: string | null;
+  proposedAt?: string | null;
+  resolvedAt?: string | null;
+  resolutionNote?: string | null;
+  /** PnL réalisé de chaque KOL sur la période du défi : en direct pendant le défi, définitif ensuite. */
+  scores?: { kolId: string; pnl: number | null }[];
+  scoresFinal?: boolean;
 };
 
-function probsFromPnl(period: Period): Outcome[] {
+/** Répartition mock du pot : le meilleur PnL attire le plus de mises. */
+function outcomesFromPnl(period: Period, pot: number): Outcome[] {
   const key = period === "7D" ? "pnl7d" : "pnl30d";
-  // Softmax-ish weighting so the leader is favourite without being a lock.
   const weights = KOLS.map((k) => Math.pow(Math.max(k[key], 1000), 1.35));
   const total = weights.reduce((a, b) => a + b, 0);
   const changes = [2.4, -0.8, 1.1, -1.6, 0.6, -0.9, -0.8];
-  return KOLS.map((kol, i) => ({ kol, prob: weights[i] / total, change24h: changes[i] }))
+  return KOLS.map((kol, i) => ({ kol, prob: weights[i] / total, pool: Math.round((pot * weights[i]) / total), change24h: changes[i] }))
     .sort((a, b) => b.prob - a.prob);
 }
 
+/** Données de démonstration (sans base) : les deux premiers défis, au format des vrais. */
+function mockMarket(spec: ReturnType<typeof challengeSpec>, challenge: number, pool: number, traders: number, featured: boolean): Market {
+  return {
+    slug: spec.slug,
+    title: spec.title,
+    question: spec.question,
+    category: "KOL",
+    period: spec.period,
+    challenge,
+    startsAt: spec.startsAt,
+    endsAt: spec.endsAt,
+    closesAt: spec.closesAt,
+    dataStart: spec.dataStart,
+    dataEnd: spec.dataEnd,
+    status: "OPEN",
+    volume: pool,
+    pool,
+    traders,
+    featured,
+    rules: spec.rules,
+    outcomes: outcomesFromPnl(spec.period, pool),
+  };
+}
+
 export const MARKETS: Market[] = [
-  {
-    slug: "kol-top-profit-7d",
-    title: "Quel KOL fera le plus de profit sur 7 jours ?",
-    question: "Quel KOL fera le plus de profit ?",
-    category: "KOL",
-    period: "7D",
-    challenge: 1,
-    startsAt: "2026-10-13T00:00:00+02:00",
-    endsAt: "2026-10-19T20:00:00+02:00",
-    closesAt: "2026-10-13T00:00:00+02:00",
-    volume: 48210,
-    pool: 31940,
-    traders: 312,
-    featured: true,
-    rules: [
-      "Le KOL gagnant est celui dont le wallet Solana listé affiche le PnL réalisé le plus élevé entre le lundi 13 octobre 00:00 et le dimanche 19 octobre 20:00 (heure de Paris).",
-      "Le PnL est mesuré en USD sur les ventes effectivement réalisées, hors positions ouvertes. Source : données on-chain publiques du wallet.",
-      "Les mises ferment au début de la période. Pendant le défi, les positions peuvent être revendues au prix du marché.",
-      "En cas d'égalité, de wallet changé ou de données indisponibles, le marché est annulé et toutes les mises sont remboursées.",
-    ],
-    outcomes: probsFromPnl("7D"),
-  },
-  {
-    slug: "kol-top-profit-30d",
-    title: "Quel KOL fera le plus de profit sur 30 jours ?",
-    question: "Quel KOL fera le plus de profit ?",
-    category: "KOL",
-    period: "30D",
-    challenge: 2,
-    startsAt: "2026-10-13T00:00:00+02:00",
-    endsAt: "2026-11-11T20:00:00+01:00",
-    closesAt: "2026-10-13T00:00:00+02:00",
-    volume: 17840,
-    pool: 12300,
-    traders: 141,
-    rules: [
-      "Le KOL gagnant est celui dont le wallet Solana listé affiche le PnL réalisé le plus élevé sur 30 jours, du 13 octobre 00:00 au 11 novembre 20:00 (heure de Paris).",
-      "Le PnL est mesuré en USD sur les ventes réalisées, hors positions ouvertes.",
-      "En cas d'égalité ou de données indisponibles, le marché est annulé et remboursé.",
-    ],
-    outcomes: probsFromPnl("30D"),
-  },
+  mockMarket(challengeSpec("7D", "2026-10-12"), 1, 31940, 312, true),
+  mockMarket(challengeSpec("30D", "2026-11-01"), 2, 12300, 141, false),
 ];
 
 export const marketBySlug = (slug: string) => MARKETS.find((m) => m.slug === slug);
 
-/** Marchés secondaires "Oui / Non", style Polymarket, pour remplir la grille. */
+/** Marchés secondaires Oui / Non : un pot commun à deux issues. */
 export type BinaryMarket = {
   slug: string;
   title: string;
   kolId: string;
   period: Period;
+  /** Part du pot misée sur Oui, 0..1 */
   yes: number;
-  volume: number;
+  /** Pot total, en USD */
+  pool: number;
 };
 
 export const BINARY_MARKETS: BinaryMarket[] = [
-  { slug: "cooker-50k-7d", title: "Cooker dépassera-t-il +50K$ de profit cette semaine ?", kolId: "cooker", period: "7D", yes: 0.34, volume: 9120 },
-  { slug: "cented-top3-7d", title: "Cented finira-t-il dans le top 3 sur 7 jours ?", kolId: "cented", period: "7D", yes: 0.71, volume: 6480 },
-  { slug: "decu-positive-7d", title: "decu terminera-t-il la semaine en positif ?", kolId: "decu", period: "7D", yes: 0.82, volume: 4310 },
-  { slug: "blu6k-winrate-30d", title: "blu6k gardera-t-il un winrate > 60 % sur 30 jours ?", kolId: "blu6k", period: "30D", yes: 0.57, volume: 2890 },
-  { slug: "chester-beats-cooker-7d", title: "chester battra-t-il Cooker sur 7 jours ?", kolId: "chester", period: "7D", yes: 0.18, volume: 5260 },
-  { slug: "zeropnl-100k-30d", title: "zeropnl atteindra-t-il +100K$ sur 30 jours ?", kolId: "zeropnl", period: "30D", yes: 0.09, volume: 1740 },
+  { slug: "cooker-50k-7d", title: "Cooker dépassera-t-il +50K$ de profit cette semaine ?", kolId: "cooker", period: "7D", yes: 0.34, pool: 9120 },
+  { slug: "cented-top3-7d", title: "Cented finira-t-il dans le top 3 sur 7 jours ?", kolId: "cented", period: "7D", yes: 0.71, pool: 6480 },
+  { slug: "decu-positive-7d", title: "decu terminera-t-il la semaine en positif ?", kolId: "decu", period: "7D", yes: 0.82, pool: 4310 },
+  { slug: "blu6k-winrate-30d", title: "blu6k gardera-t-il un winrate > 60 % sur 30 jours ?", kolId: "blu6k", period: "30D", yes: 0.57, pool: 2890 },
+  { slug: "chester-beats-cooker-7d", title: "chester battra-t-il Cooker sur 7 jours ?", kolId: "chester", period: "7D", yes: 0.18, pool: 5260 },
+  { slug: "zeropnl-100k-30d", title: "zeropnl atteindra-t-il +100K$ sur 30 jours ?", kolId: "zeropnl", period: "30D", yes: 0.09, pool: 1740 },
 ];

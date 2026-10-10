@@ -10,10 +10,10 @@ export const metadata: Metadata = { title: "Comment ça marche" };
 const BLUE: [string, string, string] = ["#5b80ff", "#2e5cff", "#1f45e0"];
 
 const STEPS = [
-  { icon: Wallet, title: "Connecte ton wallet", text: "Phantom, Solflare ou Backpack : tu signes chaque opération, on ne touche jamais à tes clés." },
-  { icon: Coins, title: "Dépose des USDC", text: "Sur Solana, crédités en deux secondes." },
-  { icon: MousePointerClick, title: "Prends Oui ou Non", text: "Sur un KOL ou sur un memecoin. Le prix d'une part, c'est la probabilité que donne le marché." },
-  { icon: Gavel, title: "Encaisse à la résolution", text: "Chaque part gagnante paie 1 $. Tu peux aussi revendre avant, au prix du moment." },
+  { icon: Wallet, title: "Connecte ton wallet", text: "Phantom, Solflare, Backpack ou n'importe quel wallet Solana. Une signature gratuite crée ton compte, ta clé ne quitte jamais ton wallet." },
+  { icon: Coins, title: "Dépose des USDC", text: "Jusqu'à 1000 $ sur ton compte, 0 frais : on paie le réseau pour toi. Tu retires quand tu veux, vers ton wallet." },
+  { icon: MousePointerClick, title: "Mise sur ton KOL", text: "Choisis celui qui fera le plus de profit. Le % affiché, c'est la part du pot misée sur lui. Les mises ferment au départ du défi, 1000 $ maximum par marché." },
+  { icon: Gavel, title: "Le gagnant prend le pot", text: "Un défi chaque semaine (lundi au dimanche, UTC) et un chaque mois. Résultat publié le lendemain vers 12:00 UTC ; 24 h plus tard, ceux qui ont misé sur le meilleur PnL se partagent tout le pot." },
 ];
 
 export default function HowPage() {
@@ -41,22 +41,22 @@ export default function HowPage() {
         <div className="mt-5 grid gap-6 md:grid-cols-2 md:items-center">
           <div className="space-y-3 text-[15px] leading-relaxed text-ink-2">
             <p>
-              Le marché donne <b className="text-ink">Cooker</b> à <b className="text-ink">34 %</b> : une part Oui coûte 0,34 $.
+              Le pot fait <b className="text-ink">10 000 $</b>, dont <b className="text-ink">2 000 $</b> misés sur <b className="text-ink">{KOLS[0].name}</b> : il est à 20 %, cote ×5.
             </p>
             <p>
-              Tu mets <b className="text-ink">100 $</b> : tu reçois environ <b className="text-ink">294 parts</b>.
+              Tu mises <b className="text-ink">100 $</b> sur lui. Le pot passe à 10 100 $, dont 2 100 $ sur {KOLS[0].name}.
             </p>
             <p>
-              Cooker finit n°1 au profit : chaque part paie 1 $, tu touches <b className="text-up">294 $</b>, soit 194 $ de gain.
+              Il termine n°1 au PnL : tu touches 100 / 2 100 × 10 100 ≈ <b className="text-up">481 $</b>, soit 381 $ de gain.
             </p>
-            <p>Il ne finit pas n°1 : les parts valent 0 $. Si sa cote monte avant la fin, tu peux revendre et prendre ton gain.</p>
+            <p>Il perd : ta mise va aux gagnants. Le gain reste une estimation jusqu&apos;à la fermeture des mises : si d&apos;autres misent aussi sur lui, il baisse.</p>
           </div>
           <div className="rounded-[22px] bg-paper-2 p-5 shadow-[inset_0_0_0_1px_#e6e9f2]">
             <div className="mb-4 flex items-center gap-3">
               <Avatar kol={KOLS[0]} size={46} ring />
               <div>
                 <div className="font-display text-[19px] font-extrabold tracking-[-0.02em]">{KOLS[0].name}</div>
-                <span className="chip-up">Oui à 34¢</span>
+                <span className="chip-blue">20 % du pot · ×5,0</span>
               </div>
             </div>
             <dl className="space-y-1.5 text-[15px]">
@@ -65,8 +65,8 @@ export default function HowPage() {
                 <dd className="num font-bold">$100</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted">Parts</dt>
-                <dd className="num font-bold">294,1</dd>
+                <dt className="text-muted">Cote après ta mise</dt>
+                <dd className="num font-bold">×4,8</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted">Frais</dt>
@@ -74,7 +74,7 @@ export default function HowPage() {
               </div>
               <div className="flex items-end justify-between border-t border-line pt-2.5">
                 <dt className="font-bold">Si Cooker gagne</dt>
-                <dd className="num font-display text-[26px] font-extrabold leading-none text-up">$294,10</dd>
+                <dd className="num font-display text-[26px] font-extrabold leading-none text-up">≈ $481</dd>
               </div>
             </dl>
           </div>
@@ -83,9 +83,9 @@ export default function HowPage() {
 
       <section className="stagger grid gap-4 md:grid-cols-3">
         {[
-          { icon: ShieldCheck, title: "Non-custodial", text: "Les fonds restent dans un smart contract Solana : aucune clé privée côté serveur." },
-          { icon: Gavel, title: "Résolution publique", text: "La règle est publiée avant l'ouverture, les données sont on-chain, et il y a 24 h pour contester." },
-          { icon: Coins, title: "0 % de frais", text: "Rien à l'achat, rien à la revente. Seul le réseau Solana prend sa fraction de centime." },
+          { icon: ShieldCheck, title: "Fonds protégés", text: "Les dépôts sont gardés dans le coffre de Marketcoins et ne repartent que vers ton propre wallet. On ne touche jamais à ton wallet." },
+          { icon: Gavel, title: "Résolution transparente", text: "Règle publiée à l'avance, PnL de chaque KOL lu sur Solana Tracker et publié chiffre par chiffre. Le pot est payé 24 h plus tard, le temps de corriger une erreur." },
+          { icon: Coins, title: "0 frais", text: "Ni sur les mises, ni sur les dépôts, ni sur les retraits. 100 % du pot va aux gagnants." },
         ].map((f) => (
           <div key={f.title} className="card p-5">
             <Coin tint={BLUE} size={40}>

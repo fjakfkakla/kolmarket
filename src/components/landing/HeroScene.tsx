@@ -8,15 +8,16 @@ import type { Market } from "@/data/markets";
 import type { CoinOutcome } from "@/data/coins";
 import { Avatar } from "../Avatar";
 import { OutcomeCoin } from "../Coin";
-import { usd } from "@/lib/format";
+import { estimatePayout, odds } from "@/lib/pot";
+import { fmtOdds, pct, usd } from "@/lib/format";
 import { KolScreenDesktop, KolScreenPhone } from "./KolScreen";
 import { Planet, defaultPlanet, type PlanetState } from "./Planet";
 import { easeInOut, easeOut, lerp, scrollToProgress, seg, useScrollScene } from "./scroll";
 
 const STEPS = [
   { id: "trader", name: "Choisis ton trader", text: "7 KOLs, 7 wallets Solana publics : leur profit se lit on-chain, trade après trade.", at: 0.57, end: 0.68 },
-  { id: "oui", name: "Prends Oui", text: "Cooker à 30 ¢ : le marché lui donne 30 % de chances de finir premier.", at: 0.68, end: 0.86 },
-  { id: "cash", name: "Encaisse", text: "Il finit n°1 sur 7 jours : chaque part Oui paie 1 $. Tu peux aussi revendre avant.", at: 0.86, end: 0.985 },
+  { id: "oui", name: "Mise sur lui", text: "", at: 0.68, end: 0.86 },
+  { id: "cash", name: "Encaisse", text: "Il finit n°1 sur 7 jours : ceux qui ont misé sur lui se partagent tout le pot. 0 frais.", at: 0.86, end: 0.985 },
 ];
 
 /** Les pièces qui tournent autour de la planète : les traders et les coins. */
@@ -45,6 +46,8 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
   const clicked = useRef({ row: false, chip: false, press: false });
 
   const lead = market.outcomes[0];
+  const stepText = (i: number) =>
+    i === 1 ? `${lead.kol.name} a ${pct(lead.prob)} du pot, cote ${fmtOdds(odds(market.pool, lead.pool))} : chaque dollar misé sur lui est multiplié d'autant s'il gagne.` : STEPS[i].text;
   const orbiters: Orbiter[] = [];
   const coinList = coins.filter((c) => c.ticker);
   kols.forEach((k, i) => {
@@ -172,13 +175,10 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
     const amt = Math.round(100 * easeOut(seg(s3, 0.5, 1)));
     const amountEl = root.querySelector("[data-amount]");
     if (amountEl) amountEl.textContent = String(amt);
-    const shares = amt / lead.prob;
     const sharesEl = root.querySelector("[data-shares]");
-    if (sharesEl) sharesEl.textContent = shares.toFixed(1).replace(".", ",");
+    if (sharesEl) sharesEl.textContent = fmtOdds(odds(market.pool + amt, lead.pool + amt));
     const payEl = root.querySelector("[data-payout]");
-    if (payEl) payEl.textContent = usd(shares, { cents: true });
-    const toastShares = root.querySelector("[data-toast-shares]");
-    if (toastShares) toastShares.textContent = String(Math.round(100 / lead.prob));
+    if (payEl) payEl.textContent = usd(Math.floor(estimatePayout(market.pool, lead.pool, amt) * 100) / 100, { cents: true });
     setOn(root.querySelector("[data-summary]"), amt > 0);
     setOn(press, s4 >= 0.62 && s4 < 0.78);
     setOn(root.querySelector("[data-toast]"), s4 >= 0.72);
@@ -308,7 +308,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
                 ))}
               </div>
               <p key={active} className="fade-up mt-4 hidden max-w-[34ch] text-[17px] font-medium leading-relaxed text-white/90 md:block">
-                {STEPS[active].text}
+                {stepText(active)}
               </p>
             </div>
             <div ref={screenBox} className="relative min-h-0 flex-1 self-stretch">

@@ -5,14 +5,15 @@ import { useRef, useState } from "react";
 import type { CoinMarket } from "@/data/coins";
 import { OutcomeCoin } from "../Coin";
 import { pointAt } from "../LineChart";
-import { usd } from "@/lib/format";
+import { estimatePayout, odds } from "@/lib/pot";
+import { fmtOdds, pct, usd } from "@/lib/format";
 import { CoinScreenDesktop, CoinScreenPhone } from "./CoinScreen";
 import { easeInOut, easeOut, lerp, scrollToProgress, seg, useScrollScene } from "./scroll";
 
 const STEPS = [
-  { id: "coin", name: "Choisis ton coin", text: "ANSEM, CASHCAT, AI ou NET : chaque coin a sa ligne, et sa ligne, c'est sa chance.", at: 0.2, end: 0.45 },
+  { id: "coin", name: "Choisis ton coin", text: "ANSEM, CASHCAT, AI ou NET : chaque ligne montre la part du pot misée sur un coin.", at: 0.2, end: 0.45 },
   { id: "race", name: "La course à 1 Md$", text: "Le premier à passer 1 milliard de FDV gagne. Les barres montrent où chacun en est.", at: 0.45, end: 0.68 },
-  { id: "bet", name: "Mise sur son potentiel", text: "$AI à 6 ¢ : 100 $ deviennent 1 667 $ s'il passe la ligne en premier.", at: 0.68, end: 0.96 },
+  { id: "bet", name: "Mise sur son potentiel", text: "", at: 0.68, end: 0.96 },
 ];
 
 const AURA: [string, string, string][] = [
@@ -40,6 +41,10 @@ export function CoinScene({ market }: { market: CoinMarket }) {
   const clicked = useRef({ row: false, press: false });
   const pick = market.outcomes.find((o) => o.id === "ai") ?? market.outcomes[1];
   const floating = market.outcomes.filter((o) => o.ticker);
+  const stepText = (i: number) =>
+    i === 2
+      ? `$${pick.ticker} a ${pct(pick.prob)} du pot : 100 $ misés rapportent environ ${usd(Math.floor(estimatePayout(market.pool, pick.pool, 100)))} s'il passe ${market.target} en premier.`
+      : STEPS[i].text;
 
   useScrollScene(track, ({ p, time, w, h, reduced }) => {
     const mobile = w < 768;
@@ -132,13 +137,10 @@ export function CoinScene({ market }: { market: CoinMarket }) {
     const amountEl = root.querySelector("[data-amount]");
     if (amountEl) amountEl.textContent = String(amt);
     setOn(chip, s3 >= 0.3 && s3 < 0.6);
-    const shares = amt / pick.prob;
     const sharesEl = root.querySelector("[data-shares]");
-    if (sharesEl) sharesEl.textContent = shares.toFixed(0);
+    if (sharesEl) sharesEl.textContent = fmtOdds(odds(market.pool + amt, pick.pool + amt));
     const payEl = root.querySelector("[data-payout]");
-    if (payEl) payEl.textContent = usd(shares, { cents: true });
-    const ts = root.querySelector("[data-toast-shares]");
-    if (ts) ts.textContent = Math.round(100 / pick.prob).toLocaleString("fr-FR");
+    if (payEl) payEl.textContent = usd(Math.floor(estimatePayout(market.pool, pick.pool, amt) * 100) / 100, { cents: true });
     setOn(root.querySelector("[data-summary]"), amt > 0);
     setOn(press, s3 >= 0.72 && s3 < 0.82);
     setOn(root.querySelector("[data-toast]"), s3 >= 0.8);
@@ -207,7 +209,7 @@ export function CoinScene({ market }: { market: CoinMarket }) {
               ))}
             </div>
             <p key={active} className="fade-up mt-4 hidden max-w-[36ch] text-[17px] font-medium leading-relaxed text-ink-2 md:block">
-              {STEPS[active].text}
+              {stepText(active)}
             </p>
           </div>
 

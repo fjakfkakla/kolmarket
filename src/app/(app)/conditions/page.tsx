@@ -7,8 +7,8 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     id: "objet",
     title: "1. Objet",
     body: [
-      "Marketcoins (« la Plateforme ») est une interface permettant d'acheter et de vendre des parts sur des marchés de prédiction portant sur la performance de traders publics (« KOLs ») et de memecoins, mesurée à partir de données blockchain et de marché publiques.",
-      "Les présentes conditions régissent l'accès et l'utilisation de la Plateforme. En connectant un wallet ou en négociant, vous les acceptez sans réserve.",
+      "Marketcoins (« la Plateforme ») permet de miser des USDC sur des marchés en pot commun portant sur la performance de traders publics (« KOLs ») mesurée à partir de données blockchain publiques.",
+      "Les présentes conditions régissent l'accès et l'utilisation de la Plateforme. En connectant un wallet ou en misant, vous les acceptez sans réserve.",
     ],
   },
   {
@@ -21,10 +21,13 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     ],
   },
   {
-    id: "non-custodial",
-    title: "3. Nature non-custodiale",
+    id: "fonds",
+    title: "3. Compte et conservation des fonds",
     body: [
-      "La Plateforme ne détient jamais vos fonds ni vos clés privées. Les dépôts, mises et retraits sont exécutés par des smart contracts sur la blockchain Solana que vous signez avec votre propre wallet.",
+      "Votre compte est lié à l'adresse publique du wallet Solana avec lequel vous vous connectez, par une simple signature. La Plateforme n'a jamais accès à votre wallet ni à vos clés privées.",
+      "Les USDC que vous déposez sont conservés par la Plateforme dans un coffre dédié jusqu'à leur retrait. Les retraits sont envoyés uniquement vers l'adresse du wallet lié au compte.",
+      "Plafonds : vos dépôts ne peuvent pas porter votre compte (solde et mises en cours) au-delà de 1000 USDC ; les gains peuvent dépasser ce montant et restent retirables. Retrait minimum : 5 USDC.",
+      "Aucun frais n'est prélevé sur les dépôts, les mises ou les retraits ; les frais du réseau Solana sont pris en charge par la Plateforme.",
       "Vous êtes seul responsable de la sécurité de votre wallet, de votre phrase de récupération et de vos appareils. Aucune transaction signée ne peut être annulée.",
     ],
   },
@@ -33,27 +36,29 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     title: "4. Fonctionnement des marchés",
     body: [
       "Chaque marché définit une question, une période, une liste de résultats possibles et une règle de résolution publiée avant l'ouverture. Cette règle fait foi.",
-      "Une part « Oui » sur un résultat vaut 1 USDC si ce résultat est déclaré gagnant, 0 sinon. Une part « Non » vaut l'inverse. Les prix affichés reflètent la probabilité implicite du marché et évoluent en continu.",
-      "Les mises ferment à la date indiquée. Les positions peuvent être revendues au prix du marché jusqu'à la résolution, sous réserve de liquidité.",
-      "Aucun frais de trading n'est prélevé : 0 % à l'achat, 0 % à la revente. Les frais de réseau Solana restent à votre charge.",
+      "Chaque marché fonctionne en pot commun : toutes les mises forment un pot unique. À la résolution, les comptes ayant misé sur le résultat gagnant se partagent 100 % du pot, au prorata de leur mise. Aucune commission n'est prélevée.",
+      "Le pourcentage affiché pour chaque résultat est la part du pot misée sur lui. La cote et le gain affichés avant la fermeture des mises sont des estimations : ils évoluent selon les mises des autres participants.",
+      "Les mises ferment à la date indiquée. Une mise ne peut être ni annulée ni revendue. La mise totale d'un compte est limitée à 1000 USDC par marché.",
+      "Si aucune mise n'a été placée sur le résultat gagnant, ou si le marché est annulé, toutes les mises sont remboursées.",
     ],
   },
   {
     id: "resolution",
-    title: "5. Résolution et contestation",
+    title: "5. Résolution et correction",
     body: [
-      "Le résultat est proposé par le comité de résolution (multisignature) à partir des données on-chain publiques des wallets listés, puis soumis à une période de contestation de 24 heures.",
-      "En cas d'égalité, de changement de wallet d'un KOL, d'indisponibilité des données ou de manipulation avérée, le marché est annulé et toutes les mises sont remboursées sans frais.",
-      "Les décisions du comité de résolution, prises conformément à la règle publiée, sont définitives.",
+      "Le PnL réalisé de chaque wallet listé est compté en journées UTC, d'après les données de Solana Tracker. Environ 12 heures après la fin du défi, le résultat est publié avec le PnL de chaque KOL.",
+      "Le pot est payé automatiquement 24 heures après la publication. Pendant ce délai, Marketcoins peut corriger le résultat en cas d'erreur manifeste des données ; le délai de 24 heures repart alors.",
+      "En cas d'égalité, de changement de wallet d'un KOL, de données indisponibles ou incohérentes, ou de manipulation avérée, le marché est annulé et toutes les mises sont remboursées sans frais.",
+      "Les décisions prises conformément à la règle publiée sont définitives.",
     ],
   },
   {
     id: "risques",
     title: "6. Avertissement sur les risques",
     body: [
-      "Négocier sur des marchés de prédiction comporte un risque de perte totale du capital engagé. Ne misez jamais plus que ce que vous pouvez vous permettre de perdre.",
-      "Les KOLs et les tokens listés ne sont ni affiliés ni partenaires de la Plateforme. Leur performance passée ne préjuge pas de leur performance future.",
-      "Les smart contracts peuvent contenir des vulnérabilités. La Plateforme applique des plafonds de mise et fait auditer son code, sans garantie d'absence de faille.",
+      "Miser sur ces marchés comporte un risque de perte totale de la mise. Ne misez jamais plus que ce que vous pouvez vous permettre de perdre.",
+      "Les KOLs listés ne sont ni affiliés ni partenaires de la Plateforme. Leur performance passée ne préjuge pas de leur performance future.",
+      "La conservation des fonds par la Plateforme comporte des risques (piratage, défaillance technique, erreur de données). La Plateforme applique des plafonds de dépôt, de mise et de retrait et des contrôles automatiques, sans garantie d'absence de faille.",
     ],
   },
   {
@@ -61,14 +66,14 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     title: "7. Conduite interdite",
     body: [
       "Sont interdits : la manipulation de marché, l'utilisation d'informations privilégiées, la coordination avec un KOL listé pour influencer un résultat, l'utilisation de bots abusifs, le contournement d'un blocage géographique et toute activité illégale.",
-      "La Plateforme peut geler l'accès à l'interface pour tout compte suspect. Les fonds restant dans les smart contracts demeurent retirables par leur propriétaire.",
+      "La Plateforme peut geler tout compte suspect le temps d'une vérification. Sauf fraude avérée, le solde d'un compte gelé reste retirable vers le wallet lié au compte.",
     ],
   },
   {
     id: "confidentialite",
     title: "8. Confidentialité",
     body: [
-      "La Plateforme ne collecte que les données strictement nécessaires : adresse publique du wallet, historique de transactions on-chain (par nature publiques), adresse email si vous choisissez la connexion par email, et données techniques de connexion.",
+      "La Plateforme ne collecte que les données strictement nécessaires : adresse publique du wallet, historique de vos dépôts, mises et retraits, et données techniques de connexion (navigateur, dates de session).",
       "Aucune donnée n'est vendue à des tiers. Vous pouvez demander la suppression de vos données hors chaîne à tout moment.",
     ],
   },

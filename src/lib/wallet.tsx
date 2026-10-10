@@ -1,175 +1,283 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { Wallet } from "@wallet-standard/base";
+import type { AccountData, Activity, Bet } from "./account-types";
+import { checkBet, checkDeposit, checkWithdraw } from "./limits";
+import { fetchSession, signInWithWallet, signOut, signTransactionWith } from "./solana-wallets";
+
+export type { Activity, Bet } from "./account-types";
 
 /**
- * État wallet côté client, mocké pour l'instant.
- * À remplacer par @solana/wallet-adapter (Phantom, Solflare, Backpack)
- * et une lecture du solde USDC on-chain. Aucune clé privée ne transite ici.
+ * Compte du joueur côté navigateur.
+ * - Mode réel (base configurée) : solde, mises et historique viennent du registre (/api/account),
+ *   les dépôts passent par le wallet et la blockchain.
+ * - Mode démo (pas de base) : tout est simulé dans le navigateur, par adresse.
  */
 
-export type PositionMedia =
-  | { kind: "kol"; avatar: string | null; color: string }
-  | { kind: "coin"; mark: string; tint: [string, string, string] };
-
-export type Position = {
-  id: string;
-  marketSlug: string;
-  marketTitle: string;
-  outcome: string;
-  side: "OUI" | "NON";
-  shares: number;
-  avgPrice: number;
-  currentPrice: number;
-  createdAt: number;
-  media?: PositionMedia;
-};
-
-export type Activity = {
-  id: string;
-  type: "DEPOT" | "RETRAIT" | "ACHAT" | "VENTE";
-  label: string;
-  amount: number;
-  at: number;
-  /** Profit ou perte réalisé (ventes seulement). */
-  pnl?: number;
-};
-
 type Modal = "connect" | "deposit" | "withdraw" | null;
+
+export type DepositStep = "prepare" | "sign" | "send" | "confirm";
+export type DepositResult = { error: string } | { credited: number; excess: number };
+export type WithdrawStatus = "REVIEW" | "QUEUED" | "SENDING" | "CONFIRMED" | "REFUNDED";
+export type WithdrawResult = { error: string } | { status: WithdrawStatus; signature: string | null };
+
+type Demo = { owner: string | null; balance: number; bets: Bet[]; activity: Activity[] };
 
 type WalletState = {
   ready: boolean;
   connected: boolean;
+  /** true = vrai registre ; false = démo dans le navigateur. */
+  live: boolean;
   address: string | null;
   provider: string | null;
   balance: number;
-  positions: Position[];
+  /** Dépôts au-delà du plafond : retirables, pas jouables. */
+  excess: number;
+  /** Total misé, encore en jeu. */
+  inPlay: number;
+  bets: Bet[];
+  /** Mises des défis terminés (gagnées, perdues, remboursées). */
+  settled: Bet[];
   activity: Activity[];
+  depositsEnabled: boolean;
   modal: Modal;
   openModal: (m: Modal) => void;
-  connect: (provider: string) => void;
-  disconnect: () => void;
-  deposit: (amount: number) => void;
-  withdraw: (amount: number) => boolean;
-  buy: (p: Omit<Position, "id" | "createdAt">, cost: number) => boolean;
-  sell: (positionId: string, price?: number) => void;
+  signIn: (wallet: Wallet) => Promise<void>;
+  disconnect: () => Promise<void>;
+  refresh: () => Promise<void>;
+  stakedOn: (marketSlug: string) => number;
+  deposit: (amount: number, onStep?: (s: DepositStep) => void) => Promise<DepositResult>;
+  withdraw: (amount: number, onSending?: () => void) => Promise<WithdrawResult>;
+  placeBet: (bet: Omit<Bet, "id" | "createdAt">, open: boolean) => Promise<string | null>;
 };
 
 const Ctx = createContext<WalletState | null>(null);
-const KEY = "marketcoins.wallet.v1";
-
-const DEMO_ADDRESS = "7Gx2kQmFpZ9vN4tLd8sH3rWcA1eB6yU5oP0jK2nM9xVq";
-
+const EMPTY: Demo = { owner: null, balance: 0, bets: [], activity: [] };
+const demoKey = (address: string) => `marketcoins.demo.v2.${address}`;
 const round2 = (n: number) => Math.round(n * 100) / 100;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * Prix de marché d'une position, simulé : il ondule doucement autour du prix d'achat
- * en attendant le vrai carnet d'ordres. Déterministe (id + temps), donc stable entre deux rendus.
- */
-export function markPrice(p: Pick<Position, "id" | "avgPrice" | "createdAt">, now: number) {
-  let h = 0;
-  for (let i = 0; i < p.id.length; i++) h = (h * 31 + p.id.charCodeAt(i)) >>> 0;
-  const phase = (h % 628) / 100;
-  const minutes = Math.max(0, (now - p.createdAt) / 60000);
-  const ramp = Math.min(1, minutes / 2);
-  const swing = 0.16 * Math.sin(minutes / 3.1 + phase) + 0.06 * Math.sin(minutes / 0.9 + phase * 2);
-  return Math.min(0.99, Math.max(0.01, p.avgPrice * (1 + swing * ramp)));
+function loadDemo(address: string): Demo {
+  try {
+    const s = JSON.parse(localStorage.getItem(demoKey(address)) ?? "null");
+    if (s) {
+      return {
+        owner: address,
+        balance: Number(s.balance) || 0,
+        bets: Array.isArray(s.bets) ? s.bets : [],
+        activity: Array.isArray(s.activity) ? s.activity : [],
+      };
+    }
+  } catch {}
+  return { ...EMPTY, owner: address };
+}
+
+async function api<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    cache: "no-store",
+    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? "Service indisponible.");
+  return data as T;
+}
+
+/** Charge le compte : réel si le serveur a une base, sinon null (démo). */
+async function fetchAccount(): Promise<AccountData | null> {
+  const r = await api<{ live: boolean; account?: AccountData }>("/api/account");
+  return r.live && r.account ? r.account : null;
 }
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [provider, setProvider] = useState<string | null>(null);
-  const [balance, setBalance] = useState(0);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [activity, setActivity] = useState<Activity[]>([]);
+  const [session, setSession] = useState<{ address: string; walletApp: string | null } | null>(null);
+  const [account, setAccount] = useState<AccountData | null>(null);
+  const [demo, setDemo] = useState<Demo>(EMPTY);
   const [modal, setModal] = useState<Modal>(null);
 
-  // Hydrate from localStorage after mount (never during SSR) to avoid markup mismatches.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      try {
-        const raw = localStorage.getItem(KEY);
-        if (raw) {
-          const s = JSON.parse(raw);
-          setConnected(!!s.connected);
-          setProvider(s.provider ?? null);
-          setBalance(Number(s.balance) || 0);
-          setPositions(Array.isArray(s.positions) ? s.positions : []);
-          setActivity(Array.isArray(s.activity) ? s.activity : []);
-        }
-      } catch {}
-      setReady(true);
-    });
-    return () => cancelAnimationFrame(id);
+  const load = useCallback(async (s: { address: string; walletApp: string | null } | null) => {
+    // Le compte est chargé avant d'afficher la session : pas de passage furtif par le mode démo.
+    const acc = s ? await fetchAccount().catch(() => null) : null;
+    setSession(s);
+    setAccount(acc);
+    setDemo(s && !acc ? loadDemo(s.address) : EMPTY);
   }, []);
 
+  // Reprend la session existante (cookie httpOnly, vérifié par le serveur).
   useEffect(() => {
-    if (!ready) return;
+    let alive = true;
+    fetchSession()
+      .then((s) => (alive ? load(s) : undefined))
+      .finally(() => alive && setReady(true));
+    return () => {
+      alive = false;
+    };
+  }, [load]);
+
+  useEffect(() => {
+    if (!demo.owner) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify({ connected, provider, balance, positions, activity }));
+      const { balance, bets, activity } = demo;
+      localStorage.setItem(demoKey(demo.owner), JSON.stringify({ balance, bets, activity }));
     } catch {}
-  }, [ready, connected, provider, balance, positions, activity]);
+  }, [demo]);
 
-  const log = useCallback((a: Omit<Activity, "id" | "at">) => {
-    setActivity((prev) => [{ ...a, id: crypto.randomUUID(), at: Date.now() }, ...prev].slice(0, 80));
+  const signIn = useCallback(
+    async (wallet: Wallet) => {
+      const s = await signInWithWallet(wallet);
+      await load(s);
+      setModal(null);
+    },
+    [load],
+  );
+
+  const disconnect = useCallback(async () => {
+    await signOut();
+    await load(null);
+  }, [load]);
+
+  const refresh = useCallback(async () => {
+    const acc = await fetchAccount().catch(() => null);
+    if (acc) setAccount(acc);
   }, []);
 
-  const value = useMemo<WalletState>(
-    () => ({
+  const value = useMemo<WalletState>(() => {
+    const live = account !== null;
+    const bets = live ? account.bets : demo.bets;
+    const balance = live ? account.balance : demo.balance;
+    const inPlay = live ? account.inPlay : round2(demo.bets.reduce((s, b) => s + b.amount, 0));
+    const stakedOn = (slug: string) => round2(bets.filter((b) => b.marketSlug === slug).reduce((s, b) => s + b.amount, 0));
+    const entry = (a: Omit<Activity, "id" | "at">): Activity => ({ ...a, id: crypto.randomUUID(), at: Date.now() });
+
+    return {
       ready,
-      connected,
-      address: connected ? DEMO_ADDRESS : null,
-      provider,
+      connected: Boolean(session),
+      live,
+      address: session?.address ?? null,
+      provider: session?.walletApp ?? null,
       balance,
-      positions,
-      activity,
+      excess: live ? account.excess : 0,
+      inPlay,
+      bets,
+      settled: live ? (account.settled ?? []) : [],
+      activity: live ? account.activity : demo.activity,
+      depositsEnabled: live ? account.depositsEnabled : true,
       modal,
       openModal: setModal,
-      connect: (p) => {
-        setProvider(p);
-        setConnected(true);
-        setModal(null);
+      signIn,
+      disconnect,
+      refresh,
+      stakedOn,
+
+      deposit: async (amount, onStep) => {
+        const err = checkDeposit(amount, balance, inPlay);
+        if (err) return { error: err };
+        if (!live) {
+          await sleep(1200);
+          const a = entry({ type: "DEPOT", label: "Dépôt USDC (démo)", amount });
+          setDemo((d) => ({ ...d, balance: round2(d.balance + amount), activity: [a, ...d.activity].slice(0, 50) }));
+          return { credited: amount, excess: 0 };
+        }
+        try {
+          onStep?.("prepare");
+          const prep = await api<{ transaction: string; token: string }>("/api/deposit/prepare", {
+            method: "POST",
+            body: JSON.stringify({ amount }),
+          });
+          onStep?.("sign");
+          const signed = await signTransactionWith(session?.walletApp ?? null, session!.address, prep.transaction);
+          onStep?.("send");
+          const { signature } = await api<{ signature: string }>("/api/deposit/submit", {
+            method: "POST",
+            body: JSON.stringify({ transaction: signed, token: prep.token }),
+          });
+          // Crédit seulement quand la transaction est définitive (~15 s sur Solana).
+          onStep?.("confirm");
+          for (let i = 0; i < 30; i++) {
+            await sleep(4000);
+            const st = await api<{ status: string; credited: number; excess: number }>(
+              `/api/deposit/status?signature=${encodeURIComponent(signature)}`,
+            ).catch(() => null);
+            if (!st || st.status === "PENDING") continue;
+            await refresh();
+            if (st.status === "CREDITED") return { credited: st.credited, excess: st.excess };
+            if (st.status === "FAILED") return { error: "La transaction a échoué sur le réseau. Aucun USDC n'a bougé." };
+            if (st.status === "DROPPED") return { error: "La transaction n'est jamais arrivée. Aucun USDC n'a bougé, réessaie." };
+            return { error: "Dépôt reçu mais non attribué : contacte le support." };
+          }
+          return { error: "Le réseau est lent : ton dépôt sera crédité dès qu'il sera confirmé." };
+        } catch (e) {
+          return { error: (e as Error).message || "Dépôt impossible." };
+        }
       },
-      disconnect: () => {
-        setConnected(false);
-        setProvider(null);
+
+      withdraw: async (amount, onSending) => {
+        const err = checkWithdraw(amount, balance + (live ? account.excess : 0));
+        if (err) return { error: err };
+        if (!live) {
+          const a = entry({ type: "RETRAIT", label: "Retrait USDC vers le wallet (démo)", amount: -amount });
+          setDemo((d) => ({ ...d, balance: round2(d.balance - amount), activity: [a, ...d.activity].slice(0, 50) }));
+          return { status: "CONFIRMED", signature: null };
+        }
+        try {
+          const r = await api<{ id: string; status: WithdrawStatus }>("/api/withdraw", {
+            method: "POST",
+            body: JSON.stringify({ amount }),
+          });
+          await refresh(); // le compte est débité dès la demande
+          if (r.status === "REVIEW") return { status: r.status, signature: null };
+          onSending?.();
+          // Suivi jusqu'à l'arrivée définitive (~15 s), au plus 1 min 30.
+          let last: WithdrawStatus = r.status;
+          for (let i = 0; i < 30; i++) {
+            await sleep(3000);
+            const st = await api<{ status: WithdrawStatus; signature: string | null }>(
+              `/api/withdraw/status?id=${encodeURIComponent(r.id)}`,
+            ).catch(() => null);
+            if (!st) continue;
+            last = st.status;
+            if (st.status === "CONFIRMED" || st.status === "REFUNDED" || st.status === "REVIEW") {
+              await refresh();
+              return { status: st.status, signature: st.signature };
+            }
+            // Toujours en file après plusieurs essais : la réserve est à recharger, inutile d'attendre ici.
+            if (st.status === "QUEUED" && i >= 3) break;
+          }
+          return { status: last, signature: null };
+        } catch (e) {
+          return { error: (e as Error).message || "Retrait impossible." };
+        }
       },
-      deposit: (amount) => {
-        setBalance((b) => round2(b + amount));
-        log({ type: "DEPOT", label: "Dépôt USDC depuis le wallet", amount });
+
+      placeBet: async (bet, open) => {
+        const err = checkBet(bet.amount, balance, stakedOn(bet.marketSlug), open);
+        if (err) return err;
+        if (live) {
+          try {
+            const r = await api<{ account: AccountData }>("/api/bets", {
+              method: "POST",
+              body: JSON.stringify({ marketSlug: bet.marketSlug, kolId: bet.kolId, amount: bet.amount }),
+            });
+            setAccount(r.account);
+            return null;
+          } catch (e) {
+            return (e as Error).message;
+          }
+        }
+        const b: Bet = { ...bet, id: crypto.randomUUID(), createdAt: Date.now() };
+        const a = entry({ type: "MISE", label: `${bet.kolName} · ${bet.marketTitle}`, amount: -bet.amount });
+        setDemo((d) => ({
+          ...d,
+          balance: round2(d.balance - bet.amount),
+          bets: [b, ...d.bets],
+          activity: [a, ...d.activity].slice(0, 50),
+        }));
+        return null;
       },
-      withdraw: (amount) => {
-        if (amount > balance) return false;
-        setBalance((b) => round2(b - amount));
-        log({ type: "RETRAIT", label: "Retrait USDC vers le wallet", amount: -amount });
-        setModal(null);
-        return true;
-      },
-      buy: (p, cost) => {
-        if (cost > balance) return false;
-        setBalance((b) => round2(b - cost));
-        setPositions((prev) => [{ ...p, id: crypto.randomUUID(), createdAt: Date.now() }, ...prev]);
-        log({ type: "ACHAT", label: `${p.side === "OUI" ? "Oui" : "Non"} · ${p.outcome}`, amount: -cost });
-        return true;
-      },
-      sell: (id, price) => {
-        const pos = positions.find((x) => x.id === id);
-        if (!pos) return;
-        const px = price ?? markPrice(pos, Date.now());
-        const proceeds = round2(pos.shares * px);
-        setBalance((b) => round2(b + proceeds));
-        setPositions((prev) => prev.filter((x) => x.id !== id));
-        log({
-          type: "VENTE",
-          label: `${pos.side === "OUI" ? "Oui" : "Non"} · ${pos.outcome}`,
-          amount: proceeds,
-          pnl: round2(proceeds - pos.shares * pos.avgPrice),
-        });
-      },
-    }),
-    [ready, connected, provider, balance, positions, activity, modal, log],
-  );
+    };
+  }, [ready, session, account, demo, modal, signIn, disconnect, refresh]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

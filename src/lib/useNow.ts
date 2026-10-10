@@ -7,9 +7,7 @@ function subscribe(cb: () => void) {
   return () => clearInterval(id);
 }
 const getNow = () => Math.floor(Date.now() / 1000) * 1000;
-const getServerNow = () => 0;
+const getServerNow = () => null;
 
-/** L'heure, à la seconde ; 0 au rendu serveur. */
-export function useNow() {
-  return useSyncExternalStore(subscribe, getNow, getServerNow);
-}
+/** Heure courante à la seconde près, `null` pendant le rendu serveur. */
+export const useNow = () => useSyncExternalStore(subscribe, getNow, getServerNow);

@@ -2,7 +2,7 @@ import type { Kol } from "@/data/kols";
 import type { Period } from "@/data/markets";
 import { Avatar } from "./Avatar";
 import { Coin } from "./Coin";
-import { usd } from "@/lib/format";
+import { pnlClass, usd } from "@/lib/format";
 
 type PnlKey = "pnl7d" | "pnl30d";
 
@@ -32,10 +32,10 @@ function Card({ k, rank, first, pnlKey: key }: { k: Kol; rank: 1 | 2 | 3; first:
           </a>
         </div>
       </div>
-      <div className="num mt-3 font-display text-[28px] font-extrabold leading-none tracking-[-0.03em] text-up">{usd(k[key], { compact: true, sign: true })}</div>
+      <div className={`num mt-3 font-display text-[28px] font-extrabold leading-none tracking-[-0.03em] ${pnlClass(k[key])}`}>{usd(k[key], { compact: true, sign: true })}</div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         <span className="chip">Vol. {usd(k.volume7d, { compact: true })}</span>
-        <span className="chip">{k.winRate} % gagnants</span>
+        <span className="chip" title="Part des jours de trading finis en positif">{Math.round(k.winRate)} % de jours +</span>
         {!lead && <span className="chip-down">{usd(gap, { compact: true })}</span>}
       </div>
     </div>

@@ -5,8 +5,8 @@ const COLS = [
   {
     title: "Marchés",
     links: [
-      { label: "Top KOL 7 jours", href: "/market/kol-top-profit-7d" },
-      { label: "Top KOL 30 jours", href: "/market/kol-top-profit-30d" },
+      { label: "Défi 7 jours", href: "/market/kol-top-profit-7d" },
+      { label: "Défi 30 jours", href: "/market/kol-top-profit-30d" },
       { label: "Course à 1 Md$", href: "/market/premier-1md-fdv" },
       { label: "Tous les marchés", href: "/app" },
     ],
@@ -15,6 +15,7 @@ const COLS = [
     title: "Accès",
     links: [
       { label: "Mon compte", href: "/compte" },
+      { label: "Mes mises", href: "/compte#mises" },
       { label: "Comment ça marche", href: "/comment-ca-marche" },
       { label: "Conditions", href: "/conditions" },
       { label: "Accueil", href: "/" },
