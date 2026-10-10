@@ -8,10 +8,12 @@ import type { CoinMarket } from "@/data/coins";
 import type { Market } from "@/data/markets";
 import { Avatar } from "../Avatar";
 import { OutcomeCoin } from "../Coin";
+import { useI18n } from "@/i18n/client";
 import { Planet, defaultPlanet, type PlanetState } from "./Planet";
 
 /** La porte : la planète se lève à l'horizon de la planche, et deux marchés à ouvrir. */
 export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMarket: Market; coinMarket: CoinMarket }) {
+  const { t } = useI18n();
   const plank = useRef<HTMLDivElement>(null);
   const planet = useRef<PlanetState>({ ...defaultPlanet(), radius: 3, ring: 0, tilt: 0.08, light: 0.92, speed: 0.05, y: -3.2 });
 
@@ -30,17 +32,17 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
   }, []);
 
   return (
-    <section className="px-2 pb-2 pt-10 md:px-5 md:pb-5 md:pt-16" aria-label="Lancer l'application">
+    <section className="px-2 pb-2 pt-10 md:px-5 md:pb-5 md:pt-16" aria-label={t.landing.nav.launchLong}>
       <div ref={plank} className="planche on-plank relative min-h-[640px] md:min-h-[680px] md:rounded-[34px]">
         <div className="absolute inset-0 z-[1]">
-          <Planet state={planet} className="h-full w-full" label="L'horizon de la planète des memecoins" />
+          <Planet state={planet} className="h-full w-full" label={t.landing.final.planetLabel} />
         </div>
         <div className="relative z-[2] flex flex-col items-center px-5 pt-16 text-center md:pt-24">
           <h2 className="display text-[clamp(48px,8vw,128px)] text-white">
             The future is <span className="text-blue-sky">tradable.</span>
           </h2>
           <Link href="/app" className="pill-white mt-8">
-            Lancer l&apos;application <ArrowRight size={18} />
+            {t.landing.nav.launchLong} <ArrowRight size={18} />
           </Link>
           <div className="mt-10 grid w-full max-w-[760px] gap-3 sm:grid-cols-2">
             <Link href={`/market/${kolMarket.slug}`} className="card card-hover flex items-center gap-3 p-4 text-left text-ink">

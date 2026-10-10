@@ -2,8 +2,10 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { useI18n } from "@/i18n/client";
 
 export function CopyButton({ value, className = "", label }: { value: string; className?: string; label?: string }) {
+  const { t } = useI18n();
   const [done, setDone] = useState(false);
   const copy = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -23,14 +25,15 @@ export function CopyButton({ value, className = "", label }: { value: string; cl
           done ? "border-blue bg-blue text-white" : "border-blue/45 text-blue hover:border-blue"
         } ${className}`}
       >
-        {done ? <Check size={13} strokeWidth={3} /> : <Copy size={13} />} {done ? "Copié" : label}
+        {done ? <Check size={13} strokeWidth={3} /> : <Copy size={13} />} {done ? t.common.copied : label}
       </button>
     );
   }
   return (
     <button
       type="button"
-      title="Copier"
+      title={t.common.copy}
+      aria-label={t.common.copy}
       onClick={copy}
       className={`inline-grid h-6 w-6 place-items-center rounded-full text-faint transition hover:bg-relief hover:text-ink active:scale-90 ${className}`}
     >

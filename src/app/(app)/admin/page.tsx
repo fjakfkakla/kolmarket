@@ -5,8 +5,12 @@ import { adminSession, adminWallets } from "@/lib/admin";
 import { loadAdminData } from "@/lib/admin-data";
 import { requestTime } from "@/lib/data";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getI18n } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Administration", robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.admin.title, robots: { index: false, follow: false } };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +24,12 @@ export default async function AdminPage() {
     return null;
   });
   if (!data) {
+    const { t } = await getI18n();
     return (
       <div className="card mx-auto max-w-lg p-8 text-center">
-        <h1 className="text-xl font-bold">Administration indisponible</h1>
+        <h1 className="text-xl font-bold">{t.admin.unavailableTitle}</h1>
         <p className="mt-2 text-sm text-muted">
-          Vérifie que la migration <span className="mono">0006_admin.sql</span> est passée dans Supabase, puis recharge la page.
+          {t.admin.unavailableBefore} <span className="mono">0006_admin.sql</span> {t.admin.unavailableAfter}
         </p>
       </div>
     );

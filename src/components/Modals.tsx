@@ -8,6 +8,8 @@ import { CLUSTER } from "@/lib/cluster";
 import { DEPOSIT_CAP, MIN_DEPOSIT, MIN_WITHDRAWAL, depositRoom } from "@/lib/limits";
 import { INSTALL_LINKS, openInWalletLinks, useSolanaWallets } from "@/lib/solana-wallets";
 import { shortWallet, usd } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 import { Coin } from "./Coin";
 import { LogoMark } from "./Logo";
 
@@ -25,6 +27,7 @@ function Shell({ title, onClose, children }: { title: string; onClose: () => voi
       document.body.style.overflow = "";
     };
   }, [onClose]);
+  const { t } = useI18n();
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-[rgba(8,12,24,.62)] p-4 backdrop-blur-[6px]" onClick={onClose}>
       <div
@@ -42,7 +45,7 @@ function Shell({ title, onClose, children }: { title: string; onClose: () => voi
               <span className="font-medium text-blue">coins</span>
             </span>
           </span>
-          <button onClick={onClose} className="round" aria-label="Fermer">
+          <button onClick={onClose} className="round" aria-label={t.account.modal.close}>
             <X size={16} />
           </button>
         </div>
@@ -57,6 +60,8 @@ const isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 
 function ConnectModal() {
   const w = useWallet();
+  const { t } = useI18n();
+  const m = t.account.modal;
   const wallets = useSolanaWallets();
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -68,16 +73,16 @@ function ConnectModal() {
     try {
       await w.signIn(wallet);
     } catch (e) {
-      setErr((e as Error).message || "Connexion impossible.");
+      setErr((e as Error).message || t.account.errors.connectFailed);
     } finally {
       setBusy(null);
     }
   };
 
   return (
-    <Shell title="Se connecter" onClose={() => w.openModal(null)}>
+    <Shell title={t.account.signIn} onClose={() => w.openModal(null)}>
       <p className="mb-4 text-[14px] font-medium leading-relaxed text-ink-2">
-        Une signature gratuite crée ton compte : ce n&apos;est pas une transaction, aucun fonds ne bouge et ta clé ne quitte jamais ton wallet.
+        {m.connectIntro}
       </p>
 
       {wallets.length > 0 ? (
@@ -94,7 +99,7 @@ function ConnectModal() {
               <span className="flex-1 text-[16px] font-bold">{wl.name}</span>
               {busy === wl.name ? (
                 <span className="chip-blue">
-                  <Loader2 size={12} className="animate-spin" /> Signature
+                  <Loader2 size={12} className="animate-spin" /> {m.signing}
                 </span>
               ) : (
                 <ArrowRight size={16} className="text-faint transition group-enabled:group-hover:translate-x-0.5 group-enabled:group-hover:text-blue" />
@@ -104,12 +109,12 @@ function ConnectModal() {
         </div>
       ) : (
         <div className="rounded-2xl border-[1.5px] border-line p-4">
-          <p className="font-display text-[17px] font-extrabold tracking-[-0.02em]">Aucun wallet Solana détecté</p>
+          <p className="font-display text-[17px] font-extrabold tracking-[-0.02em]">{m.noWallet}</p>
           {isMobile() ? (
             <div className="mt-3 grid grid-cols-2 gap-2">
               {openInWalletLinks(location.href, location.origin).map((l) => (
                 <a key={l.name} href={l.href} className="ghost h-11 rounded-[14px]">
-                  Ouvrir dans {l.name}
+                  {fmt(m.openIn, { name: l.name })}
                 </a>
               ))}
             </div>
@@ -128,11 +133,11 @@ function ConnectModal() {
       <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-2xl bg-paper-2 p-3 text-[14px] font-medium text-ink-2">
         <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#1652f0]" />
         <span>
-          J&apos;ai plus de 18 ans, j&apos;accepte les{" "}
+          {m.consentBefore}{" "}
           <a href="/conditions" className="link">
-            conditions d&apos;utilisation
+            {t.common.terms}
           </a>{" "}
-          et je sais qu&apos;une mise peut être perdue.
+          {m.consentAfter}
         </span>
       </label>
       {err && <p className="mt-3 text-[14px] font-semibold text-down-deep">{err}</p>}
@@ -140,15 +145,10 @@ function ConnectModal() {
   );
 }
 
-const STEP_LABEL: Record<DepositStep, string> = {
-  prepare: "Préparation",
-  sign: "Confirme dans ton wallet",
-  send: "Envoi",
-  confirm: "Confirmation sur Solana (~15 s)",
-};
-
 function DepositModal() {
   const w = useWallet();
+  const { t } = useI18n();
+  const m = t.account.modal;
   const room = depositRoom(w.balance, w.inPlay);
   const [amount, setAmount] = useState(Math.min(100, Math.floor(room)));
   const [step, setStep] = useState<DepositStep | "form" | "done">("form");
@@ -170,7 +170,7 @@ function DepositModal() {
   };
 
   return (
-    <Shell title={step === "done" ? "Dépôt crédité" : "Déposer des USDC"} onClose={() => !busy && w.openModal(null)}>
+    <Shell title={step === "done" ? m.depositDone : m.depositTitle} onClose={() => !busy && w.openModal(null)}>
       {step === "done" && done ? (
         <div className="pop text-center">
           <Coin tint={GREEN} size={64}>
@@ -179,15 +179,15 @@ function DepositModal() {
           <div className="num mt-3 font-display text-[34px] font-extrabold tracking-[-0.03em] text-up">+{usd(done.credited)}</div>
           {done.excess > 0 && (
             <p className="mt-2 text-[14px] font-medium text-ink-2">
-              {usd(done.excess)} dépassaient le plafond de {usd(DEPOSIT_CAP)} : ils sont mis de côté et restent retirables.
+              {fmt(m.excessNote, { excess: usd(done.excess), cap: usd(DEPOSIT_CAP) })}
             </p>
           )}
           <button onClick={() => w.openModal(null)} className="plaque mt-5 h-[52px] w-full text-[16px]">
-            Miser maintenant <ArrowRight size={17} />
+            {m.betNow} <ArrowRight size={17} />
           </button>
         </div>
       ) : !w.depositsEnabled ? (
-        <p className="py-6 text-center font-display text-[19px] font-extrabold tracking-[-0.02em] text-muted">Dépôts bientôt ouverts</p>
+        <p className="py-6 text-center font-display text-[19px] font-extrabold tracking-[-0.02em] text-muted">{m.depositsSoon}</p>
       ) : (
         <div className="space-y-4">
           <div className="flex items-center gap-3 rounded-2xl bg-[#f4f7ff] p-3 shadow-[inset_0_0_0_1px_rgba(22, 82, 240,.22)]">
@@ -196,22 +196,22 @@ function DepositModal() {
             </Coin>
             <div className="flex-1">
               <div className="flex items-center gap-2 font-bold">
-                USDC sur Solana {CLUSTER === "devnet" && <span className="chip h-6">devnet</span>}
+                {m.usdcOnSolana} {CLUSTER === "devnet" && <span className="chip h-6">devnet</span>}
               </div>
-              <div className="text-[13px] font-semibold text-muted">On paie le réseau pour toi</div>
+              <div className="text-[13px] font-semibold text-muted">{m.networkPaid}</div>
             </div>
-            <span className="chip-blue">0 frais</span>
+            <span className="chip-blue">{m.zeroFees}</span>
           </div>
           <div className="flex justify-between text-[14px]">
-            <span className="font-semibold text-muted">Depuis</span>
+            <span className="font-semibold text-muted">{m.from}</span>
             <span className="num font-bold">
               {w.provider ?? "Wallet"} · {shortWallet(w.address!)}
             </span>
           </div>
           <div>
             <div className="mb-1.5 flex justify-between text-[14px]">
-              <span className="font-bold">Montant</span>
-              <span className="num font-semibold text-muted">encore {usd(room)} possibles</span>
+              <span className="font-bold">{m.amount}</span>
+              <span className="num font-semibold text-muted">{fmt(m.roomLeft, { amount: usd(room) })}</span>
             </div>
             <div className="flex gap-2">
               <input
@@ -222,7 +222,7 @@ function DepositModal() {
                 disabled={busy}
                 onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
                 className="input num"
-                aria-label="Montant du dépôt"
+                aria-label={m.depositAmountAria}
               />
               {[50, 100].map((v) => (
                 <button key={v} disabled={busy} onClick={() => setAmount(Math.min(v, room))} className={`h-[46px] rounded-[14px] px-3.5 text-[14px] ${amount === v ? "plaque" : "ghost"}`}>
@@ -230,31 +230,31 @@ function DepositModal() {
                 </button>
               ))}
               <button disabled={busy} onClick={() => setAmount(room)} className="ghost h-[46px] rounded-[14px] px-3.5 text-[14px]">
-                Max
+                {t.common.max}
               </button>
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <span className="chip">Plafond {usd(DEPOSIT_CAP)}, mises comprises</span>
-            <span className="chip">Les gains au-delà se gardent</span>
+            <span className="chip">{fmt(m.capChip, { cap: usd(DEPOSIT_CAP) })}</span>
+            <span className="chip">{m.gainsKept}</span>
           </div>
           {!w.live ? (
             <p className="flex items-center gap-2 rounded-2xl bg-[#fff6dc] px-3 py-2.5 text-[14px] font-semibold text-[#8a5a00]">
-              <Info size={16} className="shrink-0" /> Démo : aucun USDC n&apos;est envoyé.
+              <Info size={16} className="shrink-0" /> {m.demoNote}
             </p>
           ) : CLUSTER === "devnet" ? (
             <p className="flex items-center gap-2 rounded-2xl bg-[#fff6dc] px-3 py-2.5 text-[14px] font-semibold text-[#8a5a00]">
-              <Info size={16} className="shrink-0" /> Réseau de test : des USDC devnet (faucet.circle.com), pas de vrais USDC.
+              <Info size={16} className="shrink-0" /> {m.devnetNote}
             </p>
           ) : (
             <p className="rounded-2xl bg-down-soft px-3 py-2.5 text-[14px] font-semibold text-down-deep">
-              Seulement des USDC, seulement sur Solana : un autre token est perdu.
+              {m.mainnetWarn}
             </p>
           )}
           {err && <p className="text-[14px] font-semibold text-down-deep">{err}</p>}
           <button onClick={confirm} disabled={busy || room <= 0} className="plaque h-[52px] w-full text-[16px]">
             {busy ? <Loader2 size={17} className="animate-spin" /> : <ArrowDownLeft size={17} strokeWidth={2.6} />}
-            {room <= 0 ? "Plafond atteint" : busy ? STEP_LABEL[step as DepositStep] : w.live ? `Déposer ${usd(amount)}` : `Simuler le dépôt de ${usd(amount)}`}
+            {room <= 0 ? m.capReached : busy ? m.steps[step as DepositStep] : fmt(w.live ? m.depositCta : m.simulateDeposit, { amount: usd(amount) })}
           </button>
         </div>
       )}
@@ -266,6 +266,8 @@ const EXPLORER = (sig: string) => `https://explorer.solana.com/tx/${sig}${CLUSTE
 
 function WithdrawModal() {
   const w = useWallet();
+  const { t } = useI18n();
+  const m = t.account.modal;
   const available = Math.floor((w.balance + w.excess) * 100) / 100;
   const [amount, setAmount] = useState(Math.min(50, Math.floor(available)));
   const [step, setStep] = useState<"form" | "request" | "sending" | "done">("form");
@@ -290,7 +292,7 @@ function WithdrawModal() {
     const done = result.status === "CONFIRMED";
     return (
       <Shell
-        title={done ? "Retrait arrivé" : result.status === "REVIEW" ? "Retrait en vérification" : result.status === "REFUNDED" ? "Retrait annulé" : "Retrait enregistré"}
+        title={done ? m.withdrawArrived : result.status === "REVIEW" ? m.withdrawReview : result.status === "REFUNDED" ? m.withdrawRefunded : m.withdrawRecorded}
         onClose={() => w.openModal(null)}
       >
         <div className="pop text-center">
@@ -299,18 +301,18 @@ function WithdrawModal() {
           </Coin>
           <p className="mx-auto mt-4 max-w-xs text-[15px] font-medium leading-relaxed text-ink-2">
             {done
-              ? `${usd(amount)} USDC sont dans ton wallet.`
+              ? fmt(m.withdrawDoneText, { amount: usd(amount) })
               : result.status === "REVIEW"
-                ? "Montant inhabituel : il part après une vérification manuelle, sous 24 h. Il est déjà réservé sur ton compte."
+                ? m.withdrawReviewText
                 : result.status === "REFUNDED"
-                  ? "Le montant a été recrédité sur ton solde."
+                  ? m.withdrawRefundedText
                   : result.status === "SENDING"
-                    ? "Envoyé sur Solana, la confirmation arrive dans quelques instants."
-                    : "Il partira automatiquement dès que possible. Il est déjà réservé sur ton compte."}
+                    ? m.withdrawSendingText
+                    : m.withdrawQueuedText}
           </p>
           {result.signature && (
             <a href={EXPLORER(result.signature)} target="_blank" rel="noreferrer" className="link mt-3 inline-flex items-center gap-1 text-[14px]">
-              Voir la transaction <ExternalLink size={13} />
+              {m.viewTx} <ExternalLink size={13} />
             </a>
           )}
         </div>
@@ -319,15 +321,15 @@ function WithdrawModal() {
   }
 
   return (
-    <Shell title="Retirer des USDC" onClose={() => !busy && w.openModal(null)}>
+    <Shell title={m.withdrawTitle} onClose={() => !busy && w.openModal(null)}>
       <div className="space-y-4">
         <div className="flex items-center justify-between rounded-2xl bg-paper-2 p-3.5">
-          <span className="text-[14px] font-bold text-muted">Disponible</span>
+          <span className="text-[14px] font-bold text-muted">{t.account.available}</span>
           <span className="num font-display text-[22px] font-extrabold">{usd(available, { cents: true })}</span>
         </div>
-        {w.excess > 0 && <span className="chip">Dont {usd(w.excess)} au-delà du plafond</span>}
+        {w.excess > 0 && <span className="chip">{fmt(m.excessChip, { amount: usd(w.excess) })}</span>}
         <div>
-          <div className="mb-1.5 text-[14px] font-bold">Montant</div>
+          <div className="mb-1.5 text-[14px] font-bold">{m.amount}</div>
           <div className="flex gap-2">
             <input
               type="number"
@@ -337,25 +339,25 @@ function WithdrawModal() {
               disabled={busy}
               onChange={(e) => setAmount(Number(e.target.value) || 0)}
               className="input num"
-              aria-label="Montant du retrait"
+              aria-label={m.withdrawAmountAria}
             />
             <button disabled={busy} onClick={() => setAmount(available)} className="ghost h-[46px] rounded-[14px] px-4">
-              Max
+              {t.common.max}
             </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className="chip">Minimum {usd(MIN_WITHDRAWAL)}</span>
-            <span className="chip-blue">0 frais</span>
+            <span className="chip">{fmt(m.minimum, { amount: usd(MIN_WITHDRAWAL) })}</span>
+            <span className="chip-blue">{m.zeroFees}</span>
           </div>
         </div>
         <div>
-          <div className="mb-1.5 text-[14px] font-bold">Vers ton wallet</div>
+          <div className="mb-1.5 text-[14px] font-bold">{m.toWallet}</div>
           <div className="num break-all rounded-[14px] border-[1.5px] border-line bg-paper-2 px-3.5 py-2.5 text-[13px] font-semibold text-ink-2">{w.address}</div>
         </div>
         {err && <p className="text-[14px] font-semibold text-down-deep">{err}</p>}
         <button onClick={submit} disabled={busy} className="plaque plaque-ink h-[52px] w-full text-[16px]">
           {busy ? <Loader2 size={17} className="animate-spin" /> : <ArrowUpRight size={17} strokeWidth={2.6} />}
-          {step === "request" ? "Demande" : step === "sending" ? "Envoi sur Solana (~15 s)" : `Retirer ${usd(amount)}${w.live ? "" : " (démo)"}`}
+          {step === "request" ? m.requesting : step === "sending" ? m.sendingSolana : `${fmt(m.withdrawCta, { amount: usd(amount) })}${w.live ? "" : m.demoSuffix}`}
         </button>
       </div>
     </Shell>

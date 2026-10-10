@@ -1,30 +1,33 @@
 import Link from "next/link";
+import { getI18n } from "@/i18n/server";
+import { LanguageSelect } from "./LanguageSelect";
 import { Logo } from "./Logo";
 
-const COLS = [
-  {
-    title: "Marchés",
-    links: [
-      { label: "Défi 7 jours", href: "/market/kol-top-profit-7d" },
-      { label: "Défi 30 jours", href: "/market/kol-top-profit-30d" },
-      { label: "Course à 1 Md$", href: "/market/premier-1md-fdv" },
-      { label: "Tous les marchés", href: "/app" },
-    ],
-  },
-  {
-    title: "Accès",
-    links: [
-      { label: "Mon compte", href: "/compte" },
-      { label: "Mes mises", href: "/compte#mises" },
-      { label: "Comment ça marche", href: "/comment-ca-marche" },
-      { label: "Conditions", href: "/conditions" },
-      { label: "Accueil", href: "/" },
-    ],
-  },
-];
-
-/** Le pied : la marque et sa phrase, les sections, l'accès. Rien d'autre (DA §14.2). */
-export function Footer() {
+/** Le pied : la marque et sa phrase, les sections, l'accès, et le choix de la langue (DA §14.2). */
+export async function Footer() {
+  const { t } = await getI18n();
+  const f = t.landing.footer;
+  const COLS = [
+    {
+      title: f.markets,
+      links: [
+        { label: f.challenge7d, href: "/market/kol-top-profit-7d" },
+        { label: f.challenge30d, href: "/market/kol-top-profit-30d" },
+        { label: f.race1b, href: "/market/premier-1md-fdv" },
+        { label: f.allMarkets, href: "/app" },
+      ],
+    },
+    {
+      title: f.access,
+      links: [
+        { label: f.account, href: "/compte" },
+        { label: f.bets, href: "/compte#mises" },
+        { label: t.common.howItWorks, href: "/comment-ca-marche" },
+        { label: f.terms, href: "/conditions" },
+        { label: f.home, href: "/" },
+      ],
+    },
+  ];
   return (
     <footer className="mt-20 border-t border-line bg-paper">
       <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-12 md:grid-cols-[1.5fr_1fr_1fr]">
@@ -49,7 +52,10 @@ export function Footer() {
           </div>
         ))}
       </div>
-      <div className="mx-auto max-w-[1200px] border-t border-line px-4 py-5 text-[15px] font-semibold text-faint">© 2026 Marketcoins</div>
+      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-5 text-[15px] font-semibold text-faint">
+        <span>© 2026 Marketcoins</span>
+        <LanguageSelect />
+      </div>
     </footer>
   );
 }

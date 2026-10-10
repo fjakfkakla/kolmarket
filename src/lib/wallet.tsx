@@ -5,6 +5,8 @@ import type { Wallet } from "@wallet-standard/base";
 import type { AccountData, Activity, Bet } from "./account-types";
 import { checkBet, checkDeposit, checkWithdraw } from "./limits";
 import { fetchSession, signInWithWallet, signOut, signTransactionWith } from "./solana-wallets";
+import { useI18n } from "@/i18n/client";
+import { translateError } from "@/i18n/errors";
 
 export type { Activity, Bet } from "./account-types";
 
@@ -96,6 +98,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<AccountData | null>(null);
   const [demo, setDemo] = useState<Demo>(EMPTY);
   const [modal, setModal] = useState<Modal>(null);
+  const { t } = useI18n();
+  // Messages d'erreur (en français côté serveur et règles partagées) traduits dans la langue de l'interface.
+  const tr = useCallback((msg: string) => translateError(msg, t), [t]);
 
   const load = useCallback(async (s: { address: string; walletApp: string | null } | null) => {
     // Le compte est chargé avant d'afficher la session : pas de passage furtif par le mode démo.
@@ -126,11 +131,16 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(
     async (wallet: Wallet) => {
-      const s = await signInWithWallet(wallet);
+      let s: Awaited<ReturnType<typeof signInWithWallet>>;
+      try {
+        s = await signInWithWallet(wallet);
+      } catch (e) {
+        throw new Error(tr((e as Error)?.message || "Connexion impossible."));
+      }
       await load(s);
       setModal(null);
     },
-    [load],
+    [load, tr],
   );
 
   const disconnect = useCallback(async () => {
@@ -173,7 +183,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       deposit: async (amount, onStep) => {
         const err = checkDeposit(amount, balance, inPlay);
-        if (err) return { error: err };
+        if (err) return { error: tr(err) };
         if (!live) {
           await sleep(1200);
           const a = entry({ type: "DEPOT", label: "Dépôt USDC (démo)", amount });
@@ -203,19 +213,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
             if (!st || st.status === "PENDING") continue;
             await refresh();
             if (st.status === "CREDITED") return { credited: st.credited, excess: st.excess };
-            if (st.status === "FAILED") return { error: "La transaction a échoué sur le réseau. Aucun USDC n'a bougé." };
-            if (st.status === "DROPPED") return { error: "La transaction n'est jamais arrivée. Aucun USDC n'a bougé, réessaie." };
-            return { error: "Dépôt reçu mais non attribué : contacte le support." };
+            if (st.status === "FAILED") return { error: tr("La transaction a échoué sur le réseau. Aucun USDC n'a bougé.") };
+            if (st.status === "DROPPED") return { error: tr("La transaction n'est jamais arrivée. Aucun USDC n'a bougé, réessaie.") };
+            return { error: tr("Dépôt reçu mais non attribué : contacte le support.") };
           }
-          return { error: "Le réseau est lent : ton dépôt sera crédité dès qu'il sera confirmé." };
+          return { error: tr("Le réseau est lent : ton dépôt sera crédité dès qu'il sera confirmé.") };
         } catch (e) {
-          return { error: (e as Error).message || "Dépôt impossible." };
+          return { error: tr((e as Error).message || "Dépôt impossible.") };
         }
       },
 
       withdraw: async (amount, onSending) => {
         const err = checkWithdraw(amount, balance + (live ? account.excess : 0));
-        if (err) return { error: err };
+        if (err) return { error: tr(err) };
         if (!live) {
           const a = entry({ type: "RETRAIT", label: "Retrait USDC vers le wallet (démo)", amount: -amount });
           setDemo((d) => ({ ...d, balance: round2(d.balance - amount), activity: [a, ...d.activity].slice(0, 50) }));
@@ -247,13 +257,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           }
           return { status: last, signature: null };
         } catch (e) {
-          return { error: (e as Error).message || "Retrait impossible." };
+          return { error: tr((e as Error).message || "Retrait impossible.") };
         }
       },
 
       placeBet: async (bet, open) => {
         const err = checkBet(bet.amount, balance, stakedOn(bet.marketSlug), open);
-        if (err) return err;
+        if (err) return tr(err);
         if (live) {
           try {
             const r = await api<{ account: AccountData }>("/api/bets", {
@@ -263,7 +273,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
             setAccount(r.account);
             return null;
           } catch (e) {
-            return (e as Error).message;
+            return tr((e as Error).message);
           }
         }
         const b: Bet = { ...bet, id: crypto.randomUUID(), createdAt: Date.now() };
@@ -277,7 +287,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         return null;
       },
     };
-  }, [ready, session, account, demo, modal, signIn, disconnect, refresh]);
+  }, [ready, session, account, demo, modal, signIn, disconnect, refresh, tr]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

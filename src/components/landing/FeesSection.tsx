@@ -1,13 +1,10 @@
 "use client";
 
 import { useRef } from "react";
+import { useI18n } from "@/i18n/client";
 import { easeInOut, easeOut, seg, useScrollScene } from "./scroll";
 
-const TILES = [
-  { name: "À l'achat", at: 0.18 },
-  { name: "À la revente", at: 0.4 },
-  { name: "Au retrait", at: 0.62 },
-];
+const TILES = [{ at: 0.18 }, { at: 0.4 }, { at: 0.62 }];
 
 const LAYERS = 18;
 
@@ -51,6 +48,7 @@ function Coin3D({ refEl }: { refEl: React.RefObject<HTMLDivElement | null> }) {
 }
 
 export function FeesSection() {
+  const { t } = useI18n();
   const track = useRef<HTMLElement>(null);
   const coin = useRef<HTMLDivElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
@@ -65,37 +63,37 @@ export function FeesSection() {
       c.style.transform = reduced ? "rotateX(8deg)" : `translateY(${Math.sin(time * 0.8) * 6}px) rotateX(${10 + wob * 0.4}deg) rotateY(${-24 + turns + wob}deg)`;
     }
     if (title.current) {
-      const t = easeOut(seg(p, 0, 0.12));
-      title.current.style.opacity = String(t);
-      title.current.style.transform = reduced ? "" : `translateY(${(1 - t) * 40}px)`;
+      const k = easeOut(seg(p, 0, 0.12));
+      title.current.style.opacity = String(k);
+      title.current.style.transform = reduced ? "" : `translateY(${(1 - k) * 40}px)`;
     }
     tiles.current.forEach((el, i) => {
       if (!el) return;
-      const t = easeOut(seg(p, TILES[i].at - 0.04, TILES[i].at + 0.06));
-      el.style.opacity = String(t);
-      el.style.transform = reduced ? "" : `translate3d(${(1 - t) * 60}px, 0, 0) scale(${0.96 + 0.04 * t})`;
+      const k = easeOut(seg(p, TILES[i].at - 0.04, TILES[i].at + 0.06));
+      el.style.opacity = String(k);
+      el.style.transform = reduced ? "" : `translate3d(${(1 - k) * 60}px, 0, 0) scale(${0.96 + 0.04 * k})`;
     });
   });
 
   return (
-    <section ref={track} id="frais" className="relative" style={{ height: "260vh" }} aria-label="0 % de frais">
+    <section ref={track} id="frais" className="relative" style={{ height: "260vh" }} aria-label={t.landing.nav.fees}>
       <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden pt-[68px] md:pt-[84px]">
         <div className="mx-auto grid w-full max-w-[1240px] items-center gap-8 px-4 md:grid-cols-[1fr_1fr] md:gap-14 md:px-8">
           <Coin3D refEl={coin} />
           <div>
             <h2 ref={title} className="display text-[clamp(44px,6vw,96px)]">
-              <span className="text-blue">0 %</span> de frais.
+              <span className="text-blue">{t.landing.zeroPct}</span> {t.landing.fees.title}
             </h2>
             <div className="mt-6 grid gap-3 md:mt-9">
-              {TILES.map((t, i) => (
+              {t.landing.fees.tiles.map((name, i) => (
                 <div
-                  key={t.name}
+                  key={name}
                   ref={(el) => { tiles.current[i] = el; }}
                   className="card flex items-center justify-between px-5 py-4 md:px-6 md:py-5"
                   style={{ opacity: 0 }}
                 >
-                  <span className="font-display text-[clamp(20px,2vw,26px)] font-extrabold tracking-[-0.02em]">{t.name}</span>
-                  <span className="num font-display text-[clamp(30px,3.4vw,46px)] font-extrabold tracking-[-0.035em] text-blue">0 %</span>
+                  <span className="font-display text-[clamp(20px,2vw,26px)] font-extrabold tracking-[-0.02em]">{name}</span>
+                  <span className="num font-display text-[clamp(30px,3.4vw,46px)] font-extrabold tracking-[-0.035em] text-blue">{t.landing.zeroPct}</span>
                 </div>
               ))}
             </div>

@@ -7,17 +7,21 @@ import { HeroScene } from "@/components/landing/HeroScene";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { COIN_MARKETS } from "@/data/coins";
 import { getKols, getMarkets } from "@/lib/data";
+import { getI18n } from "@/i18n/server";
+import { localizeCoinMarket, localizeMarket } from "@/i18n/content";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: { absolute: "Marketcoins · The future of memecoins. Trade the future." },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: { absolute: t.meta.landingTitle } };
+}
 
 export default async function Landing() {
-  const [markets, kols] = await Promise.all([getMarkets(), getKols()]);
-  const kolMarket = markets.find((m) => m.period === "7D") ?? markets[0];
-  const coinMarket = COIN_MARKETS[0];
+  const [markets, kols, { t }] = await Promise.all([getMarkets(), getKols(), getI18n()]);
+  const raw = markets.find((m) => m.period === "7D") ?? markets[0];
+  const kolMarket = localizeMarket(raw, t);
+  const coinMarket = localizeCoinMarket(COIN_MARKETS[0], t);
   return (
     <>
       <LandingNav />

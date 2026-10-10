@@ -7,13 +7,15 @@ import { OutcomeCoin } from "../Coin";
 import { pointAt } from "../LineChart";
 import { estimatePayout, odds } from "@/lib/pot";
 import { fmtOdds, pct, usd } from "@/lib/format";
+import { fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 import { CoinScreenDesktop, CoinScreenPhone } from "./CoinScreen";
 import { easeInOut, easeOut, lerp, scrollToProgress, seg, useScrollScene } from "./scroll";
 
 const STEPS = [
-  { id: "coin", name: "Choisis ton coin", text: "TRUMP, WIF, ANSEM ou ARC : chaque ligne montre la part du pot misée sur un coin.", at: 0.2, end: 0.45 },
-  { id: "race", name: "La course à 1 Md$", text: "Le premier à passer 1 milliard de market cap gagne. Les barres montrent où chacun en est.", at: 0.45, end: 0.68 },
-  { id: "bet", name: "Mise sur son potentiel", text: "", at: 0.68, end: 0.96 },
+  { id: "coin", at: 0.2, end: 0.45 },
+  { id: "race", at: 0.45, end: 0.68 },
+  { id: "bet", at: 0.68, end: 0.96 },
 ];
 
 const AURA: [string, string, string][] = [
@@ -27,6 +29,8 @@ function setOn(el: Element | null | undefined, on: boolean) {
 }
 
 export function CoinScene({ market }: { market: CoinMarket }) {
+  const { t } = useI18n();
+  const L = t.landing.coins;
   const track = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const glass = useRef<HTMLDivElement>(null);
@@ -43,8 +47,8 @@ export function CoinScene({ market }: { market: CoinMarket }) {
   const floating = market.outcomes.filter((o) => o.ticker);
   const stepText = (i: number) =>
     i === 2
-      ? `$${pick.ticker} a ${pct(pick.prob)} du pot : 100 $ misés rapportent environ ${usd(Math.floor(estimatePayout(market.pool, pick.pool, 100)))} s'il passe ${market.target} en premier.`
-      : STEPS[i].text;
+      ? fmt(L.pickText, { ticker: pick.ticker ?? "", share: pct(pick.prob), payout: usd(Math.floor(estimatePayout(market.pool, pick.pool, 100))), target: market.target })
+      : L.steps[i].text;
 
   useScrollScene(track, ({ p, time, w, h, reduced }) => {
     const mobile = w < 768;
@@ -138,7 +142,7 @@ export function CoinScene({ market }: { market: CoinMarket }) {
     if (amountEl) amountEl.textContent = String(amt);
     setOn(chip, s3 >= 0.3 && s3 < 0.6);
     const sharesEl = root.querySelector("[data-shares]");
-    if (sharesEl) sharesEl.textContent = fmtOdds(odds(market.pool + amt, pick.pool + amt));
+    if (sharesEl) sharesEl.textContent = fmtOdds(odds(market.pool + amt, pick.pool + amt), t.common.open);
     const payEl = root.querySelector("[data-payout]");
     if (payEl) payEl.textContent = usd(Math.floor(estimatePayout(market.pool, pick.pool, amt) * 100) / 100, { cents: true });
     setOn(root.querySelector("[data-summary]"), amt > 0);
@@ -203,7 +207,7 @@ export function CoinScene({ market }: { market: CoinMarket }) {
                   onClick={() => track.current && scrollToProgress(track.current, st.at + 0.01)}
                 >
                   <span className={`num grid h-7 w-7 place-items-center rounded-full text-[13px] font-extrabold ${active === i ? "bg-blue text-white" : "bg-relief text-muted"}`}>{i + 1}</span>
-                  {st.name}
+                  {L.steps[i].name}
                   <span className="story-bar"><i /></span>
                 </button>
               ))}
@@ -234,7 +238,7 @@ export function CoinScene({ market }: { market: CoinMarket }) {
             ))}
             <div ref={glass} className="glass absolute inset-[3%] z-[2] p-2.5 md:inset-[5%] md:p-3" style={{ opacity: 0 }}>
               <div ref={box} className="relative h-full w-full">
-                <Link href={`/market/${market.slug}`} aria-label={`Ouvrir le marché : ${market.title}`}>
+                <Link href={`/market/${market.slug}`} aria-label={fmt(t.landing.hero.openMarket, { title: market.title })}>
                   <div ref={desk} className="absolute left-0 top-0 origin-top overflow-hidden rounded-[26px] shadow-[0_30px_60px_-36px_rgba(13,32,84,.5)]">
                     <CoinScreenDesktop market={market} pick={pick} />
                   </div>

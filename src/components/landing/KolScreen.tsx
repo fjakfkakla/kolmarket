@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Check, Search } from "lucide-react";
 import type { Kol } from "@/data/kols";
@@ -7,8 +9,8 @@ import { LineChart } from "../LineChart";
 import { LogoMark } from "../Logo";
 import { odds } from "@/lib/pot";
 import { fmtOdds, pct, usd } from "@/lib/format";
-
-const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+import { fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 
 /** La barre du navigateur : l'écran est un vrai écran, pas une illustration. */
 export function BrowserBar({ url }: { url: string }) {
@@ -29,6 +31,8 @@ export function BrowserBar({ url }: { url: string }) {
 }
 
 export function MiniAppNav({ compact = false }: { compact?: boolean }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   return (
     <div className="flex items-center gap-3 border-b border-line px-5 py-2.5">
       <span className="flex items-center gap-1.5">
@@ -40,17 +44,17 @@ export function MiniAppNav({ compact = false }: { compact?: boolean }) {
       </span>
       {!compact && (
         <span className="flex h-8 w-64 items-center gap-2 rounded-full bg-paper-2 px-3 text-[12.5px] font-medium text-faint shadow-[inset_0_0_0_1.5px_rgba(10,15,30,.08)]">
-          <Search size={13} /> Rechercher un KOL, un coin
+          <Search size={13} /> {S.search}
         </span>
       )}
       <span className="ml-auto flex items-center gap-3">
         {!compact && (
           <span className="text-right leading-tight">
-            <span className="block text-[12px] font-bold text-faint">Cash</span>
-            <span className="num block font-display text-[14px] font-extrabold text-up">$500,00</span>
+            <span className="block text-[12px] font-bold text-faint">{S.cash}</span>
+            <span className="num block font-display text-[14px] font-extrabold text-up">{usd(500, { cents: true })}</span>
           </span>
         )}
-        <span className="plaque h-8 rounded-[11px] px-3 text-[12.5px]">Déposer</span>
+        <span className="plaque h-8 rounded-[11px] px-3 text-[12.5px]">{S.deposit}</span>
       </span>
     </div>
   );
@@ -76,6 +80,8 @@ export function Ticket({
   toast: ReactNode;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   return (
     <div className="relative rounded-[20px] border border-line bg-white p-4 shadow-[0_18px_40px_-30px_rgba(13,32,84,.38)]">
       <div className="mb-3 flex items-center gap-2.5">
@@ -86,15 +92,15 @@ export function Ticket({
         </div>
         <div className="text-right">
           <div className="num font-display text-[22px] font-extrabold leading-none tracking-[-0.03em] text-blue">{cote}</div>
-          <div className="mt-0.5 text-[12px] font-bold text-faint">cote</div>
+          <div className="mt-0.5 text-[12px] font-bold text-faint">{S.odds}</div>
         </div>
       </div>
       <div data-yes className="ks-share flex items-center justify-between rounded-2xl bg-paper-2 px-3 py-2 text-[13px]">
-        <span className="font-semibold text-muted">Part du pot</span>
+        <span className="font-semibold text-muted">{S.poolShare}</span>
         <span className="num font-bold">{share}</span>
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-[14px] font-bold">Ta mise</span>
+        <span className="text-[14px] font-bold">{S.yourBet}</span>
         <span className="num font-display text-[34px] font-extrabold leading-none tracking-[-0.03em]">
           $<span data-amount>0</span>
         </span>
@@ -105,24 +111,24 @@ export function Ticket({
             +${v}
           </span>
         ))}
-        <span className="ghost h-7 rounded-full px-2.5 text-[12.5px]">Max</span>
+        <span className="ghost h-7 rounded-full px-2.5 text-[12.5px]">{t.common.max}</span>
       </div>
       <div data-summary className="ks-summary mt-3 space-y-1 rounded-2xl bg-paper-2 p-3 text-[13px]">
         <div className="flex justify-between">
-          <span className="text-muted">Cote après ta mise</span>
+          <span className="text-muted">{S.oddsAfter}</span>
           <span data-shares className="num font-bold">{cote}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted">Frais</span>
-          <span className="font-bold text-blue">0 %</span>
+          <span className="text-muted">{S.fees}</span>
+          <span className="font-bold text-blue">{t.landing.zeroPct}</span>
         </div>
         <div className="flex items-end justify-between border-t border-line pt-1.5">
-          <span className="font-bold">Gain estimé s&apos;il gagne</span>
+          <span className="font-bold">{S.payout}</span>
           <span data-payout className="num font-display text-[19px] font-extrabold leading-none text-up">$0</span>
         </div>
       </div>
       <span data-press className="ks-press plaque mt-3 h-11 w-full text-[15px]">
-        Miser <span data-press-label>sur {name}</span>
+        {S.bet} <span data-press-label>{fmt(S.betOn, { name })}</span>
       </span>
       <div data-toast className={`ks-toast absolute inset-x-3 flex ${compact ? "bottom-2" : "top-[calc(100%+12px)]"} items-center gap-2 rounded-2xl bg-ink px-3.5 py-2.5 text-[13px] font-semibold text-white shadow-[0_18px_30px_-16px_rgba(5,18,60,.7)]`}>
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-up">
@@ -135,6 +141,8 @@ export function Ticket({
 }
 
 function Row({ kol, prob, pool, cote, rank }: { kol: Kol; prob: number; pool: number; cote: string; rank: number }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   return (
     <div data-row={kol.id} className="ks-row grid grid-cols-[1fr_110px_150px] items-center gap-3 px-4 py-2.5">
       <div className="flex min-w-0 items-center gap-2.5">
@@ -147,10 +155,10 @@ function Row({ kol, prob, pool, cote, rank }: { kol: Kol; prob: number; pool: nu
       </div>
       <div className="text-center">
         <div className="num font-display text-[22px] font-extrabold leading-none tracking-[-0.03em]">{pct(prob)}</div>
-        <div className="num text-[12px] font-semibold text-muted">{usd(pool, { compact: true })} misés</div>
+        <div className="num text-[12px] font-semibold text-muted">{fmt(S.staked, { amount: usd(pool, { compact: true }) })}</div>
       </div>
       <span data-row-yes className="soft-up h-9 rounded-[11px] text-[13px]">
-        Miser <span className="num">{cote}</span>
+        {S.bet} <span className="num">{cote}</span>
       </span>
     </div>
   );
@@ -158,6 +166,8 @@ function Row({ kol, prob, pool, cote, rank }: { kol: Kol; prob: number; pool: nu
 
 /** L'écran du marché KOL, tel qu'il est dans l'app, à la taille d'un ordinateur (1060 × 660). */
 export function KolScreenDesktop({ market, kols }: { market: Market; kols: Kol[] }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   const lead = market.outcomes[0];
   return (
     <div data-screen className="ks relative w-[1060px] overflow-hidden rounded-[26px] bg-white text-ink shadow-[0_60px_110px_-42px_rgba(5,18,60,.75)]">
@@ -173,24 +183,24 @@ export function KolScreenDesktop({ market, kols }: { market: Market; kols: Kol[]
             </div>
             <div>
               <div className="mb-1 flex gap-1.5">
-                <span className="chip-blue h-6 text-[12px]">KOL · 7 jours</span>
-                <span className="chip h-6 text-[12px]">Défi #{market.challenge}</span>
+                <span className="chip-blue h-6 text-[12px]">{S.kol7d}</span>
+                <span className="chip h-6 text-[12px]">{fmt(S.challenge, { n: market.challenge })}</span>
               </div>
               <div className="display text-[24px]">{market.title}</div>
             </div>
           </div>
           <div className="rounded-[20px] border border-line p-3.5 pb-2">
             <div className="mb-2 flex items-center">
-              <span className="font-display text-[15px] font-extrabold tracking-[-0.02em]">Course au PnL</span>
+              <span className="font-display text-[15px] font-extrabold tracking-[-0.02em]">{S.pnlRace}</span>
               <span className="seg ml-auto p-0.5">
-                <span className="seg-item px-2.5 py-1 text-[12px]" data-active="true">7 jours</span>
-                <span className="seg-item px-2.5 py-1 text-[12px]">30 jours</span>
+                <span className="seg-item px-2.5 py-1 text-[12px]" data-active="true">{S.days7}</span>
+                <span className="seg-item px-2.5 py-1 text-[12px]">{S.days30}</span>
               </span>
             </div>
             <LineChart
               series={kols.map((k) => ({ id: k.id, label: k.name, color: k.color, values: k.series7d }))}
               format={(v) => usd(v, { compact: true, sign: true })}
-              xLabels={DAYS}
+              xLabels={S.weekdays}
               highlight={lead.kol.id}
               interactive={false}
               height={150}
@@ -199,7 +209,7 @@ export function KolScreenDesktop({ market, kols }: { market: Market; kols: Kol[]
           <div className="overflow-hidden rounded-[20px] border border-line">
             <div className="divide-y divide-line">
               {market.outcomes.slice(0, 4).map((o, i) => (
-                <Row key={o.kol.id} kol={o.kol} prob={o.prob} pool={o.pool} cote={fmtOdds(odds(market.pool, o.pool))} rank={i + 1} />
+                <Row key={o.kol.id} kol={o.kol} prob={o.prob} pool={o.pool} cote={fmtOdds(odds(market.pool, o.pool), t.common.open)} rank={i + 1} />
               ))}
             </div>
           </div>
@@ -209,9 +219,9 @@ export function KolScreenDesktop({ market, kols }: { market: Market; kols: Kol[]
             visual={<Avatar kol={lead.kol} size={38} ring />}
             question={market.question}
             name={lead.kol.name}
-            cote={fmtOdds(odds(market.pool, lead.pool))}
-            share={`${pct(lead.prob)} · ${usd(lead.pool, { compact: true })} misés`}
-            toast={<>Mise de $100 sur {lead.kol.name} enregistrée</>}
+            cote={fmtOdds(odds(market.pool, lead.pool), t.common.open)}
+            share={`${pct(lead.prob)} · ${fmt(S.staked, { amount: usd(lead.pool, { compact: true }) })}`}
+            toast={fmt(S.toastOn, { name: lead.kol.name })}
           />
         </div>
       </div>
@@ -226,6 +236,8 @@ export function KolScreenDesktop({ market, kols }: { market: Market; kols: Kol[]
 
 /** Le même écran au format téléphone (380 px). */
 export function KolScreenPhone({ market, kols }: { market: Market; kols: Kol[] }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   const lead = market.outcomes[0];
   return (
     <div data-screen className="ks relative w-[380px] overflow-hidden rounded-[34px] border-[6px] border-white bg-white text-ink shadow-[0_50px_90px_-40px_rgba(5,18,60,.8)]">
@@ -247,7 +259,7 @@ export function KolScreenPhone({ market, kols }: { market: Market; kols: Kol[] }
               <Avatar kol={o.kol} size={32} />
               <span className="flex-1 text-[14px] font-bold">{o.kol.name}</span>
               <span className="num font-display text-[19px] font-extrabold">{pct(o.prob)}</span>
-              <span data-row-yes className="soft-up h-8 rounded-[10px] px-2.5 text-[12.5px]">Miser {fmtOdds(odds(market.pool, o.pool))}</span>
+              <span data-row-yes className="soft-up h-8 rounded-[10px] px-2.5 text-[12.5px]">{S.bet} {fmtOdds(odds(market.pool, o.pool), t.common.open)}</span>
             </div>
           ))}
         </div>
@@ -256,9 +268,9 @@ export function KolScreenPhone({ market, kols }: { market: Market; kols: Kol[] }
           visual={<Avatar kol={lead.kol} size={30} />}
           question=""
           name={lead.kol.name}
-          cote={fmtOdds(odds(market.pool, lead.pool))}
-          share={`${pct(lead.prob)} · ${usd(lead.pool, { compact: true })} misés`}
-          toast={<>Mise de $100 enregistrée</>}
+          cote={fmtOdds(odds(market.pool, lead.pool), t.common.open)}
+          share={`${pct(lead.prob)} · ${fmt(S.staked, { amount: usd(lead.pool, { compact: true }) })}`}
+          toast={S.toast}
         />
       </div>
       <span data-cursor className="ks-cursor ks-tap" aria-hidden />

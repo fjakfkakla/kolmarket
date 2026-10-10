@@ -6,21 +6,29 @@ import { coinMarketBySlug } from "@/data/coins";
 import { marketPhase } from "@/lib/challenge-calendar";
 import { getKols, getMarket, getMarkets, requestTime } from "@/lib/data";
 import { aliasPeriod, currentChallenge } from "@/lib/market-select";
+import type { Market } from "@/data/markets";
+import { getI18n } from "@/i18n/server";
+import { type ContentT, localizeCoinMarket, localizeMarket, localizeResolutionNote } from "@/i18n/content";
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** Titre, question, règles et note de résolution dans la langue de l'interface. */
+const localize = (m: Market, t: ContentT): Market => ({ ...localizeMarket(m, t), resolutionNote: localizeResolutionNote(m.resolutionNote, t) });
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const { t } = await getI18n();
   const coin = coinMarketBySlug(slug);
-  if (coin) return { title: coin.title };
+  if (coin) return { title: localizeCoinMarket(coin, t).title };
   const m = await getMarket(slug);
-  return { title: m ? m.title : "Marché" };
+  return { title: m ? localizeMarket(m, t).title : t.market.metaFallback };
 }
 
 export default async function MarketPage({ params }: Props) {
   const { slug } = await params;
+  const { t } = await getI18n();
   const [markets, kols] = await Promise.all([getMarkets(), getKols()]);
   const now = requestTime();
 
@@ -28,7 +36,7 @@ export default async function MarketPage({ params }: Props) {
   const coin = coinMarketBySlug(slug);
   if (coin) {
     const related = [currentChallenge(markets, "7D", now), currentChallenge(markets, "30D", now)].filter((m) => m !== undefined);
-    return <CoinMarketView market={coin} related={related} />;
+    return <CoinMarketView market={localizeCoinMarket(coin, t)} related={related.map((m) => localize(m, t))} />;
   }
 
   const market = markets.find((m) => m.slug === slug);
@@ -45,5 +53,5 @@ export default async function MarketPage({ params }: Props) {
     marketPhase(market, now) !== "betting" && next && next.slug !== market.slug
       ? next
       : currentChallenge(markets, market.period === "7D" ? "30D" : "7D", now);
-  return <MarketView market={market} kols={kols} sibling={sibling} serverNow={now} />;
+  return <MarketView market={localize(market, t)} kols={kols} sibling={sibling && localize(sibling, t)} serverNow={now} />;
 }

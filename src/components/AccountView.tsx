@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, ExternalLink, LogOut, RotateCcw, SlidersHorizontal, Trophy, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, ExternalLink, Globe, LogOut, RotateCcw, SlidersHorizontal, Trophy, Wallet } from "lucide-react";
 import type { Market } from "@/data/markets";
 import { COIN_MARKETS } from "@/data/coins";
 import { type Activity, type Bet, useWallet } from "@/lib/wallet";
@@ -12,9 +12,15 @@ import { useNow } from "@/lib/useNow";
 import { CLUSTER } from "@/lib/cluster";
 import { marketPhase } from "@/lib/challenge-calendar";
 import { fmtOdds, pnlClass, shortWallet, usd } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
+import { localizeCoinMarket, localizeMarket } from "@/i18n/content";
+import { translateActivityLabel } from "@/i18n/errors";
+import type { ClientDictionary } from "@/i18n/messages";
 import { Avatar } from "./Avatar";
 import { Coin, OutcomeCoin } from "./Coin";
 import { CopyButton } from "./CopyButton";
+import { LanguageSelect } from "./LanguageSelect";
 import { LogoMark } from "./Logo";
 
 const BLUE: [string, string, string] = ["#4a76ff", "#1652f0", "#0e3fd0"];
@@ -24,40 +30,69 @@ const INK: [string, string, string] = ["#2a3245", "#141a2c", "#0a0f1e"];
 const GOLD: [string, string, string] = ["#ffd45c", "#f0b429", "#dc9a06"];
 
 const RANGES = [
-  { id: "1J", ms: 86400000 },
-  { id: "1S", ms: 7 * 86400000 },
-  { id: "1M", ms: 30 * 86400000 },
-  { id: "Tout", ms: Infinity },
+  { id: "day", ms: 86400000 },
+  { id: "week", ms: 7 * 86400000 },
+  { id: "month", ms: 30 * 86400000 },
+  { id: "all", ms: Infinity },
 ] as const;
 
+type AccountT = ClientDictionary["account"];
+
 /** Où en est une mise encore en jeu, d'après l'étape de son défi. */
-function betState(m: Market | undefined, kolId: string, now: number | null) {
-  if (!m) return "En attente du résultat";
+function betState(m: Market | undefined, kolId: string, now: number | null, s: AccountT["state"]) {
+  if (!m) return s.awaiting;
   switch (marketPhase(m, now ?? 0)) {
     case "betting":
-      return "Mises ouvertes";
+      return s.betsOpen;
     case "live":
-      return "Défi en cours";
+      return s.live;
     case "counting":
-      return "Résultat en préparation";
+      return s.counting;
     case "proposed":
-      return m.winnerId === kolId ? "Gagnant proposé, paiement sous 24 h" : "Résultat proposé : autre KOL";
+      return m.winnerId === kolId ? s.proposedWin : s.proposedOther;
     default:
-      return "Paiement en cours";
+      return s.paying;
   }
 }
 
 /** Ce qu'a rapporté une mise terminée : le gain net, 0 si remboursée. */
 const settledGain = (b: Bet) => (b.status === "WON" ? (b.payout ?? 0) - b.amount : b.status === "LOST" ? -b.amount : 0);
 
-const TYPE: Record<Activity["type"], { label: string; tint: [string, string, string]; icon: React.ReactNode }> = {
-  DEPOT: { label: "Dépôt", tint: GREEN, icon: <ArrowDownLeft size={16} strokeWidth={2.6} /> },
-  RETRAIT: { label: "Retrait", tint: SLATE, icon: <ArrowUpRight size={16} strokeWidth={2.6} /> },
-  MISE: { label: "Mise", tint: BLUE, icon: <ArrowRight size={16} strokeWidth={2.6} /> },
-  GAIN: { label: "Gain", tint: GOLD, icon: <Trophy size={15} strokeWidth={2.6} /> },
-  REMBOURSEMENT: { label: "Remboursement", tint: SLATE, icon: <RotateCcw size={15} strokeWidth={2.6} /> },
-  AJUSTEMENT: { label: "Ajustement", tint: INK, icon: <SlidersHorizontal size={15} strokeWidth={2.6} /> },
+const TYPE: Record<Activity["type"], { label: keyof AccountT["types"]; tint: [string, string, string]; icon: React.ReactNode }> = {
+  DEPOT: { label: "deposit", tint: GREEN, icon: <ArrowDownLeft size={16} strokeWidth={2.6} /> },
+  RETRAIT: { label: "withdrawal", tint: SLATE, icon: <ArrowUpRight size={16} strokeWidth={2.6} /> },
+  MISE: { label: "bet", tint: BLUE, icon: <ArrowRight size={16} strokeWidth={2.6} /> },
+  GAIN: { label: "payout", tint: GOLD, icon: <Trophy size={15} strokeWidth={2.6} /> },
+  REMBOURSEMENT: { label: "refund", tint: SLATE, icon: <RotateCcw size={15} strokeWidth={2.6} /> },
+  AJUSTEMENT: { label: "adjustment", tint: INK, icon: <SlidersHorizontal size={15} strokeWidth={2.6} /> },
 };
+
+/** Paramètres du compte : la langue de l'interface. */
+function SettingsCard({ compact = false }: { compact?: boolean }) {
+  const { t } = useI18n();
+  if (compact) {
+    return (
+      <div className="mt-6 flex items-center justify-between gap-3 border-t border-line pt-5 text-left">
+        <span className="flex items-center gap-2 text-[14px] font-bold text-muted">
+          <Globe size={15} /> {t.common.language}
+        </span>
+        <LanguageSelect />
+      </div>
+    );
+  }
+  return (
+    <section id="parametres" className="card fade-up scroll-mt-32 p-5 md:p-6">
+      <h2 className="text-[15px] font-bold text-muted">{t.common.settings}</h2>
+      <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4">
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-bold">{t.common.language}</div>
+          <div className="text-[13px] font-semibold text-faint">{t.account.settingsHint}</div>
+        </div>
+        <LanguageSelect />
+      </div>
+    </section>
+  );
+}
 
 /** Le profit cumulé des mises terminées, dans le temps. */
 function AreaChart({ pts, from, to }: { pts: { t: number; v: number }[]; from: number; to: number }) {
@@ -94,8 +129,19 @@ function AreaChart({ pts, from, to }: { pts: { t: number; v: number }[]; from: n
 export function AccountView({ markets }: { markets: Market[] }) {
   const w = useWallet();
   const now = useNow();
-  const [range, setRange] = useState<(typeof RANGES)[number]["id"]>("Tout");
+  const { t: tr, intl } = useI18n();
+  const ta = tr.account;
+  const [range, setRange] = useState<(typeof RANGES)[number]["id"]>("all");
   const [tab, setTab] = useState<"bets" | "settled" | "history">("bets");
+
+  // Titres de marché dans la langue de l'interface (repli sur le titre d'origine).
+  const titles = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of markets) map.set(m.title, localizeMarket(m, tr).title);
+    for (const c of COIN_MARKETS) map.set(c.title, localizeCoinMarket(c, tr).title);
+    return map;
+  }, [markets, tr]);
+  const titleOf = (fr: string) => titles.get(fr) ?? fr;
 
   // Gain estimé de chaque mise avec le pot actuel. En démo, les mises du joueur ne sont pas dans les pots
   // venus du serveur : on les y ajoute pour que le calcul reste juste. En réel, elles y sont déjà.
@@ -118,9 +164,9 @@ export function AccountView({ markets }: { markets: Market[] }) {
             <span>{b.kolName.slice(0, 2)}</span>
           </Coin>
         );
-        return { bet: b, visual, cote: pool > 0 ? pot / pool : null, payout: payoutOf(pot, pool, b.amount), state: coin ? "Mises ouvertes" : betState(m, b.kolId, now) };
+        return { bet: b, visual, cote: pool > 0 ? pot / pool : null, payout: payoutOf(pot, pool, b.amount), state: coin ? ta.state.betsOpen : betState(m, b.kolId, now, ta.state) };
       }),
-    [w.bets, w.live, markets, now],
+    [w.bets, w.live, markets, now, ta],
   );
 
   // Meilleur cas : sur chaque marché, le résultat qui rapporterait le plus parmi ceux misés.
@@ -153,10 +199,11 @@ export function AccountView({ markets }: { markets: Market[] }) {
         <div className="mx-auto mb-5 w-fit">
           <LogoMark size={56} />
         </div>
-        <h1 className="display text-[30px]">Connecte ton wallet</h1>
+        <h1 className="display text-[30px]">{ta.connectTitle}</h1>
         <button onClick={() => w.openModal("connect")} className="plaque mt-6 h-[52px] w-full text-[16px]">
-          <Wallet size={17} /> Se connecter
+          <Wallet size={17} /> {ta.signIn}
         </button>
+        <SettingsCard compact />
       </div>
     );
   }
@@ -173,34 +220,34 @@ export function AccountView({ markets }: { markets: Market[] }) {
   return (
     <div className="space-y-6">
       <div className="fade-up flex flex-wrap items-center gap-3">
-        <h1 className="display text-[32px]">Mon compte</h1>
-        {!w.live ? <span className="chip">Démo</span> : net && <span className="chip">{net}</span>}
+        <h1 className="display text-[32px]">{ta.title}</h1>
+        {!w.live ? <span className="chip">{ta.demo}</span> : net && <span className="chip">{net}</span>}
       </div>
 
       <div className="stagger grid gap-4 lg:grid-cols-2">
         {/* Portefeuille */}
         <section className="card flex flex-col p-5 md:p-6">
-          <h2 className="text-[15px] font-bold text-muted">Portefeuille</h2>
+          <h2 className="text-[15px] font-bold text-muted">{ta.portfolio}</h2>
           <div className="num mt-1 font-display text-[44px] font-extrabold leading-none tracking-[-0.035em]">{usd(w.balance + w.inPlay + w.excess, { cents: true })}</div>
           <div className="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4 sm:grid-cols-3">
             <div>
-              <div className="text-[13px] font-bold text-faint">Disponible</div>
+              <div className="text-[13px] font-bold text-faint">{ta.available}</div>
               <div className="num font-display text-[22px] font-extrabold tracking-[-0.02em] text-up">{usd(w.balance, { cents: true })}</div>
             </div>
             <div>
-              <div className="text-[13px] font-bold text-faint">En jeu</div>
+              <div className="text-[13px] font-bold text-faint">{ta.inPlay}</div>
               <div className="num font-display text-[22px] font-extrabold tracking-[-0.02em]">{usd(w.inPlay, { cents: true })}</div>
             </div>
             {w.excess > 0 && (
               <div>
-                <div className="text-[13px] font-bold text-faint">À retirer</div>
+                <div className="text-[13px] font-bold text-faint">{ta.toWithdraw}</div>
                 <div className="num font-display text-[22px] font-extrabold tracking-[-0.02em]">{usd(w.excess, { cents: true })}</div>
               </div>
             )}
           </div>
           <div className="mt-4">
             <div className="mb-1.5 flex justify-between text-[13px] font-bold">
-              <span className="text-faint">Dépôt possible</span>
+              <span className="text-faint">{ta.depositRoom}</span>
               <span className="num">
                 {usd(room)} <span className="text-faint">/ {usd(DEPOSIT_CAP)}</span>
               </span>
@@ -211,10 +258,10 @@ export function AccountView({ markets }: { markets: Market[] }) {
           </div>
           <div className="mt-auto grid grid-cols-2 gap-2.5 pt-5">
             <button onClick={() => w.openModal("deposit")} className="plaque h-12 text-[15px]">
-              <ArrowDownLeft size={17} strokeWidth={2.6} /> Déposer
+              <ArrowDownLeft size={17} strokeWidth={2.6} /> {ta.deposit}
             </button>
             <button onClick={() => w.openModal("withdraw")} className="ghost h-12 rounded-[14px] text-[15px]">
-              <ArrowUpRight size={17} strokeWidth={2.6} /> Retirer
+              <ArrowUpRight size={17} strokeWidth={2.6} /> {ta.withdraw}
             </button>
           </div>
         </section>
@@ -222,11 +269,11 @@ export function AccountView({ markets }: { markets: Market[] }) {
         {/* Profit / Perte */}
         <section className="card flex flex-col p-5 md:p-6">
           <div className="flex items-center gap-3">
-            <h2 className="text-[15px] font-bold text-muted">Profit / Perte</h2>
+            <h2 className="text-[15px] font-bold text-muted">{ta.pnl}</h2>
             <div className="seg ml-auto">
               {RANGES.map((x) => (
                 <button key={x.id} className="seg-item px-3 py-1" data-active={range === x.id} onClick={() => setRange(x.id)}>
-                  {x.id}
+                  {ta.ranges[x.id]}
                 </button>
               ))}
             </div>
@@ -235,9 +282,9 @@ export function AccountView({ markets }: { markets: Market[] }) {
             {usd(pnlRange, { sign: true, cents: true })}
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className={realized >= 0 ? "chip-up" : "chip-down"}>Réalisé {usd(realized, { sign: true, cents: true })}</span>
-            <span className="chip">En jeu {usd(w.inPlay, { cents: true })}</span>
-            {best > 0 && <span className="chip-blue">Gain max estimé {usd(Math.floor(best * 100) / 100, { cents: true })}</span>}
+            <span className={realized >= 0 ? "chip-up" : "chip-down"}>{fmt(ta.realized, { amount: usd(realized, { sign: true, cents: true }) })}</span>
+            <span className="chip">{fmt(ta.inPlayChip, { amount: usd(w.inPlay, { cents: true }) })}</span>
+            {best > 0 && <span className="chip-blue">{fmt(ta.maxGain, { amount: usd(Math.floor(best * 100) / 100, { cents: true }) })}</span>}
           </div>
           <div className="relative mt-auto h-[132px] pt-4">
             <div className="absolute inset-x-0 bottom-0 top-4">
@@ -256,7 +303,7 @@ export function AccountView({ markets }: { markets: Market[] }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-display text-[20px] font-extrabold tracking-[-0.02em]">{w.provider ?? "Wallet"}</span>
             <span className="chip">Solana{net ? ` · ${net}` : ""}</span>
-            <span className="chip-blue">Retraits vers ce wallet uniquement</span>
+            <span className="chip-blue">{ta.withdrawOnly}</span>
           </div>
           <div className="num mt-1 text-[14px] font-semibold text-muted">
             <span className="hidden break-all md:inline">{w.address}</span>
@@ -264,17 +311,17 @@ export function AccountView({ markets }: { markets: Market[] }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <CopyButton value={w.address!} label="Copier l'adresse" />
+          <CopyButton value={w.address!} label={ta.copyAddress} />
           <a
             href={`https://solscan.io/account/${w.address}${CLUSTER === "devnet" ? "?cluster=devnet" : ""}`}
             target="_blank"
             rel="noreferrer"
             className="round"
-            title="Voir sur Solscan"
+            title={ta.viewSolscan}
           >
             <ExternalLink size={14} />
           </a>
-          <button onClick={w.disconnect} className="round" title="Déconnecter le wallet" aria-label="Déconnecter le wallet">
+          <button onClick={w.disconnect} className="round" title={ta.disconnect} aria-label={ta.disconnect}>
             <LogOut size={14} />
           </button>
         </div>
@@ -284,32 +331,32 @@ export function AccountView({ markets }: { markets: Market[] }) {
       <section id="mises" className="card fade-up scroll-mt-32 overflow-hidden">
         <div className="flex items-end gap-6 overflow-x-auto border-b border-line px-5 pt-4 scrollbar-none">
           <button className="tab shrink-0" data-active={tab === "bets"} onClick={() => setTab("bets")}>
-            Mises <span className="num ml-1 text-faint">{w.bets.length}</span>
+            {ta.tabs.bets} <span className="num ml-1 text-faint">{w.bets.length}</span>
           </button>
           <button className="tab shrink-0" data-active={tab === "settled"} onClick={() => setTab("settled")}>
-            Terminées <span className="num ml-1 text-faint">{w.settled.length}</span>
+            {ta.tabs.settled} <span className="num ml-1 text-faint">{w.settled.length}</span>
           </button>
           <button className="tab shrink-0" data-active={tab === "history"} onClick={() => setTab("history")}>
-            Historique <span className="num ml-1 text-faint">{w.activity.length}</span>
+            {ta.tabs.history} <span className="num ml-1 text-faint">{w.activity.length}</span>
           </button>
         </div>
 
         {tab === "bets" &&
           (rows.length === 0 ? (
             <div className="px-5 py-12 text-center">
-              <p className="font-display text-[20px] font-extrabold tracking-[-0.02em] text-muted">Aucune mise</p>
+              <p className="font-display text-[20px] font-extrabold tracking-[-0.02em] text-muted">{ta.noBets}</p>
               <Link href="/app" className="plaque mt-4 h-11 px-5">
-                Voir les marchés <ArrowRight size={16} />
+                {tr.common.seeMarkets} <ArrowRight size={16} />
               </Link>
             </div>
           ) : (
             <>
               <div className="hidden grid-cols-[1fr_100px_100px_120px_210px] gap-3 border-b border-line px-5 py-2.5 text-[13px] font-bold text-faint lg:grid">
-                <span>Marché</span>
-                <span className="text-right">Mise</span>
-                <span className="text-right">Cote</span>
-                <span className="text-right">Si gagné</span>
-                <span className="text-right">Statut</span>
+                <span>{ta.cols.market}</span>
+                <span className="text-right">{ta.cols.stake}</span>
+                <span className="text-right">{ta.cols.odds}</span>
+                <span className="text-right">{ta.cols.ifWon}</span>
+                <span className="text-right">{ta.cols.status}</span>
               </div>
               <ul className="divide-y divide-line">
                 {rows.map(({ bet, visual, cote, payout, state }) => (
@@ -319,12 +366,12 @@ export function AccountView({ markets }: { markets: Market[] }) {
                       <div className="min-w-0">
                         <div className="truncate text-[15px] font-bold">{bet.kolName}</div>
                         <Link href={`/market/${bet.marketSlug}`} className="line-clamp-1 text-[13px] font-semibold text-muted hover:text-blue">
-                          {bet.marketTitle}
+                          {titleOf(bet.marketTitle)}
                         </Link>
                       </div>
                     </div>
                     <div className="num text-right font-bold">{usd(bet.amount, { cents: true })}</div>
-                    <div className="num hidden text-right font-bold text-blue lg:block">{fmtOdds(cote)}</div>
+                    <div className="num hidden text-right font-bold text-blue lg:block">{fmtOdds(cote, tr.common.open)}</div>
                     <div className="num text-right font-display text-[17px] font-extrabold text-up">≈ {usd(Math.floor(payout * 100) / 100, { cents: true })}</div>
                     <div className="text-right">
                       <span className="chip">{state}</span>
@@ -337,7 +384,7 @@ export function AccountView({ markets }: { markets: Market[] }) {
 
         {tab === "settled" &&
           (w.settled.length === 0 ? (
-            <p className="px-5 py-12 text-center font-display text-[20px] font-extrabold tracking-[-0.02em] text-muted">Aucune mise terminée</p>
+            <p className="px-5 py-12 text-center font-display text-[20px] font-extrabold tracking-[-0.02em] text-muted">{ta.noSettled}</p>
           ) : (
             <ul className="divide-y divide-line">
               {w.settled.map((b) => {
@@ -345,12 +392,12 @@ export function AccountView({ markets }: { markets: Market[] }) {
                 return (
                   <li key={b.id} className="flex items-center gap-3 px-5 py-3.5 text-[15px]">
                     <span className={b.status === "WON" ? "chip-up" : b.status === "LOST" ? "chip-down" : "chip"}>
-                      {b.status === "WON" ? "Gagnée" : b.status === "LOST" ? "Perdue" : "Remboursée"}
+                      {b.status === "WON" ? ta.won : b.status === "LOST" ? ta.lost : ta.refunded}
                     </span>
                     <Link href={`/market/${b.marketSlug}`} className="min-w-0 flex-1 truncate font-semibold hover:text-blue">
-                      {b.kolName} · <span className="text-muted">{b.marketTitle}</span>
+                      {b.kolName} · <span className="text-muted">{titleOf(b.marketTitle)}</span>
                     </Link>
-                    <span className="num hidden text-[13px] font-semibold text-muted sm:inline">mise {usd(b.amount)}</span>
+                    <span className="num hidden text-[13px] font-semibold text-muted sm:inline">{fmt(ta.stakeOf, { amount: usd(b.amount) })}</span>
                     <span className={`num w-24 text-right font-display text-[17px] font-extrabold ${b.status === "REFUNDED" ? "text-muted" : pnlClass(g)}`}>
                       {b.status === "REFUNDED" ? "±$0" : usd(g, { sign: true, cents: true })}
                     </span>
@@ -362,7 +409,7 @@ export function AccountView({ markets }: { markets: Market[] }) {
 
         {tab === "history" &&
           (w.activity.length === 0 ? (
-            <p className="px-5 py-12 text-center font-display text-[20px] font-extrabold tracking-[-0.02em] text-muted">Aucune opération</p>
+            <p className="px-5 py-12 text-center font-display text-[20px] font-extrabold tracking-[-0.02em] text-muted">{ta.noActivity}</p>
           ) : (
             <ul className="divide-y divide-line">
               {w.activity.map((a) => {
@@ -373,12 +420,12 @@ export function AccountView({ markets }: { markets: Market[] }) {
                       {T.icon}
                     </Coin>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-bold">{T.label}</div>
-                      <div className="truncate text-[13px] font-semibold text-muted">{a.label}</div>
+                      <div className="truncate font-bold">{ta.types[T.label]}</div>
+                      <div className="truncate text-[13px] font-semibold text-muted">{translateActivityLabel(a.label, tr, titleOf)}</div>
                     </div>
                     <span className={`num w-28 text-right font-bold ${a.amount >= 0 ? "text-up" : "text-ink"}`}>{usd(a.amount, { sign: true, cents: true })}</span>
                     <span className="hidden w-32 text-right text-[13px] font-semibold text-faint md:inline">
-                      {new Date(a.at).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(a.at).toLocaleString(intl, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </li>
                 );
@@ -386,6 +433,8 @@ export function AccountView({ markets }: { markets: Market[] }) {
             </ul>
           ))}
       </section>
+
+      <SettingsCard />
     </div>
   );
 }

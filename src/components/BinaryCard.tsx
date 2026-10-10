@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import type { BinaryMarket } from "@/data/markets";
 import { kolById } from "@/data/kols";
 import { Avatar } from "./Avatar";
 import { odds } from "@/lib/pot";
 import { fmtOdds, usd } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
 
 /** La demi-jauge Polymarket : la part du pot sur le Oui, à sa couleur. */
 function Gauge({ p }: { p: number }) {
@@ -20,7 +23,9 @@ function Gauge({ p }: { p: number }) {
   );
 }
 
+/** Carte Oui / Non ; passer un marché déjà traduit (localizeBinary de @/i18n/content). */
 export function BinaryCard({ market }: { market: BinaryMarket }) {
+  const { t } = useI18n();
   const kol = kolById(market.kolId)!;
   return (
     <Link href={`/market/kol-top-profit-${market.period.toLowerCase()}`} className="card card-hover group flex flex-col p-4">
@@ -31,15 +36,15 @@ export function BinaryCard({ market }: { market: BinaryMarket }) {
       </div>
       <div className="mt-auto grid grid-cols-2 gap-2">
         <span className="soft-up h-10">
-          Oui <span className="num">{fmtOdds(odds(market.pool, market.pool * market.yes))}</span>
+          {t.common.yes} <span className="num">{fmtOdds(odds(market.pool, market.pool * market.yes), t.common.open)}</span>
         </span>
         <span className="soft-down h-10">
-          Non <span className="num">{fmtOdds(odds(market.pool, market.pool * (1 - market.yes)))}</span>
+          {t.common.no} <span className="num">{fmtOdds(odds(market.pool, market.pool * (1 - market.yes)), t.common.open)}</span>
         </span>
       </div>
       <div className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-muted">
-        <span className="num">Pot {usd(market.pool, { compact: true })}</span>
-        <span className="chip ml-auto">{market.period === "7D" ? "7 jours" : "30 jours"}</span>
+        <span className="num">{t.common.pool} {usd(market.pool, { compact: true })}</span>
+        <span className="chip ml-auto">{market.period === "7D" ? t.app.home.days7 : t.app.home.days30}</span>
       </div>
     </Link>
   );

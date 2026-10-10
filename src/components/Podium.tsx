@@ -3,10 +3,13 @@ import type { Period } from "@/data/markets";
 import { Avatar } from "./Avatar";
 import { Coin } from "./Coin";
 import { pnlClass, usd } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 
 type PnlKey = "pnl7d" | "pnl30d";
 
 function Card({ k, rank, first, pnlKey: key }: { k: Kol; rank: 1 | 2 | 3; first: Kol; pnlKey: PnlKey }) {
+  const { t } = useI18n();
   const gap = k[key] - first[key];
   const lead = rank === 1;
   return (
@@ -34,8 +37,8 @@ function Card({ k, rank, first, pnlKey: key }: { k: Kol; rank: 1 | 2 | 3; first:
       </div>
       <div className={`num mt-3 font-display text-[28px] font-extrabold leading-none tracking-[-0.03em] ${pnlClass(k[key])}`}>{usd(k[key], { compact: true, sign: true })}</div>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        <span className="chip">Vol. {usd(k.volume7d, { compact: true })}</span>
-        <span className="chip" title="Part des jours de trading finis en positif">{Math.round(k.winRate)} % de jours +</span>
+        <span className="chip">{t.common.vol} {usd(k.volume7d, { compact: true })}</span>
+        <span className="chip" title={t.market.podiumWinDaysTitle}>{fmt(t.market.podiumWinDays, { n: Math.round(k.winRate) })}</span>
         {!lead && <span className="chip-down">{usd(gap, { compact: true })}</span>}
       </div>
     </div>

@@ -1,9 +1,13 @@
+"use client";
+
 import type { CoinMarket, CoinOutcome } from "@/data/coins";
 import { OutcomeCoin } from "../Coin";
 import { LineChart } from "../LineChart";
 import { RaceCard } from "../RaceCard";
 import { odds } from "@/lib/pot";
 import { fmtOdds, pct, usd } from "@/lib/format";
+import { fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 import { BrowserBar, MiniAppNav, Ticket } from "./KolScreen";
 
 const TICKS = [1, 0.75, 0.5, 0.25, 0];
@@ -22,30 +26,34 @@ function Tips({ outcomes, size }: { outcomes: CoinOutcome[]; size: number }) {
 }
 
 function CoinRow({ o, pot, compact = false }: { o: CoinOutcome; pot: number; compact?: boolean }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   return (
     <div data-row={o.id} className={`ks-row flex items-center gap-2.5 ${compact ? "px-3 py-2" : "px-4 py-2.5"}`}>
       <OutcomeCoin outcome={o} size={compact ? 30 : 34} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14px] font-bold">
-          {o.ticker ? <>${o.ticker}</> : "Aucun"}
+          {o.ticker ? <>${o.ticker}</> : S.none}
           {!compact && <span className="ml-1.5 text-[12.5px] font-semibold text-muted">{o.name}</span>}
         </div>
-        {!compact && <div className="num text-[12.5px] font-semibold text-muted">{usd(o.pool, { compact: true })} misés</div>}
+        {!compact && <div className="num text-[12.5px] font-semibold text-muted">{fmt(S.staked, { amount: usd(o.pool, { compact: true }) })}</div>}
       </div>
       <span className="num w-14 text-right font-display text-[20px] font-extrabold tracking-[-0.03em]">{pct(o.prob)}</span>
       <span data-row-yes className={`soft-up rounded-[11px] text-[12.5px] ${compact ? "h-8 px-2.5" : "h-9 w-[132px]"}`}>
-        Miser <span className="num">{fmtOdds(odds(pot, o.pool))}</span>
+        {S.bet} <span className="num">{fmtOdds(odds(pot, o.pool), t.common.open)}</span>
       </span>
     </div>
   );
 }
 
-function series(m: CoinMarket) {
-  return m.outcomes.map((o) => ({ id: o.id, label: o.ticker ? `$${o.ticker}` : "Aucun", color: o.tint[1], values: o.series }));
+function series(m: CoinMarket, none: string) {
+  return m.outcomes.map((o) => ({ id: o.id, label: o.ticker ? `$${o.ticker}` : none, color: o.tint[1], values: o.series }));
 }
 
 /** L'écran du marché memecoin, comme dans l'app (1000 px). */
 export function CoinScreenDesktop({ market, pick }: { market: CoinMarket; pick: CoinOutcome }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   return (
     <div data-screen className="ks relative w-[1000px] overflow-hidden rounded-[26px] bg-white text-ink">
       <BrowserBar url={`marketcoins.app/market/${market.slug}`} />
@@ -63,7 +71,7 @@ export function CoinScreenDesktop({ market, pick }: { market: CoinMarket; pick: 
             <div className="display text-[21px]">{market.title}</div>
           </div>
           <div className="rounded-[20px] border border-line p-3.5 pb-2.5">
-            <LineChart series={series(market)} domain={[0, 1]} ticks={TICKS} format={(v) => `${Math.round(v * 100)}%`} interactive={false} endDots={false} height={150} overlay={<Tips outcomes={market.outcomes} size={26} />} />
+            <LineChart series={series(market, S.none)} domain={[0, 1]} ticks={TICKS} format={(v) => `${Math.round(v * 100)}%`} interactive={false} endDots={false} height={150} overlay={<Tips outcomes={market.outcomes} size={26} />} />
           </div>
           <div data-race-card className="ks-race">
             <RaceCard outcomes={market.outcomes} label={market.target} compact />
@@ -81,9 +89,9 @@ export function CoinScreenDesktop({ market, pick }: { market: CoinMarket; pick: 
             visual={<OutcomeCoin outcome={pick} size={38} />}
             question={market.question}
             name={`$${pick.ticker}`}
-            cote={fmtOdds(odds(market.pool, pick.pool))}
-            share={`${pct(pick.prob)} · ${usd(pick.pool, { compact: true })} misés`}
-            toast={<>Mise de $100 sur ${pick.ticker} enregistrée</>}
+            cote={fmtOdds(odds(market.pool, pick.pool), t.common.open)}
+            share={`${pct(pick.prob)} · ${fmt(S.staked, { amount: usd(pick.pool, { compact: true }) })}`}
+            toast={fmt(S.toastOn, { name: `$${pick.ticker}` })}
           />
         </div>
       </div>
@@ -97,13 +105,15 @@ export function CoinScreenDesktop({ market, pick }: { market: CoinMarket; pick: 
 }
 
 export function CoinScreenPhone({ market, pick }: { market: CoinMarket; pick: CoinOutcome }) {
+  const { t } = useI18n();
+  const S = t.landing.screen;
   return (
     <div data-screen className="ks relative w-[380px] overflow-hidden rounded-[34px] border-[6px] border-white bg-white text-ink">
       <MiniAppNav compact />
       <div className="space-y-3 p-3.5">
         <div className="display text-[19px]">{market.title}</div>
         <div className="rounded-[18px] border border-line p-2.5 pb-1.5">
-          <LineChart series={series(market)} domain={[0, 1]} ticks={[1, 0.5, 0]} format={(v) => `${Math.round(v * 100)}%`} interactive={false} endDots={false} height={92} overlay={<Tips outcomes={market.outcomes} size={22} />} />
+          <LineChart series={series(market, S.none)} domain={[0, 1]} ticks={[1, 0.5, 0]} format={(v) => `${Math.round(v * 100)}%`} interactive={false} endDots={false} height={92} overlay={<Tips outcomes={market.outcomes} size={22} />} />
         </div>
         <div data-race-card className="ks-race">
           <RaceCard outcomes={market.outcomes} label={market.target} compact />
@@ -116,9 +126,9 @@ export function CoinScreenPhone({ market, pick }: { market: CoinMarket; pick: Co
           visual={<OutcomeCoin outcome={pick} size={30} />}
           question=""
           name={`$${pick.ticker}`}
-          cote={fmtOdds(odds(market.pool, pick.pool))}
-          share={`${pct(pick.prob)} · ${usd(pick.pool, { compact: true })} misés`}
-          toast={<>Mise de $100 enregistrée</>}
+          cote={fmtOdds(odds(market.pool, pick.pool), t.common.open)}
+          share={`${pct(pick.prob)} · ${fmt(S.staked, { amount: usd(pick.pool, { compact: true }) })}`}
+          toast={S.toast}
         />
       </div>
       <span data-cursor className="ks-cursor ks-tap" aria-hidden />

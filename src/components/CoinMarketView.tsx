@@ -14,19 +14,21 @@ import { RaceCard } from "./RaceCard";
 import { ShareButtons } from "./ShareButtons";
 import { useWallet } from "@/lib/wallet";
 import { odds } from "@/lib/pot";
-import { dateFr, fmtOdds, pct, usd } from "@/lib/format";
+import { fmtDate, fmtOdds, pct, usd } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 
 const RANGES = [
-  { id: "1S", label: "1S", points: 8 },
-  { id: "1M", label: "1M", points: 30 },
-  { id: "ALL", label: "Tout", points: 0 },
+  { id: "1S", label: "range1w", points: 8 },
+  { id: "1M", label: "range1m", points: 30 },
+  { id: "ALL", label: "rangeAll", points: 0 },
 ] as const;
 
 /** Les dates de l'axe : un point par jour, le dernier aujourd'hui. */
-function axisLabels(n: number, every: number) {
+function axisLabels(n: number, every: number, intl: string) {
   const end = new Date("2026-10-10T12:00:00+02:00").getTime();
   return Array.from({ length: n }, (_, i) =>
-    (n - 1 - i) % every === 0 && i > 1 ? dateFr(new Date(end - (n - 1 - i) * 86400000).toISOString()) : "",
+    (n - 1 - i) % every === 0 && i > 1 ? fmtDate(new Date(end - (n - 1 - i) * 86400000).toISOString(), intl) : "",
   );
 }
 
@@ -43,6 +45,7 @@ function withMyBets(market: CoinMarket, bets: { marketSlug: string; kolId: strin
 }
 
 function CoinOutcomeRow({ o, pot, active, onPick }: { o: CoinOutcome; pot: number; active: boolean; onPick: (scroll: boolean) => void }) {
+  const { t } = useI18n();
   return (
     <li
       onClick={() => onPick(false)}
@@ -57,14 +60,14 @@ function CoinOutcomeRow({ o, pot, active, onPick }: { o: CoinOutcome; pot: numbe
             {o.name}
             {o.ticker && <span className="ml-1.5 text-[14px] font-semibold text-muted">${o.ticker}</span>}
           </div>
-          <div className="num text-[13px] font-semibold text-muted">{usd(o.pool)} misés</div>
+          <div className="num text-[13px] font-semibold text-muted">{fmt(t.market.staked, { amount: usd(o.pool) })}</div>
         </div>
       </div>
       <div className="flex items-center justify-end gap-2 md:justify-center">
         <span className="num font-display text-[28px] font-extrabold leading-none tracking-[-0.03em]">{pct(o.prob)}</span>
         <span className={`num flex items-center gap-0.5 text-[12.5px] font-bold ${o.change24h >= 0 ? "text-up" : "text-down"}`}>
           {o.change24h >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-          {Math.abs(o.change24h).toFixed(1).replace(".", ",")}
+          {Math.abs(o.change24h).toFixed(1)}
         </span>
       </div>
       <div className="col-span-2 md:col-span-1">
@@ -75,7 +78,7 @@ function CoinOutcomeRow({ o, pot, active, onPick }: { o: CoinOutcome; pot: numbe
           }}
           className={`h-11 w-full ${active ? "plaque" : "soft-up"}`}
         >
-          Miser <span className="num">{fmtOdds(odds(pot, o.pool))}</span>
+          {t.market.bet} <span className="num">{fmtOdds(odds(pot, o.pool), t.common.open)}</span>
         </button>
       </div>
     </li>
@@ -83,6 +86,8 @@ function CoinOutcomeRow({ o, pot, active, onPick }: { o: CoinOutcome; pot: numbe
 }
 
 export function CoinMarketView({ market: base, related }: { market: CoinMarket; related: Market[] }) {
+  const { t, intl } = useI18n();
+  const tc = t.market.coin;
   const w = useWallet();
   // Pas encore en base : en démo, les mises du joueur s'ajoutent au pot.
   const market = useMemo(() => (w.live ? base : withMyBets(base, w.bets)), [base, w.bets, w.live]);
@@ -93,10 +98,10 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
   const { series, labels } = useMemo(() => {
     const r = RANGES.find((x) => x.id === range)!;
     const cut = (v: number[]) => (r.points ? v.slice(-r.points) : v);
-    const s = market.outcomes.map((o) => ({ id: o.id, label: o.ticker ? `$${o.ticker}` : "Aucun", color: o.tint[1], values: cut(o.series) }));
+    const s = market.outcomes.map((o) => ({ id: o.id, label: o.ticker ? `$${o.ticker}` : tc.none, color: o.tint[1], values: cut(o.series) }));
     const n = s[0].values.length;
-    return { series: s, labels: axisLabels(n, r.points === 8 ? 2 : r.points === 30 ? 7 : 14) };
-  }, [market, range]);
+    return { series: s, labels: axisLabels(n, r.points === 8 ? 2 : r.points === 30 ? 7 : 14, intl) };
+  }, [market, range, tc.none, intl]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
@@ -112,10 +117,10 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
             </div>
             <div className="min-w-0 flex-1">
               <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                <span className="chip-blue">Memecoins</span>
-                <span className="chip">Course à {market.target}</span>
-                <span className="chip">Pot commun · 0 frais</span>
-                {w.live && <span className="chip">Ouverture prochaine</span>}
+                <span className="chip-blue">{tc.memecoins}</span>
+                <span className="chip">{fmt(tc.raceTo, { target: market.target })}</span>
+                <span className="chip">{tc.poolNoFees}</span>
+                {w.live && <span className="chip">{tc.openingSoon}</span>}
               </div>
               <h1 className="display text-[28px] md:text-[34px]">{market.title}</h1>
             </div>
@@ -125,7 +130,7 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
             {market.outcomes.map((o) => (
               <button key={o.id} onClick={() => setSelectedId(o.id)} className="flex items-center gap-1.5 text-[14px] font-semibold text-ink-2 hover:text-ink">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: o.tint[1] }} />
-                {o.ticker ? `$${o.ticker}` : "Aucun"} <span className="num font-bold text-ink">{pct(o.prob)}</span>
+                {o.ticker ? `$${o.ticker}` : tc.none} <span className="num font-bold text-ink">{pct(o.prob)}</span>
               </button>
             ))}
           </div>
@@ -143,16 +148,16 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
           />
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-3.5 text-[14px] font-semibold text-muted">
             <span>
-              Pot <span className="num font-bold text-ink">{usd(market.pool)}</span>
+              {t.common.pool} <span className="num font-bold text-ink">{usd(market.pool)}</span>
             </span>
             <span>
-              <span className="num font-bold text-ink">{market.traders.toLocaleString("fr-FR")}</span> joueurs
+              <span className="num font-bold text-ink">{market.traders.toLocaleString(intl)}</span> {t.market.players}
             </span>
             <Countdown to={market.closesAt} compact />
             <div className="seg ml-auto">
               {RANGES.map((r) => (
                 <button key={r.id} className="seg-item" data-active={range === r.id} onClick={() => setRange(r.id)}>
-                  {r.label}
+                  {tc[r.label]}
                 </button>
               ))}
             </div>
@@ -165,9 +170,9 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
 
         <section className="card fade-up overflow-hidden">
           <div className="hidden grid-cols-[1fr_130px_160px] gap-4 border-b border-line px-5 py-3 text-[13px] font-bold text-faint md:grid">
-            <span>Résultat</span>
-            <span className="text-center">Part du pot</span>
-            <span className="text-center">Miser</span>
+            <span>{tc.outcome}</span>
+            <span className="text-center">{t.market.colShare}</span>
+            <span className="text-center">{t.market.bet}</span>
           </div>
           <ul className="divide-y divide-line">
             {market.outcomes.map((o) => (
@@ -186,7 +191,7 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
         </section>
 
         <section className="card fade-up p-5" id="regles">
-          <h2 className="mb-3 font-display text-[19px] font-extrabold tracking-[-0.02em]">Règles</h2>
+          <h2 className="mb-3 font-display text-[19px] font-extrabold tracking-[-0.02em]">{t.market.rules}</h2>
           <ol className="space-y-2.5 text-[15px] text-ink-2">
             {market.rules.map((r, i) => (
               <li key={i} className="flex gap-3">
@@ -196,8 +201,8 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
             ))}
           </ol>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="chip">Source : DexScreener</span>
-            <span className="chip">Clôture le {dateFr(market.closesAt, { year: "numeric" })}</span>
+            <span className="chip">{fmt(t.market.source, { src: "DexScreener" })}</span>
+            <span className="chip">{fmt(tc.closesOn, { date: fmtDate(market.closesAt, intl, { year: "numeric" }) })}</span>
           </div>
         </section>
       </div>
@@ -212,7 +217,7 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
           soon
           choice={{
             id: selected.id,
-            name: selected.ticker ? `$${selected.ticker}` : "Aucun",
+            name: selected.ticker ? `$${selected.ticker}` : tc.none,
             pool: selected.pool,
             prob: selected.prob,
             visual: <OutcomeCoin outcome={selected} size={46} />,
@@ -227,7 +232,7 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[14px] font-bold">{m.title}</div>
-              <div className="num text-[13px] font-semibold text-muted">Pot {usd(m.pool, { compact: true })}</div>
+              <div className="num text-[13px] font-semibold text-muted">{t.common.pool} {usd(m.pool, { compact: true })}</div>
             </div>
             <span className="num font-display text-[20px] font-extrabold text-blue">{pct(m.outcomes[0].prob)}</span>
           </Link>

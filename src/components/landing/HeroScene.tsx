@@ -10,14 +10,16 @@ import { Avatar } from "../Avatar";
 import { OutcomeCoin } from "../Coin";
 import { estimatePayout, odds } from "@/lib/pot";
 import { fmtOdds, pct, usd } from "@/lib/format";
+import { fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 import { KolScreenDesktop, KolScreenPhone } from "./KolScreen";
 import { Planet, defaultPlanet, type PlanetState } from "./Planet";
 import { easeInOut, easeOut, lerp, scrollToProgress, seg, useScrollScene } from "./scroll";
 
 const STEPS = [
-  { id: "trader", name: "Choisis ton trader", text: "7 KOLs, 7 wallets Solana publics : leur profit se lit on-chain, trade après trade.", at: 0.57, end: 0.68 },
-  { id: "oui", name: "Mise sur lui", text: "", at: 0.68, end: 0.86 },
-  { id: "cash", name: "Encaisse", text: "Il finit n°1 sur 7 jours : ceux qui ont misé sur lui se partagent tout le pot. 0 frais.", at: 0.86, end: 0.985 },
+  { id: "trader", at: 0.57, end: 0.68 },
+  { id: "oui", at: 0.68, end: 0.86 },
+  { id: "cash", at: 0.86, end: 0.985 },
 ];
 
 /** Les pièces qui tournent autour de la planète : les traders et les coins. */
@@ -28,6 +30,8 @@ function setOn(el: Element | null | undefined, on: boolean) {
 }
 
 export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]; coins: CoinOutcome[] }) {
+  const { t } = useI18n();
+  const L = t.landing.hero;
   const track = useRef<HTMLElement>(null);
   const plank = useRef<HTMLDivElement>(null);
   const planet = useRef<PlanetState>(defaultPlanet());
@@ -47,7 +51,9 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
 
   const lead = market.outcomes[0];
   const stepText = (i: number) =>
-    i === 1 ? `${lead.kol.name} a ${pct(lead.prob)} du pot, cote ${fmtOdds(odds(market.pool, lead.pool))} : chaque dollar misé sur lui est multiplié d'autant s'il gagne.` : STEPS[i].text;
+    i === 1
+      ? fmt(L.leadText, { name: lead.kol.name, share: pct(lead.prob), odds: fmtOdds(odds(market.pool, lead.pool), t.common.open) })
+      : L.steps[i].text;
   const orbiters: Orbiter[] = [];
   const coinList = coins.filter((c) => c.ticker);
   kols.forEach((k, i) => {
@@ -152,10 +158,10 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
       target.style.visibility = rise <= 0 ? "hidden" : "visible";
     }
     if (kolText.current) {
-      const t = easeOut(seg(p, 0.44, 0.56));
-      kolText.current.style.opacity = String(t);
-      kolText.current.style.transform = reduced ? "" : `translate3d(0, ${(1 - t) * 40}px, 0)`;
-      kolText.current.style.visibility = t <= 0 ? "hidden" : "visible";
+      const k = easeOut(seg(p, 0.44, 0.56));
+      kolText.current.style.opacity = String(k);
+      kolText.current.style.transform = reduced ? "" : `translate3d(0, ${(1 - k) * 40}px, 0)`;
+      kolText.current.style.visibility = k <= 0 ? "hidden" : "visible";
     }
 
     // La cinématique dans l'écran : tracer, choisir, miser, négocier.
@@ -178,7 +184,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
     const amountEl = root.querySelector("[data-amount]");
     if (amountEl) amountEl.textContent = String(amt);
     const sharesEl = root.querySelector("[data-shares]");
-    if (sharesEl) sharesEl.textContent = fmtOdds(odds(market.pool + amt, lead.pool + amt));
+    if (sharesEl) sharesEl.textContent = fmtOdds(odds(market.pool + amt, lead.pool + amt), t.common.open);
     const payEl = root.querySelector("[data-payout]");
     if (payEl) payEl.textContent = usd(Math.floor(estimatePayout(market.pool, lead.pool, amt) * 100) / 100, { cents: true });
     setOn(root.querySelector("[data-summary]"), amt > 0);
@@ -237,7 +243,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
         <div ref={plank} className="planche on-plank absolute inset-x-2 bottom-2 top-[68px] rounded-[26px] md:inset-x-5 md:bottom-4 md:top-[84px] md:rounded-[34px]">
 
           <div className="absolute inset-0 z-[2]">
-            <Planet state={planet} className="h-full w-full" label="La planète des memecoins, ses traders et ses coins en orbite" />
+            <Planet state={planet} className="h-full w-full" label={L.planetLabel} />
           </div>
 
           {orbiters.map((o, i) => (
@@ -261,14 +267,14 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
               <span className="block text-blue-sky">Trade the future.</span>
             </h1>
             <p className="mx-auto mt-4 max-w-[38ch] text-[15px] font-medium leading-relaxed text-white/70 md:mx-0 md:mt-6 md:text-[18px]">
-              Parie sur les KOLs qui tradent et sur les memecoins qui vont exploser. USDC sur Solana, 0&nbsp;% de frais.
+              {L.subtitle}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:mt-8 md:justify-start">
               <Link href="/app" className="pill-white">
-                Lancer l&apos;application <ArrowRight size={18} />
+                {t.landing.nav.launchLong} <ArrowRight size={18} />
               </Link>
               <Link href="/comment-ca-marche" className="hidden h-[54px] items-center rounded-[14px] px-5 text-[15px] font-bold text-white/80 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white sm:inline-flex">
-                Comment ça marche
+                {t.common.howItWorks}
               </Link>
             </div>
           </div>
@@ -281,14 +287,14 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
           {/* 2. Les mots qui encadrent la planète */}
           <div ref={flankL} className="absolute left-5 top-[13%] z-[5] md:left-[5%] md:top-[30%]" style={{ opacity: 0, visibility: "hidden" }}>
             <p className="display text-[clamp(36px,5vw,84px)] text-white">
-              Parie sur
-              <span className="block text-blue-sky">les traders</span>
+              {L.flankL[0]}
+              <span className="block text-blue-sky">{L.flankL[1]}</span>
             </p>
           </div>
           <div ref={flankR} className="absolute bottom-[12%] right-5 z-[5] text-right md:bottom-auto md:right-[5%] md:top-[70%]" style={{ opacity: 0, visibility: "hidden" }}>
             <p className="display text-[clamp(36px,5vw,84px)] text-white">
-              et sur
-              <span className="block text-blue-sky">les memecoins.</span>
+              {L.flankR[0]}
+              <span className="block text-blue-sky">{L.flankR[1]}</span>
             </p>
           </div>
 
@@ -308,7 +314,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
                     onClick={() => track.current && scrollToProgress(track.current, st.at + 0.005)}
                   >
                     <span className={`num grid h-7 w-7 place-items-center rounded-full text-[13px] font-extrabold ${active === i ? "bg-blue text-white" : "bg-white/20 text-white"}`}>{i + 1}</span>
-                    {st.name}
+                    {L.steps[i].name}
                     <span className="story-bar"><i /></span>
                   </button>
                 ))}
@@ -318,7 +324,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
               </p>
             </div>
             <div ref={screenBox} className="relative min-h-0 flex-1 self-stretch">
-              <Link href={`/market/${market.slug}`} aria-label={`Ouvrir le marché : ${market.title}`}>
+              <Link href={`/market/${market.slug}`} aria-label={fmt(L.openMarket, { title: market.title })}>
                 <div ref={screenDesk} className="pointer-events-auto absolute left-0 top-0 origin-top" style={{ visibility: "hidden" }}>
                   <KolScreenDesktop market={market} kols={kols} />
                 </div>
