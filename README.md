@@ -34,7 +34,7 @@ Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typech
 ## Lancement public (chrono)
 
 Tant que le lancement n'est pas passé, l'app est fermée : `/app`, `/market/*`, `/compte`, `/comment-ca-marche` et `/conditions`
-affichent seulement « Launch in: » et le chrono (voir `src/proxy.ts`). Seuls les wallets de `ADMIN_WALLETS` entrent.
+affichent seulement « App opens in: » et le chrono (voir `src/proxy.ts`). Seuls les wallets de `ADMIN_WALLETS` entrent.
 Les mises et les dépôts sont refusés côté API pour les autres ; retraits et dépôts déjà envoyés passent toujours.
 
 Pour lancer le chrono : `/admin` → connexion avec le wallet admin → **Lancer le chrono de 7 jours** (action signée).

@@ -20,7 +20,7 @@ function parts(ms: number) {
 }
 
 /**
- * « Launch in: » et le chrono jusqu'à l'ouverture, à la milliseconde.
+ * « App opens in: » et le chrono jusqu'à l'ouverture, à la milliseconde.
  * Sans heure d'ouverture (chrono pas encore lancé), il reste figé sur 7 jours.
  * À zéro, la page se recharge : le serveur ouvre l'app.
  */
@@ -48,8 +48,8 @@ export function LaunchCountdown({ at, serverNow }: { at: number | null; serverNo
   }, [done, router]);
 
   return (
-    <div className="text-center text-ink" role="timer" aria-label="Launch countdown">
-      <p className="font-display text-[clamp(20px,2.4vw,32px)] font-extrabold tracking-[-0.02em] text-muted">Launch in:</p>
+    <div className="text-center text-ink" role="timer" aria-label="App opening countdown">
+      <p className="font-display text-[clamp(20px,2.4vw,32px)] font-extrabold tracking-[-0.02em] text-muted">App opens in:</p>
       <div className="num mt-3 flex items-start justify-center font-display font-extrabold leading-none tracking-[-0.04em] text-black">
         {parts(left).map((p, i) => (
           <div key={p.u} className="flex items-start">

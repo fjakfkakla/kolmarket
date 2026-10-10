@@ -5,7 +5,7 @@ import { requestTime } from "@/lib/data";
 import { getLaunch } from "@/lib/launch";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Launch in", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "App opens in", robots: { index: false, follow: false } };
 
 /** Ce que voient les pages de l'app avant le lancement public (voir proxy.ts) : le chrono, rien d'autre. */
 export default async function LaunchPage() {
