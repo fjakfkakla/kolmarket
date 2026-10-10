@@ -113,7 +113,7 @@ export const KOLS: Kol[] = [
     name: "zeropnl",
     handle: "zeropnl",
     wallet: "4xY9T1Q7foJzJsJ6YZDSsfp9zkzeZsXnxd45SixduMmr",
-    avatar: null,
+    avatar: "/kols/zeropnl.jpg",
     color: "#ef4444",
     pnl7d: 12400,
     pnl30d: 25100,

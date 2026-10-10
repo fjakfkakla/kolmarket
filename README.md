@@ -116,6 +116,7 @@ public/kols/            avatars des KOLs
 5. Puis `supabase/migrations/0004_withdrawals.sql` (retraits). **Obligatoire pour les retraits.**
 6. Puis `supabase/migrations/0005_challenges.sql` (résultats, paiement des pots, remboursements ; recale les deux premiers défis sur le calendrier UTC). **Obligatoire pour les défis.**
 7. Puis `supabase/migrations/0006_admin.sql` (journal des actions admin, origine du résultat). **Obligatoire pour /admin et la relecture.**
+8. Puis `supabase/migrations/0007_zeropnl_avatar.sql` (photo de profil de zeropnl sur une base déjà seedée).
 8. Tous les scripts sont rejouables sans danger.
 
 Tables : `kols`, `kol_stats`, `pnl_snapshots`, `markets`, `outcomes`, `market_results` (PnL final de chaque KOL, public), `accounts`, `sessions`, `vault_signatures`, `ledger_entries`, `bets`, `withdrawals`, `solvency_checks`, `app_state` (+ `trades`, `positions` de l'ancien modèle Oui/Non, plus utilisées).

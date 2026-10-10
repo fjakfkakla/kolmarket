@@ -11,7 +11,7 @@ insert into public.kols (id, name, handle, wallet, avatar_url, color, telegram) 
   ('decu',       'decu',     'notdecu',     '4vw54BmAogeRV3vPKWyFet5yf8DTLcREzdSzx4rw9Ud9', '/kols/decu.jpg',       '#8b5cf6', 'https://t.me/DecusCalls'),
   ('chester',    'chester',  'Chestererer', 'PMJA8UQDyWTFw2Smhyp9jGA6aTaP7jKHR7BPudrgyYN', '/kols/chester.jpg',    '#10b981', null),
   ('blu6k',      'blu6k',    'blu6k',       '8Ltv5royXzxVG3tAhVhRnfXrzapS5Dwqt1ocxprgu6YP', '/kols/blu6k.jpg',      '#06b6d4', null),
-  ('zeropnl',    'zeropnl',  'zeropnl',     '4xY9T1Q7foJzJsJ6YZDSsfp9zkzeZsXnxd45SixduMmr', null,                   '#ef4444', null),
+  ('zeropnl',    'zeropnl',  'zeropnl',     '4xY9T1Q7foJzJsJ6YZDSsfp9zkzeZsXnxd45SixduMmr', '/kols/zeropnl.jpg',    '#ef4444', null),
   ('trustnoest', 'trunoest', 'trunoest',    'ardinRsN1mNYVeoJWTBsWeYeXvuR9UUDGMsCDKpb6AT', '/kols/trustnoest.jpg', '#ec4899', null)
 on conflict (id) do update set
   name = excluded.name, handle = excluded.handle, wallet = excluded.wallet,
