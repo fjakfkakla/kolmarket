@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { allowedOrigins, managedHost } from "@/lib/auth";
 import { CLUSTER } from "@/lib/cluster";
-import { solanaConfig } from "@/lib/solana";
+import { hotBalanceMicro, solanaConfig } from "@/lib/solana";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -53,6 +53,8 @@ export async function GET(req: NextRequest) {
       // Adresses publiques : le payeur doit avoir quelques SOL de test, le compte USDC du coffre va dans le webhook.
       payeur_des_frais: solana?.feePayer.address ?? null,
       solde_payeur_SOL: solana ? await solBalance(solana) : null,
+      // La réserve des retraits est sur ce même wallet : y envoyer des USDC (depuis le coffre) pour payer les retraits.
+      reserve_retraits_USDC: solana ? Number(await hotBalanceMicro(solana)) / 1e6 : null,
       compte_usdc_du_coffre: solana?.vaultAta ?? null,
       ALCHEMY_WEBHOOK_SIGNING_KEY: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY ? "ok" : "manquant (facultatif au début)",
       CRON_SECRET: process.env.CRON_SECRET ? "ok" : "manquant",

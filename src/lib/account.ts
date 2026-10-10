@@ -13,7 +13,23 @@ type BetRow = {
   markets: { slug: string; title: string } | null;
   outcomes: { kol_id: string; kols: { name: string } | null } | null;
 };
-type LedgerRow = { id: number; kind: string; bucket: string; amount_micro: number; created_at: string; bet_id: string | null };
+type LedgerRow = {
+  id: number;
+  kind: string;
+  bucket: string;
+  amount_micro: number;
+  created_at: string;
+  bet_id: string | null;
+  withdrawal_id: string | null;
+};
+
+const WITHDRAWAL_STATE: Record<string, string> = {
+  REVIEW: "en vérification",
+  QUEUED: "en attente",
+  SENDING: "envoi en cours",
+  CONFIRMED: "arrivé",
+  REFUNDED: "annulé",
+};
 
 const KIND: Record<string, Activity["type"]> = {
   DEPOSIT: "DEPOT",
@@ -33,7 +49,7 @@ const LABEL: Record<string, string> = {
 
 /** Solde, mises et historique d'un compte, lus dans le registre. */
 export async function accountSummary(db: SupabaseClient, accountId: string, depositsEnabled: boolean): Promise<AccountData> {
-  const [bal, bets, ledger] = await Promise.all([
+  const [bal, bets, ledger, withdrawals] = await Promise.all([
     db.rpc("account_balance", { p_account: accountId }).single<{ play_micro: number; excess_micro: number; in_play_micro: number }>(),
     db
       .from("bets")
@@ -44,12 +60,13 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
       .limit(200),
     db
       .from("ledger_entries")
-      .select("id, kind, bucket, amount_micro, created_at, bet_id")
+      .select("id, kind, bucket, amount_micro, created_at, bet_id, withdrawal_id")
       .eq("account_id", accountId)
       .order("id", { ascending: false })
       .limit(50),
+    db.from("withdrawals").select("id, status").eq("account_id", accountId).order("created_at", { ascending: false }).limit(50),
   ]);
-  const err = bal.error ?? bets.error ?? ledger.error;
+  const err = bal.error ?? bets.error ?? ledger.error ?? withdrawals.error;
   if (err) throw new Error(`compte : ${err.message}`);
 
   const betList: Bet[] = ((bets.data ?? []) as unknown as BetRow[]).map((b) => ({
@@ -62,6 +79,7 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
     createdAt: Date.parse(b.created_at),
   }));
   const betById = new Map(betList.map((b) => [b.id, b]));
+  const withdrawalState = new Map((withdrawals.data ?? []).map((w) => [w.id as string, WITHDRAWAL_STATE[w.status as string] ?? w.status]));
 
   const activity: Activity[] = ((ledger.data ?? []) as LedgerRow[]).map((l) => {
     const bet = l.bet_id ? betById.get(l.bet_id) : undefined;
@@ -74,7 +92,9 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
           ? bet
             ? `${bet.kolName} · ${bet.marketTitle}`
             : "Mise"
-          : (LABEL[l.kind] ?? l.kind);
+          : l.kind === "WITHDRAWAL" && l.withdrawal_id
+            ? `${LABEL.WITHDRAWAL} · ${withdrawalState.get(l.withdrawal_id) ?? "en attente"}`
+            : (LABEL[l.kind] ?? l.kind);
     return { id: String(l.id), type: KIND[l.kind] ?? "AJUSTEMENT", label, amount: usd(l.amount_micro), at: Date.parse(l.created_at) };
   });
 

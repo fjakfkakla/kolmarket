@@ -10,9 +10,11 @@ Paris en pot commun sur les KOLs crypto. « Quel KOL fera le plus de profit sur 
 - **Plafonds** (`src/lib/limits.ts`) : dépôts jusqu'à 1000 $ sur le compte (solde + mises en cours), 1000 $ max par compte et par marché, retrait minimum 5 $. Les gains au-delà de 1000 $ se gardent. Un dépôt envoyé directement au coffre au-delà du plafond est mis de côté (« à retirer ») : il n'est pas jouable.
 - **Registre** : chaque mouvement (dépôt, mise, gain, retrait) est une ligne en micro-USDC, jamais modifiée ni effacée. Le solde est la somme des lignes. Toutes les écritures passent par des fonctions SQL sous verrou (pas de double crédit, pas de solde négatif, même avec des requêtes simultanées).
 - **Dépôts** : le site prépare la transaction USDC (wallet du joueur → coffre), la plateforme la signe comme payeuse des frais (0 frais pour le joueur), le joueur la signe dans son wallet, le serveur l'envoie. Le crédit n'a lieu que lorsque la transaction est définitive (« finalized »), lue directement sur la chaîne.
+- **Retraits** : uniquement vers le wallet du compte, 5 $ minimum, 0 frais. Le compte est débité tout de suite, puis les USDC partent du **wallet chaud** (le même que le payeur des frais), qui garde une petite réserve. Le coffre ne sert qu'à recevoir : sa clé n'est jamais sur le serveur. La signature de chaque envoi est enregistrée avant l'envoi, et une transaction n'est refaite que si la précédente a été refusée, a échoué ou a expiré sans arriver : jamais de double paiement. Avant chaque envoi, on vérifie que coffre + réserve couvrent ce que la plateforme doit.
+- **Garde-fous des retraits** (`src/lib/limits.ts`) : au-delà de 2000 $ par retrait, ou de 10 000 $ retirés sur 24 h pour toute la plateforme, le retrait attend une validation manuelle.
 
 **État actuel** :
-- Avec Supabase : connexion, solde, dépôts USDC (devnet) et mises sont réels. Les retraits arrivent à l'étape suivante.
+- Avec Supabase : connexion, solde, dépôts, retraits USDC (devnet) et mises sont réels.
 - Sans Supabase (dev local) : connexion réelle, mais solde et mises en démo dans le navigateur.
 
 ## Lancer en local
@@ -46,7 +48,10 @@ src/lib/solana-wallets.ts   détection des wallets (Wallet Standard) et signatur
 src/lib/wallet.tsx          état du compte côté navigateur (réel via /api/account, ou démo)
 src/lib/solana.ts           Solana côté serveur : RPC Alchemy, transaction de dépôt, lecture des transactions du coffre
 src/lib/deposits.ts         détection et crédit des dépôts, synchro du coffre, contrôle coffre ≥ engagements
+src/lib/withdrawals.ts      retraits : demande, envoi, rapprochement avec la chaîne
 src/lib/account.ts          solde, mises et historique ; placement d'une mise
+src/app/api/withdraw/       demande de retrait ; status (suivi)
+src/app/api/health/         diagnostic de la configuration (aucun secret affiché)
 src/app/api/account/        compte du joueur connecté
 src/app/api/deposit/        prepare → submit → status ; info (adresses publiques du coffre)
 src/app/api/bets/           placer une mise
@@ -65,7 +70,8 @@ public/kols/            avatars des KOLs
 2. Puis `supabase/seed/0001_kols_and_markets.sql` (7 KOLs, 30 jours de PnL, 2 défis).
 3. Puis `supabase/migrations/0002_accounts.sql` (comptes et sessions). **Obligatoire pour la connexion** dès que Supabase est configuré.
 4. Puis `supabase/migrations/0003_ledger.sql` (registre, dépôts, mises, contrôle du coffre). **Obligatoire pour les dépôts et les mises.**
-5. Tous les scripts sont rejouables sans danger.
+5. Puis `supabase/migrations/0004_withdrawals.sql` (retraits). **Obligatoire pour les retraits.**
+6. Tous les scripts sont rejouables sans danger.
 
 Tables : `kols`, `kol_stats`, `pnl_snapshots`, `markets`, `outcomes`, `accounts`, `sessions`, `vault_signatures`, `ledger_entries`, `bets`, `solvency_checks` (+ `trades`, `positions` de l'ancien modèle Oui/Non, plus utilisées).
 Vues publiques : `market_stats` (pot, joueurs), `outcome_pools` (pot par KOL), `recent_bets` (dernières mises, adresse raccourcie), `kol_pnl_series`.
@@ -76,7 +82,7 @@ Les pots se remplissent avec les vraies mises : le seed n'en crée plus.
 
 1. ~~Connexion multi-wallets et comptes~~ (fait).
 2. ~~Registre, dépôts (devnet) et mises~~ (fait).
-3. **Retraits** : uniquement vers le wallet du compte, plafonds, frais réseau payés par la plateforme.
+3. ~~Retraits~~ (fait).
 4. **PnL des KOLs** : cron qui lit le wallet principal de chaque KOL (Solana Tracker + calcul maison pour comparer) et l'écrit dans Supabase.
 5. **Résolution** : désigner le gagnant, répartir le pot, rembourser si personne n'a misé sur lui.
 
@@ -118,4 +124,11 @@ Sans `ALCHEMY_API`, `VAULT_ADDRESS` et `FEE_PAYER_SECRET_KEY`, le bouton Dépose
    Sans webhook, les dépôts faits avec le bouton sont quand même crédités (le navigateur suit la transaction) ; le webhook sert pour les envois directs au coffre.
 5. Pour voir tes USDC de test dans Phantom : Paramètres → Paramètres développeur → Mode testnet → Solana Devnet.
 
-Le payeur des frais ne détient que quelques SOL : s'il est compromis, la perte est limitée à ces SOL. Les USDC des joueurs sont sur le coffre, dont la clé n'est jamais sur le serveur.
+Le wallet chaud (payeur des frais + réserve des retraits) ne détient que quelques SOL et une petite réserve d'USDC : s'il est compromis, la perte est limitée à ça. Les USDC des joueurs sont sur le coffre, dont la clé n'est jamais sur le serveur.
+
+### Retraits : exploitation
+
+- **Recharger la réserve** : envoie des USDC du coffre vers l'adresse `payeur_des_frais` affichée sur `/api/health` (ligne `reserve_retraits_USDC`). Sur devnet, tu peux aussi l'alimenter directement avec le faucet Circle. Tant que la réserve est vide, les retraits restent « en attente » et repartent tout seuls dès qu'elle est rechargée (à la visite du joueur ou par la tâche planifiée).
+- **Valider un retrait en vérification** (Supabase → SQL Editor) : `update withdrawals set status = 'QUEUED' where id = '…';`
+- **Refuser un retrait en vérification** (le joueur est recrédité) : `select refund_withdrawal('…', 'raison');`
+- **Voir les retraits en cours** : `select id, destination, amount_micro / 1e6 as usdc, status, last_error from withdrawals where status <> 'CONFIRMED' order by created_at;`

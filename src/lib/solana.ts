@@ -13,11 +13,15 @@ import {
   getBase58Encoder,
   getBase64EncodedWireTransaction,
   getBase64Encoder,
+  getSignatureFromTransaction,
   getTransactionDecoder,
+  isSolanaError,
   partiallySignTransactionMessageWithSigners,
   pipe,
+  SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  signTransactionMessageWithSigners,
 } from "@solana/kit";
 import {
   TOKEN_PROGRAM_ADDRESS,
@@ -32,8 +36,9 @@ import { CLUSTER } from "./cluster";
  *
  * - Coffre : adresse publique VAULT_ADDRESS. Les dépôts arrivent sur son compte USDC.
  *   Sa clé n'est jamais sur le serveur pour les dépôts.
- * - Payeur des frais : FEE_PAYER_SECRET_KEY, un petit wallet qui ne contient que quelques SOL
- *   et paie le réseau pour les joueurs (0 frais). Il ne détient jamais d'USDC.
+ * - Wallet chaud : FEE_PAYER_SECRET_KEY. Il paie le réseau pour les joueurs (0 frais) et envoie
+ *   les retraits depuis une petite réserve d'USDC, rechargée à la main depuis le coffre.
+ *   Si sa clé fuit, la perte se limite à cette réserve et à quelques SOL.
  */
 
 const USDC_MINTS = {
@@ -50,6 +55,8 @@ export type SolanaConfig = {
   vault: Address;
   vaultAta: Address;
   feePayer: KeyPairSigner;
+  /** Compte USDC du wallet chaud (réserve des retraits). */
+  hotAta: Address;
 };
 
 function rpcUrl(): string | null {
@@ -87,7 +94,8 @@ export function solanaConfig(): Promise<SolanaConfig | null> {
     const [vaultAta] = await findAssociatedTokenPda({ owner: vault, mint, tokenProgram: TOKEN_PROGRAM_ADDRESS });
     const feePayer = await createKeyPairSignerFromBytes(secretBytes(secret));
     if (feePayer.address === vault) throw new Error("Le payeur des frais doit être un autre wallet que le coffre");
-    return { rpc: createSolanaRpc(url), mint, vault, vaultAta, feePayer };
+    const [hotAta] = await findAssociatedTokenPda({ owner: feePayer.address, mint, tokenProgram: TOKEN_PROGRAM_ADDRESS });
+    return { rpc: createSolanaRpc(url), mint, vault, vaultAta, feePayer, hotAta };
   })().catch((e) => {
     config = null;
     console.error("[solana] configuration invalide :", (e as Error).message);
@@ -215,11 +223,89 @@ export async function recentVaultSignatures(cfg: SolanaConfig, before?: Signatur
   return cfg.rpc.getSignaturesForAddress(cfg.vaultAta, { limit: 100, commitment: "confirmed", ...(before ? { before } : {}) }).send();
 }
 
-/** USDC détenus par le coffre (définitif). */
-export async function vaultBalanceMicro(cfg: SolanaConfig): Promise<bigint> {
+async function usdcBalance(cfg: SolanaConfig, ata: Address, commitment: "confirmed" | "finalized"): Promise<bigint> {
   const r = await cfg.rpc
-    .getTokenAccountBalance(cfg.vaultAta, { commitment: "finalized" })
+    .getTokenAccountBalance(ata, { commitment })
     .send()
     .catch(() => null);
   return r ? BigInt(r.value.amount) : 0n;
+}
+
+/** USDC détenus par le coffre (définitif). */
+export const vaultBalanceMicro = (cfg: SolanaConfig) => usdcBalance(cfg, cfg.vaultAta, "finalized");
+
+/** USDC de la réserve des retraits (wallet chaud). */
+export const hotBalanceMicro = (cfg: SolanaConfig, commitment: "confirmed" | "finalized" = "confirmed") =>
+  usdcBalance(cfg, cfg.hotAta, commitment);
+
+/**
+ * Transaction de retrait : réserve du wallet chaud → compte USDC du joueur (créé au besoin, à nos frais).
+ * Entièrement signée par le wallet chaud. Sa signature identifie la transaction : on l'enregistre
+ * avant l'envoi pour toujours savoir si l'argent est parti.
+ */
+export async function buildWithdrawalTransaction(cfg: SolanaConfig, destination: Address, amountMicro: bigint) {
+  const [destinationAta] = await findAssociatedTokenPda({ owner: destination, mint: cfg.mint, tokenProgram: TOKEN_PROGRAM_ADDRESS });
+  const exists = (await cfg.rpc.getAccountInfo(destinationAta, { commitment: "confirmed", encoding: "base64" }).send()).value !== null;
+  const { value: blockhash } = await cfg.rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
+  const instructions = [
+    ...(exists
+      ? []
+      : [getCreateAssociatedTokenIdempotentInstruction({ payer: cfg.feePayer, ata: destinationAta, owner: destination, mint: cfg.mint })]),
+    getTransferCheckedInstruction({
+      source: cfg.hotAta,
+      mint: cfg.mint,
+      destination: destinationAta,
+      authority: cfg.feePayer,
+      amount: amountMicro,
+      decimals: USDC_DECIMALS,
+    }),
+  ];
+  const message = pipe(
+    createTransactionMessage({ version: "legacy" }),
+    (m) => setTransactionMessageFeePayerSigner(cfg.feePayer, m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
+    (m) => appendTransactionMessageInstructions(instructions, m),
+  );
+  const tx = await signTransactionMessageWithSigners(message);
+  return {
+    wire: getBase64EncodedWireTransaction(tx),
+    signature: getSignatureFromTransaction(tx) as string,
+    lastValidBlockHeight: Number(blockhash.lastValidBlockHeight),
+  };
+}
+
+/** Refus avant diffusion (simulation) : la transaction n'est jamais partie, on peut la refaire sans risque. */
+export class NotBroadcastError extends Error {}
+
+export async function sendWireTransaction(cfg: SolanaConfig, wire: ReturnType<typeof getBase64EncodedWireTransaction>) {
+  try {
+    await cfg.rpc.sendTransaction(wire, { encoding: "base64", preflightCommitment: "confirmed" }).send();
+  } catch (e) {
+    if (isSolanaError(e, SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE)) {
+      throw new NotBroadcastError((e as Error).message);
+    }
+    // Autre erreur (réseau, délai) : elle a peut-être été diffusée. On ne refait rien avant expiration.
+    throw e;
+  }
+}
+
+/** État d'une transaction : définitive, en cours, échouée, ou inconnue du réseau. */
+export async function signatureState(cfg: SolanaConfig, signature: string): Promise<"finalized" | "pending" | "failed" | "unknown"> {
+  const { value } = await cfg.rpc.getSignatureStatuses([signature as Signature], { searchTransactionHistory: true }).send();
+  const st = value[0];
+  if (st) {
+    if (st.err) return "failed";
+    return st.confirmationStatus === "finalized" ? "finalized" : "pending";
+  }
+  // Deuxième avis avant de conclure « inconnue » (un nœud en retard pourrait l'ignorer à tort) :
+  // une transaction jugée inconnue peut être refaite, il ne faut donc jamais se tromper dans ce sens.
+  const tx = await cfg.rpc
+    .getTransaction(signature as Signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0, encoding: "json" })
+    .send();
+  if (!tx) return "unknown";
+  return tx.meta?.err ? "failed" : "pending";
+}
+
+export async function currentBlockHeight(cfg: SolanaConfig): Promise<number> {
+  return Number(await cfg.rpc.getBlockHeight({ commitment: "confirmed" }).send());
 }

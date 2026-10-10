@@ -3,12 +3,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { fail } from "@/lib/auth";
 import { checkSolvency, syncVault } from "@/lib/deposits";
 import { solanaConfig } from "@/lib/solana";
+import { processOpenWithdrawals } from "@/lib/withdrawals";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const maxDuration = 60;
 
 /**
- * Filet de sécurité planifié : rattrape les dépôts manqués et contrôle le coffre.
+ * Filet de sécurité planifié : rattrape les dépôts manqués, fait avancer les retraits, contrôle le coffre.
  * Appel : Authorization: Bearer <CRON_SECRET> (Vercel Cron l'envoie tout seul).
  */
 export async function GET(req: NextRequest) {
@@ -25,9 +26,13 @@ export async function GET(req: NextRequest) {
     console.error("[cron] synchro :", e.message);
     return { error: "synchro interrompue" };
   });
+  const withdrawals = await processOpenWithdrawals(cfg, db).catch((e: Error) => {
+    console.error("[cron] retraits :", e.message);
+    return { error: "retraits interrompus" };
+  });
   try {
     const solvency = await checkSolvency(cfg, db);
-    return NextResponse.json({ ok: solvency.ok, sync, solvency });
+    return NextResponse.json({ ok: solvency.ok, sync, withdrawals, solvency });
   } catch (e) {
     console.error("[cron] contrôle du coffre :", (e as Error).message);
     return fail(500, "Contrôle du coffre impossible.");

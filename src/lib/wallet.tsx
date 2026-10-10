@@ -19,6 +19,8 @@ type Modal = "connect" | "deposit" | "withdraw" | null;
 
 export type DepositStep = "prepare" | "sign" | "send" | "confirm";
 export type DepositResult = { error: string } | { credited: number; excess: number };
+export type WithdrawStatus = "REVIEW" | "QUEUED" | "SENDING" | "CONFIRMED" | "REFUNDED";
+export type WithdrawResult = { error: string } | { status: WithdrawStatus; signature: string | null };
 
 type Demo = { owner: string | null; balance: number; bets: Bet[]; activity: Activity[] };
 
@@ -44,8 +46,7 @@ type WalletState = {
   refresh: () => Promise<void>;
   stakedOn: (marketSlug: string) => number;
   deposit: (amount: number, onStep?: (s: DepositStep) => void) => Promise<DepositResult>;
-  /** Renvoie un message d'erreur, ou null si c'est fait. */
-  withdraw: (amount: number) => string | null;
+  withdraw: (amount: number, onSending?: () => void) => Promise<WithdrawResult>;
   placeBet: (bet: Omit<Bet, "id" | "createdAt">, open: boolean) => Promise<string | null>;
 };
 
@@ -95,15 +96,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [modal, setModal] = useState<Modal>(null);
 
   const load = useCallback(async (s: { address: string; walletApp: string | null } | null) => {
+    // Le compte est chargé avant d'afficher la session : pas de passage furtif par le mode démo.
+    const acc = s ? await fetchAccount().catch(() => null) : null;
     setSession(s);
-    if (!s) {
-      setAccount(null);
-      setDemo(EMPTY);
-      return;
-    }
-    const acc = await fetchAccount().catch(() => null);
     setAccount(acc);
-    setDemo(acc ? EMPTY : loadDemo(s.address));
+    setDemo(s && !acc ? loadDemo(s.address) : EMPTY);
   }, []);
 
   // Reprend la session existante (cookie httpOnly, vérifié par le serveur).
@@ -213,13 +210,42 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         }
       },
 
-      withdraw: (amount) => {
-        if (live) return "Les retraits arrivent à la prochaine étape.";
-        const err = checkWithdraw(amount, demo.balance);
-        if (err) return err;
-        const a = entry({ type: "RETRAIT", label: "Retrait USDC vers le wallet (démo)", amount: -amount });
-        setDemo((d) => ({ ...d, balance: round2(d.balance - amount), activity: [a, ...d.activity].slice(0, 50) }));
-        return null;
+      withdraw: async (amount, onSending) => {
+        const err = checkWithdraw(amount, balance + (live ? account.excess : 0));
+        if (err) return { error: err };
+        if (!live) {
+          const a = entry({ type: "RETRAIT", label: "Retrait USDC vers le wallet (démo)", amount: -amount });
+          setDemo((d) => ({ ...d, balance: round2(d.balance - amount), activity: [a, ...d.activity].slice(0, 50) }));
+          return { status: "CONFIRMED", signature: null };
+        }
+        try {
+          const r = await api<{ id: string; status: WithdrawStatus }>("/api/withdraw", {
+            method: "POST",
+            body: JSON.stringify({ amount }),
+          });
+          await refresh(); // le compte est débité dès la demande
+          if (r.status === "REVIEW") return { status: r.status, signature: null };
+          onSending?.();
+          // Suivi jusqu'à l'arrivée définitive (~15 s), au plus 1 min 30.
+          let last: WithdrawStatus = r.status;
+          for (let i = 0; i < 30; i++) {
+            await sleep(3000);
+            const st = await api<{ status: WithdrawStatus; signature: string | null }>(
+              `/api/withdraw/status?id=${encodeURIComponent(r.id)}`,
+            ).catch(() => null);
+            if (!st) continue;
+            last = st.status;
+            if (st.status === "CONFIRMED" || st.status === "REFUNDED" || st.status === "REVIEW") {
+              await refresh();
+              return { status: st.status, signature: st.signature };
+            }
+            // Toujours en file après plusieurs essais : la réserve est à recharger, inutile d'attendre ici.
+            if (st.status === "QUEUED" && i >= 3) break;
+          }
+          return { status: last, signature: null };
+        } catch (e) {
+          return { error: (e as Error).message || "Retrait impossible." };
+        }
       },
 
       placeBet: async (bet, open) => {

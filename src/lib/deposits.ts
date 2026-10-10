@@ -2,7 +2,7 @@ import "server-only";
 import type { Signature } from "@solana/kit";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEPOSIT_CAP } from "./limits";
-import { type SolanaConfig, isSignatureKnown, readVaultTransaction, recentVaultSignatures, vaultBalanceMicro } from "./solana";
+import { type SolanaConfig, hotBalanceMicro, isSignatureKnown, readVaultTransaction, recentVaultSignatures, vaultBalanceMicro } from "./solana";
 
 /**
  * Détection et crédit des dépôts.
@@ -111,14 +111,14 @@ export async function processPending(cfg: SolanaConfig, db: SupabaseClient) {
   return { results, interrupted };
 }
 
-/** Contrôle : le coffre doit détenir au moins ce que la plateforme doit aux joueurs. */
+/** Contrôle : coffre + réserve des retraits doivent couvrir ce que la plateforme doit aux joueurs. */
 export async function checkSolvency(cfg: SolanaConfig, db: SupabaseClient) {
-  const vault = Number(await vaultBalanceMicro(cfg));
+  const [vault, hot] = (await Promise.all([vaultBalanceMicro(cfg), hotBalanceMicro(cfg, "finalized")])).map(Number);
   const { data, error } = await db.rpc("liabilities_micro");
   if (error) throw new Error(`liabilities_micro : ${error.message}`);
   const liabilities = Number(data);
-  const ok = vault >= liabilities;
-  await db.from("solvency_checks").insert({ vault_micro: vault, liabilities_micro: liabilities, ok });
-  if (!ok) console.error(`[coffre] ALERTE : coffre ${vault / MICRO} USDC < engagements ${liabilities / MICRO} USDC`);
-  return { vault: vault / MICRO, liabilities: liabilities / MICRO, ok };
+  const ok = vault + hot >= liabilities;
+  await db.from("solvency_checks").insert({ vault_micro: vault, hot_micro: hot, liabilities_micro: liabilities, ok });
+  if (!ok) console.error(`[coffre] ALERTE : coffre ${vault / MICRO} + réserve ${hot / MICRO} USDC < engagements ${liabilities / MICRO} USDC`);
+  return { vault: vault / MICRO, hot: hot / MICRO, liabilities: liabilities / MICRO, ok };
 }

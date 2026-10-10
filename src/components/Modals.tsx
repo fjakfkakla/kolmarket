@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Check, ExternalLink, Info, Loader2, X } from "lucide-react";
 import type { Wallet } from "@wallet-standard/base";
-import { type DepositStep, useWallet } from "@/lib/wallet";
+import { type DepositStep, type WithdrawStatus, useWallet } from "@/lib/wallet";
 import { CLUSTER } from "@/lib/cluster";
 import { DEPOSIT_CAP, MIN_DEPOSIT, MIN_WITHDRAWAL, depositRoom } from "@/lib/limits";
 import { INSTALL_LINKS, openInWalletLinks, useSolanaWallets } from "@/lib/solana-wallets";
@@ -219,30 +219,76 @@ function DepositModal() {
   );
 }
 
+const EXPLORER = (sig: string) => `https://explorer.solana.com/tx/${sig}${CLUSTER === "devnet" ? "?cluster=devnet" : ""}`;
+
 function WithdrawModal() {
   const w = useWallet();
-  const [amount, setAmount] = useState(Math.min(50, Math.floor(w.balance)));
+  const available = Math.floor((w.balance + w.excess) * 100) / 100;
+  const [amount, setAmount] = useState(Math.min(50, Math.floor(available)));
+  const [step, setStep] = useState<"form" | "request" | "sending" | "done">("form");
+  const [result, setResult] = useState<{ status: WithdrawStatus; signature: string | null } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const busy = step === "request" || step === "sending";
+
+  const submit = async () => {
+    setErr(null);
+    setStep("request");
+    const r = await w.withdraw(amount, () => setStep("sending"));
+    if ("error" in r) {
+      setErr(r.error);
+      setStep("form");
+    } else {
+      setResult(r);
+      setStep("done");
+    }
+  };
+
+  if (step === "done" && result) {
+    const done = result.status === "CONFIRMED";
+    return (
+      <Shell title="Retirer des USDC" onClose={() => w.openModal(null)}>
+        <div className="py-6 text-center pop">
+          <div className={`mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full ${done ? "bg-up-soft text-up" : "bg-gold-soft text-gold-3"}`}>
+            {done ? <Check size={28} /> : <Info size={28} />}
+          </div>
+          <div className="text-lg font-bold">
+            {done ? "Retrait arrivé" : result.status === "REVIEW" ? "Retrait en vérification" : result.status === "REFUNDED" ? "Retrait annulé" : "Retrait enregistré"}
+          </div>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-muted">
+            {done
+              ? `${usd(amount)} USDC sont dans ton wallet.`
+              : result.status === "REVIEW"
+                ? "Montant inhabituel : il part après une vérification manuelle, sous 24 h. Il est déjà réservé sur ton compte."
+                : result.status === "REFUNDED"
+                  ? "Le montant a été recrédité sur ton solde."
+                  : result.status === "SENDING"
+                    ? "Envoyé sur Solana, la confirmation arrive dans quelques instants."
+                    : "Il partira automatiquement dès que possible. Il est déjà réservé sur ton compte."}
+          </p>
+          {result.signature && (
+            <a href={EXPLORER(result.signature)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-gold-3 underline">
+              Voir la transaction <ExternalLink size={12} />
+            </a>
+          )}
+        </div>
+      </Shell>
+    );
+  }
+
   return (
-    <Shell title="Retirer des USDC" onClose={() => w.openModal(null)}>
+    <Shell title="Retirer des USDC" onClose={() => !busy && w.openModal(null)}>
       <div className="space-y-4">
         <div className="rounded-xl bg-cream-2 p-3 text-sm">
-          Disponible : <span className="mono font-bold">{usd(w.balance + w.excess)}</span>
+          Disponible : <span className="mono font-bold">{usd(available)}</span>
           {w.excess > 0 && <span className="text-muted"> (dont {usd(w.excess)} au-delà du plafond)</span>}
         </div>
-        {w.live && (
-          <div className="flex items-start gap-2 rounded-xl bg-gold-soft p-3 text-xs text-ink">
-            <Info size={16} className="mt-0.5 shrink-0 text-gold-3" />
-            Les retraits arrivent à la prochaine étape.
-          </div>
-        )}
         <div>
           <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Montant</div>
           <div className="flex gap-2">
-            <input type="number" min={MIN_WITHDRAWAL} max={w.balance} value={amount} onChange={(e) => setAmount(Number(e.target.value) || 0)} className="input mono" />
-            <button onClick={() => setAmount(w.balance)} className="btn-ghost px-3">Max</button>
+            <input type="number" min={MIN_WITHDRAWAL} max={available} value={amount} disabled={busy} onChange={(e) => setAmount(Number(e.target.value) || 0)} className="input mono" />
+            <button disabled={busy} onClick={() => setAmount(available)} className="btn-ghost px-3">Max</button>
           </div>
-          <div className="mt-1 text-xs text-muted">Minimum {usd(MIN_WITHDRAWAL)} · 0 frais</div>
+          <div className="mt-1 text-xs text-muted">Minimum {usd(MIN_WITHDRAWAL)} · 0 frais : on paie le réseau pour toi</div>
         </div>
         <div>
           <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Vers ton wallet</div>
@@ -250,16 +296,9 @@ function WithdrawModal() {
           <div className="mt-1 text-xs text-muted">Les retraits partent uniquement vers le wallet connecté.</div>
         </div>
         {err && <p className="text-sm text-down">{err}</p>}
-        <button
-          onClick={() => {
-            const e = w.withdraw(amount);
-            if (e) setErr(e);
-            else w.openModal(null);
-          }}
-          disabled={w.live}
-          className="btn-dark w-full py-3 disabled:opacity-50"
-        >
-          <ArrowUpFromLine size={16} /> Retirer {usd(amount)}{w.live ? "" : " (démo)"}
+        <button onClick={submit} disabled={busy} className="btn-dark w-full py-3 disabled:opacity-60">
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <ArrowUpFromLine size={16} />}{" "}
+          {step === "request" ? "Demande…" : step === "sending" ? "Envoi sur Solana (~15 s)…" : `Retirer ${usd(amount)}${w.live ? "" : " (démo)"}`}
         </button>
       </div>
     </Shell>

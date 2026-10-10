@@ -11,6 +11,10 @@ export const MIN_BET = 1;
 export const MIN_DEPOSIT = 1;
 /** Évite qu'on paie le réseau pour des retraits de quelques centimes. Ce n'est pas un frais. */
 export const MIN_WITHDRAWAL = 5;
+/** Au-delà, un retrait attend une validation manuelle (filet de sécurité si la base était piratée). */
+export const WITHDRAWAL_REVIEW_ABOVE = 2000;
+/** Total des retraits de toute la plateforme sur 24 h au-delà duquel tout passe en validation manuelle. */
+export const PLATFORM_DAILY_WITHDRAWALS = 10000;
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
