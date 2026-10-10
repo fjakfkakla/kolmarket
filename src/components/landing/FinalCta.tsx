@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import type { Kol } from "@/data/kols";
@@ -41,11 +41,11 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
           <h2 className="display text-[clamp(48px,8vw,128px)] text-white">
             The future is <span className="text-blue-sky">tradable.</span>
           </h2>
-          <Link href="/app" className="pill-white mt-8">
+          <AppLink hide href="/app" className="pill-white mt-8">
             {t.landing.nav.launchLong} <ArrowRight size={18} />
-          </Link>
+          </AppLink>
           <div className="mt-10 grid w-full max-w-[760px] gap-3 sm:grid-cols-2">
-            <Link href={`/market/${kolMarket.slug}`} className="card card-hover flex items-center gap-3 p-4 text-left text-ink">
+            <AppLink hide href={`/market/${kolMarket.slug}`} className="card card-hover flex items-center gap-3 p-4 text-left text-ink">
               <div className="flex -space-x-2.5">
                 {kols.slice(0, 3).map((k) => (
                   <Avatar key={k.id} kol={k} size={38} className="ring-[3px] ring-white" />
@@ -53,8 +53,8 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
               </div>
               <span className="flex-1 font-display text-[19px] font-extrabold tracking-[-0.02em]">Trade the KOL</span>
               <ArrowRight size={18} className="text-blue" />
-            </Link>
-            <Link href={`/market/${coinMarket.slug}`} className="card card-hover flex items-center gap-3 p-4 text-left text-ink">
+            </AppLink>
+            <AppLink hide href={`/market/${coinMarket.slug}`} className="card card-hover flex items-center gap-3 p-4 text-left text-ink">
               <div className="flex -space-x-2.5">
                 {coinMarket.outcomes.slice(1, 4).map((o) => (
                   <span key={o.id} className="rounded-full ring-[3px] ring-white">
@@ -64,7 +64,7 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
               </div>
               <span className="flex-1 font-display text-[19px] font-extrabold tracking-[-0.02em]">Trade the coin</span>
               <ArrowRight size={18} className="text-blue" />
-            </Link>
+            </AppLink>
           </div>
         </div>
       </div>
