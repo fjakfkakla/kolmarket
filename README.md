@@ -35,7 +35,7 @@ Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typech
 
 Avant l'ouverture, **seule la landing (`/`) répond** : toute autre adresse (app, marchés, compte, `/admin`, `/api/*`…)
 renvoie vers `/` (404 pour une API). Personne n'entre, admin compris. La landing n'a plus aucun lien vers l'app
-et affiche « Access opens in: » avec le chrono. Voir `src/proxy.ts` et `src/lib/launch.ts`.
+et chaque lien vers l'app ouvre « Access opens in: » et le chrono en plein écran, sur la landing même. Voir `src/proxy.ts` et `src/lib/launch.ts`.
 
 Le chrono se règle uniquement par une variable Railway, aucune page à trouver :
 
