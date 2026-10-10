@@ -37,9 +37,9 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
         </div>
         <div className="relative z-[2] flex flex-col items-center px-5 pt-16 text-center md:pt-24">
           <h2 className="display text-[clamp(48px,8vw,128px)] text-white">
-            The future is <span className="text-blue-sky">tradable.</span>
+            The future is <span className="accent text-volt">tradable.</span>
           </h2>
-          <Link href="/app" className="pill-white mt-8">
+          <Link href="/app" className="pill-volt mt-8">
             Lancer l&apos;application <ArrowRight size={18} />
           </Link>
           <div className="mt-10 grid w-full max-w-[760px] gap-3 sm:grid-cols-2">

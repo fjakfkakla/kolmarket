@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 /*
- * Marketcoins : la DA memescanner (papier clair, objets imprimés, une couleur d'action)
- * repeinte au bleu Polymarket. Bricolage pour ce qui est gros, Inter pour le reste,
- * aucune mono. Les ombres sont froides et portées, jamais un halo.
+ * Marketcoins : la charte Polymarket (Poly Blue #2E5CFF, noir, blanc, Inter) et notre signature.
+ * Le bleu est un aplat, jamais un dégradé. Archivo élargi pour ce qui est gros, Instrument Serif
+ * italique pour le mot qui compte, le volt pour la seule action d'une planche bleue.
+ * Les ombres sont dures et décalées, comme un ticket imprimé : pas de halo, pas de verre teinté.
  */
 
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-bricolage), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-display: var(--font-archivo), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
 
   --color-paper: #fbfcff;
   --color-paper-2: #f4f6fb;
-  --color-ink: #0a0f1e;
-  --color-ink-2: #2a3245;
+  --color-ink: #0b0c10;
+  --color-ink-2: #262a35;
   --color-muted: #5b6478;
   --color-faint: #8a93a8;
   --color-line: #e6e9f2;
@@ -21,12 +23,16 @@
   --color-relief: #eef1f9;
   --color-relief-2: #f3f5fa;
 
-  /* Le bleu Polymarket : il s'écrit et il se clique. */
+  /* Poly Blue, la valeur de la charte Polymarket : il s'écrit et il se clique. */
   --color-blue: #2e5cff;
-  --color-blue-deep: #1f45e0;
+  --color-blue-deep: #1d44d6;
   --color-blue-light: #5b80ff;
-  --color-blue-sky: #a9c1ff;
+  --color-blue-sky: #b9ccff;
   --color-blue-soft: #eaf0ff;
+
+  /* Le volt : notre signature, le mot qui compte et l'action posée sur le bleu. */
+  --color-volt: #d6ff3d;
+  --color-volt-deep: #b3e000;
 
   /* Le vert et le rouge disent un état : Oui / Non, gain / perte. */
   --color-up: #00a03c;
@@ -56,8 +62,19 @@ body {
 @utility display {
   font-family: var(--font-display);
   font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.02;
+  font-stretch: 112%;
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+}
+/* Le mot qui compte : en italique serif, plus grand d'un cheveu pour tenir face à l'Archivo. */
+@utility accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-stretch: normal;
+  letter-spacing: -0.01em;
+  font-size: 1.1em;
+  line-height: 0.9;
 }
 @utility num { font-variant-numeric: tabular-nums; }
 
@@ -87,13 +104,10 @@ body {
   /* La plaque : le beau bouton, une seule recette, seule la couleur change. */
   .plaque {
     @apply btn text-white;
-    --pl-a: #5b80ff;
     --pl-b: #2e5cff;
-    --pl-c: #1f45e0;
-    --pl-shadow: rgba(31, 69, 224, 0.62);
-    background: linear-gradient(135deg, var(--pl-a) 0%, var(--pl-b) 46%, var(--pl-c) 100%);
-    box-shadow: 0 14px 26px -14px var(--pl-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+    --pl-c: #1d44d6;
+    background: var(--pl-b);
+    box-shadow: 0 3px 0 var(--pl-c), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   }
   .plaque::after {
     content: "";
@@ -104,41 +118,40 @@ body {
     background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.38) 50%, transparent 70%);
   }
   .plaque:not(:disabled):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 18px 30px -14px var(--pl-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 var(--pl-c), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   }
   .plaque:not(:disabled):hover::after { transform: translateX(130%); transition: transform 0.75s ease; }
   .plaque:not(:disabled):active {
-    transform: translateY(1px);
-    box-shadow: 0 6px 14px -10px var(--pl-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--pl-c), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
-  .plaque-up { --pl-a: #2fd36d; --pl-b: #00a03c; --pl-c: #007e26; --pl-shadow: rgba(0, 126, 38, 0.55); }
-  .plaque-down { --pl-a: #ff7a7d; --pl-b: #e5484d; --pl-c: #c42f33; --pl-shadow: rgba(196, 47, 51, 0.5); }
-  .plaque-ink { --pl-a: #2a3245; --pl-b: #141a2c; --pl-c: #0a0f1e; --pl-shadow: rgba(10, 15, 30, 0.5); }
+  .plaque-up { --pl-b: #00a03c; --pl-c: #007028; }
+  .plaque-down { --pl-b: #e5484d; --pl-c: #b5292e; }
+  .plaque-ink { --pl-b: #0b0c10; --pl-c: #2e5cff; }
 
-  /* La pilule blanche : l'action posée sur une planche bleue. */
-  .pill-white {
-    @apply btn rounded-full bg-white px-7 text-blue;
+  /* La pilule volt : la seule action posée sur une planche bleue, ombre noire décalée. */
+  .pill-volt {
+    @apply btn rounded-full bg-volt px-7 text-ink;
     font-family: var(--font-display);
     font-weight: 800;
+    font-stretch: 108%;
     font-size: 1.02rem;
     height: 54px;
-    box-shadow: 0 5px 0 rgba(8, 24, 90, 0.38), 0 22px 36px -16px rgba(5, 18, 60, 0.62);
+    box-shadow: 0 5px 0 var(--color-ink);
   }
-  .pill-white::after {
+  .pill-volt::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
     transform: translateX(-130%);
-    background: linear-gradient(110deg, transparent 30%, rgba(46, 92, 255, 0.16) 50%, transparent 70%);
+    background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
   }
-  .pill-white:hover { transform: translateY(-2px); box-shadow: 0 7px 0 rgba(8, 24, 90, 0.38), 0 26px 40px -16px rgba(5, 18, 60, 0.66); }
-  .pill-white:hover::after { transform: translateX(130%); transition: transform 0.75s ease; }
-  .pill-white:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(8, 24, 90, 0.38), 0 12px 22px -12px rgba(5, 18, 60, 0.6); }
-  .pill-white:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+  .pill-volt:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--color-ink); }
+  .pill-volt:hover::after { transform: translateX(130%); transition: transform 0.75s ease; }
+  .pill-volt:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--color-ink); }
+  .pill-volt:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 
   /* Le fantôme : l'action secondaire. */
   .ghost {
@@ -168,11 +181,9 @@ body {
   .planche {
     position: relative;
     overflow: hidden;
-    border-radius: 30px;
+    border-radius: 20px;
     color: #fff;
-    background: linear-gradient(140deg, #1c3fe6 0%, #2e5cff 46%, #5a84ff 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -4px 0 rgba(0, 0, 0, 0.16),
-      0 30px 60px -36px rgba(13, 32, 84, 0.55);
+    background: var(--color-blue);
   }
   .planche::before {
     content: "";
@@ -180,7 +191,13 @@ body {
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    background: radial-gradient(110% 80% at 14% 0%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 56%);
+    /* le papier millimétré d'un graphique de cours, qui s'efface vers les bords */
+    background-image: linear-gradient(rgba(255, 255, 255, 0.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.075) 1px, transparent 1px);
+    background-size: 56px 56px;
+    background-position: center;
+    -webkit-mask: radial-gradient(ellipse 75% 70% at 50% 45%, #000 20%, transparent 100%);
+    mask: radial-gradient(ellipse 75% 70% at 50% 45%, #000 20%, transparent 100%);
   }
 
   .chip, .chip-blue, .chip-up, .chip-down {
@@ -306,7 +323,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .fade-up, .pop, .stagger > * { animation: none !important; }
-  .plaque::after, .pill-white::after { display: none; }
+  .plaque::after, .pill-volt::after { display: none; }
 }
 
 /* ---------- landing : les écrans qui jouent au défilement ---------- */
@@ -315,8 +332,8 @@ body {
 .ks-yes, [data-row-yes] { transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.18s ease; }
 [data-row-yes].ks-on {
   color: #fff;
-  background: linear-gradient(135deg, #5b80ff 0%, #2e5cff 46%, #1f45e0 100%);
-  box-shadow: 0 12px 22px -12px rgba(31, 69, 224, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+  background: var(--color-blue);
+  box-shadow: 0 3px 0 var(--color-blue-deep);
 }
 .ks-share { transition: box-shadow 0.3s ease, background-color 0.3s ease; }
 .ks-share.ks-on { background: var(--color-blue-soft); box-shadow: inset 0 0 0 2px var(--color-blue); }
@@ -325,7 +342,7 @@ body {
 .ks-summary { opacity: 0; transform: translateY(6px); transition: opacity 0.4s ease, transform 0.4s ease; }
 .ks-summary.ks-on { opacity: 1; transform: none; }
 .ks-press { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.ks-press.ks-on { transform: translateY(2px) scale(0.985); box-shadow: 0 4px 10px -8px rgba(31, 69, 224, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.18); }
+.ks-press.ks-on { transform: translateY(2px) scale(0.985); box-shadow: 0 1px 0 var(--color-blue-deep); }
 .ks-toast { opacity: 0; transform: translateY(12px) scale(0.96); transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .ks-toast.ks-on { opacity: 1; transform: none; }
 .ks-cursor {
@@ -384,7 +401,7 @@ body {
 .story-bar { position: absolute; left: 14px; right: 14px; bottom: 4px; height: 3px; border-radius: 3px; overflow: hidden; }
 .story-bar > i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); border-radius: inherit; }
 .on-plank .story { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); }
-.on-plank .story[data-active="true"] { background: #fff; color: var(--color-blue); box-shadow: 0 5px 0 rgba(8, 24, 90, 0.3), 0 18px 30px -16px rgba(5, 18, 60, 0.6); }
+.on-plank .story[data-active="true"] { background: #fff; color: var(--color-ink); box-shadow: 0 4px 0 var(--color-ink); }
 .on-plank .story .story-bar { background: rgba(255, 255, 255, 0.2); }
 .on-plank .story .story-bar > i { background: #fff; }
 .on-plank .story[data-active="true"] .story-bar { background: rgba(46, 92, 255, 0.15); }
@@ -411,3 +428,10 @@ body {
   .scroll-cue-dot { animation: none; }
   .ks-toast, .ks-summary { transition: none; }
 }
+
+/* Le ruban des cotes : il défile en bas de la planche, comme un bandeau de salle de marché. */
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker { -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.ticker-track { display: flex; width: max-content; animation: ticker 38s linear infinite; }
+.ticker:hover .ticker-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
