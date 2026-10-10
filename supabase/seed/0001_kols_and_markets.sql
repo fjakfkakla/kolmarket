@@ -63,7 +63,9 @@ insert into public.markets (slug, title, question, category, period, challenge_n
   array[
     'Le KOL gagnant est celui dont le wallet Solana listé affiche le PnL réalisé le plus élevé entre le lundi 13 octobre 00:00 et le dimanche 19 octobre 20:00 (heure de Paris).',
     'Le PnL est mesuré en USD sur les ventes effectivement réalisées, hors positions ouvertes. Source : données on-chain publiques du wallet.',
-    'Les mises ferment au début de la période. Pendant le défi, les positions peuvent être revendues au prix du marché.',
+    'Pot commun, 0 frais : ceux qui ont misé sur le KOL gagnant se partagent 100 % du pot, au prorata de leur mise. Si personne n''a misé sur le gagnant, tout le monde est remboursé.',
+    'Les mises ferment au début de la période. Pas de revente : chaque mise reste en jeu jusqu''au résultat. Le gain affiché avant la fermeture est une estimation.',
+    'Mise maximale : 1000 $ par compte sur ce marché.',
     'En cas d''égalité, de wallet changé ou de données indisponibles, le marché est annulé et toutes les mises sont remboursées.'
   ]
 ),
@@ -77,6 +79,9 @@ insert into public.markets (slug, title, question, category, period, challenge_n
   array[
     'Le KOL gagnant est celui dont le wallet Solana listé affiche le PnL réalisé le plus élevé sur 30 jours, du 13 octobre 00:00 au 11 novembre 20:00 (heure de Paris).',
     'Le PnL est mesuré en USD sur les ventes réalisées, hors positions ouvertes.',
+    'Pot commun, 0 frais : ceux qui ont misé sur le KOL gagnant se partagent 100 % du pot, au prorata de leur mise. Si personne n''a misé sur le gagnant, tout le monde est remboursé.',
+    'Les mises ferment au début de la période. Pas de revente : chaque mise reste en jeu jusqu''au résultat. Le gain affiché avant la fermeture est une estimation.',
+    'Mise maximale : 1000 $ par compte sur ce marché.',
     'En cas d''égalité ou de données indisponibles, le marché est annulé et remboursé.'
   ]
 )
@@ -85,7 +90,7 @@ on conflict (slug) do update set
   challenge_no = excluded.challenge_no, starts_at = excluded.starts_at, ends_at = excluded.ends_at,
   closes_at = excluded.closes_at, featured = excluded.featured, rules = excluded.rules;
 
--- Un résultat par KOL et par marché, cotes dérivées du PnL (favori = meilleur PnL)
+-- Un résultat par KOL et par marché ; part du pot de démo dérivée du PnL (favori = meilleur PnL)
 insert into public.outcomes (market_id, kol_id, position, prob, change_24h)
 select
   m.id,
@@ -99,20 +104,20 @@ where m.slug in ('kol-top-profit-7d', 'kol-top-profit-30d')
 on conflict (market_id, kol_id) do update set
   position = excluded.position, prob = excluded.prob, change_24h = excluded.change_24h, updated_at = now();
 
--- Quelques trades de démo pour alimenter volume, pool et activité
+-- Quelques mises de démo pour alimenter le pot et l'activité
 insert into public.trades (wallet, market_id, outcome_id, side, kind, shares, price, amount_usd, fee_usd, created_at)
 select
   w.wallet, o.market_id, o.id, w.side, 'BUY',
   round(w.amount / (case when w.side = 'OUI' then o.prob else 1 - o.prob end), 4),
   case when w.side = 'OUI' then o.prob else 1 - o.prob end,
-  w.amount, round(w.amount * 0.02, 2),
+  w.amount, 0,
   now() - (w.ago || ' minutes')::interval
 from (values
   ('7Gx2kQmFpZ9vN4tLd8sH3rWcA1eB6yU5oP0jK2nM9xVq', 'cooker',  'OUI', 250.00, 1),
-  ('Bq91mNx3Lp8zR2vK7sT4wY6uA1cE5fH9jD0gS8kQ2aa4', 'zeropnl', 'NON',  40.00, 2),
+  ('Bq91mNx3Lp8zR2vK7sT4wY6uA1cE5fH9jD0gS8kQ2aa4', 'zeropnl', 'OUI',  40.00, 2),
   ('3FkdP0mLz9vN2qR7sT4wY6uA1cE5fH8jD1gS2kQ5xm0P', 'cented',  'OUI', 120.00, 4),
   ('9zLmQe7vN2qR8sT4wY6uA1cE5fH9jD0gS3kQ2xP1mQe7', 'decu',    'OUI',  75.00, 6),
-  ('Hh3sK2RvN2qR8sT4wY6uA1cE5fH9jD0gS3kQ2xP1mk2R', 'cooker',  'NON', 500.00, 9),
+  ('Hh3sK2RvN2qR8sT4wY6uA1cE5fH9jD0gS3kQ2xP1mk2R', 'cooker',  'OUI', 500.00, 9),
   ('7Gx2kQmFpZ9vN4tLd8sH3rWcA1eB6yU5oP0jK2nM9xVq', 'chester', 'OUI',  60.00, 15)
 ) as w(wallet, kol_id, side, amount, ago)
 join public.markets m on m.slug = 'kol-top-profit-7d'

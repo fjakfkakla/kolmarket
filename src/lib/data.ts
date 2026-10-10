@@ -89,8 +89,10 @@ export async function getMarkets(): Promise<Market[]> {
 
     return (markets.data as unknown as MarketRow[]).map((m) => {
       const st = statFor(m.id);
+      const pot = num(st?.pool_usd);
+      // Pot commun : `prob` = part du pot misée sur le KOL, `pool` = montant correspondant.
       const outcomes: Outcome[] = m.outcomes
-        .map((o) => ({ kol: kolById.get(o.kol_id), prob: num(o.prob), change24h: num(o.change_24h) }))
+        .map((o) => ({ kol: kolById.get(o.kol_id), prob: num(o.prob), pool: Math.round(num(o.prob) * pot), change24h: num(o.change_24h) }))
         .filter((o): o is Outcome => Boolean(o.kol))
         .sort((a, b) => b.prob - a.prob);
       return {
@@ -104,7 +106,7 @@ export async function getMarkets(): Promise<Market[]> {
         endsAt: m.ends_at,
         closesAt: m.closes_at,
         volume: num(st?.volume_usd),
-        pool: num(st?.pool_usd),
+        pool: pot,
         traders: num(st?.traders),
         rules: m.rules ?? [],
         featured: m.featured,

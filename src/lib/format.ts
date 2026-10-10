@@ -12,6 +12,10 @@ export const usd = (n: number, opts: { compact?: boolean; sign?: boolean } = {})
 export const pct = (p: number) => `${Math.round(p * 100)}%`;
 export const cents = (p: number) => `${Math.round(p * 100)}¢`;
 
+/** Cote du pot commun : « ×4,8 ». Tiret si personne n'a encore misé. */
+export const fmtOdds = (x: number | null) =>
+  x === null ? "—" : `×${x.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: x < 2 ? 2 : 1 })}`;
+
 export const shortWallet = (w: string) => `${w.slice(0, 4)}…${w.slice(-4)}`;
 
 export const dateFr = (iso: string, opts: Intl.DateTimeFormatOptions = {}) =>

@@ -7,8 +7,8 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     id: "objet",
     title: "1. Objet",
     body: [
-      "Marketcoins (« la Plateforme ») est une interface permettant d'acheter et de vendre des parts sur des marchés de prédiction portant sur la performance de traders publics (« KOLs ») mesurée à partir de données blockchain publiques.",
-      "Les présentes conditions régissent l'accès et l'utilisation de la Plateforme. En connectant un wallet ou en négociant, vous les acceptez sans réserve.",
+      "Marketcoins (« la Plateforme ») permet de miser des USDC sur des marchés en pot commun portant sur la performance de traders publics (« KOLs ») mesurée à partir de données blockchain publiques.",
+      "Les présentes conditions régissent l'accès et l'utilisation de la Plateforme. En connectant un wallet ou en misant, vous les acceptez sans réserve.",
     ],
   },
   {
@@ -21,10 +21,13 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     ],
   },
   {
-    id: "non-custodial",
-    title: "3. Nature non-custodiale",
+    id: "fonds",
+    title: "3. Compte et conservation des fonds",
     body: [
-      "La Plateforme ne détient jamais vos fonds ni vos clés privées. Les dépôts, mises et retraits sont exécutés par des smart contracts sur la blockchain Solana que vous signez avec votre propre wallet.",
+      "Votre compte est lié à l'adresse publique du wallet Solana avec lequel vous vous connectez, par une simple signature. La Plateforme n'a jamais accès à votre wallet ni à vos clés privées.",
+      "Les USDC que vous déposez sont conservés par la Plateforme dans un coffre dédié jusqu'à leur retrait. Les retraits sont envoyés uniquement vers l'adresse du wallet lié au compte.",
+      "Plafonds : vos dépôts ne peuvent pas porter votre compte (solde et mises en cours) au-delà de 1000 USDC ; les gains peuvent dépasser ce montant et restent retirables. Retrait minimum : 5 USDC.",
+      "Aucun frais n'est prélevé sur les dépôts, les mises ou les retraits ; les frais du réseau Solana sont pris en charge par la Plateforme.",
       "Vous êtes seul responsable de la sécurité de votre wallet, de votre phrase de récupération et de vos appareils. Aucune transaction signée ne peut être annulée.",
     ],
   },
@@ -33,9 +36,10 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     title: "4. Fonctionnement des marchés",
     body: [
       "Chaque marché définit une question, une période, une liste de résultats possibles et une règle de résolution publiée avant l'ouverture. Cette règle fait foi.",
-      "Une part « Oui » sur un résultat vaut 1 USDC si ce résultat est déclaré gagnant, 0 sinon. Une part « Non » vaut l'inverse. Les prix affichés reflètent la probabilité implicite du marché et évoluent en continu.",
-      "Les mises ferment à la date indiquée. Les positions peuvent être revendues au prix du marché jusqu'à la résolution, sous réserve de liquidité.",
-      "Des frais de 2 % sont prélevés sur chaque achat. Les frais de réseau Solana restent à votre charge.",
+      "Chaque marché fonctionne en pot commun : toutes les mises forment un pot unique. À la résolution, les comptes ayant misé sur le résultat gagnant se partagent 100 % du pot, au prorata de leur mise. Aucune commission n'est prélevée.",
+      "Le pourcentage affiché pour chaque résultat est la part du pot misée sur lui. La cote et le gain affichés avant la fermeture des mises sont des estimations : ils évoluent selon les mises des autres participants.",
+      "Les mises ferment à la date indiquée. Une mise ne peut être ni annulée ni revendue. La mise totale d'un compte est limitée à 1000 USDC par marché.",
+      "Si aucune mise n'a été placée sur le résultat gagnant, ou si le marché est annulé, toutes les mises sont remboursées.",
     ],
   },
   {
@@ -51,9 +55,9 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     id: "risques",
     title: "6. Avertissement sur les risques",
     body: [
-      "Négocier sur des marchés de prédiction comporte un risque de perte totale du capital engagé. Ne misez jamais plus que ce que vous pouvez vous permettre de perdre.",
+      "Miser sur ces marchés comporte un risque de perte totale de la mise. Ne misez jamais plus que ce que vous pouvez vous permettre de perdre.",
       "Les KOLs listés ne sont ni affiliés ni partenaires de la Plateforme. Leur performance passée ne préjuge pas de leur performance future.",
-      "Les smart contracts peuvent contenir des vulnérabilités. La Plateforme applique des plafonds de mise et fait auditer son code, sans garantie d'absence de faille.",
+      "La conservation des fonds par la Plateforme comporte des risques (piratage, défaillance technique, erreur de données). La Plateforme applique des plafonds de dépôt, de mise et de retrait et des contrôles automatiques, sans garantie d'absence de faille.",
     ],
   },
   {
@@ -61,14 +65,14 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     title: "7. Conduite interdite",
     body: [
       "Sont interdits : la manipulation de marché, l'utilisation d'informations privilégiées, la coordination avec un KOL listé pour influencer un résultat, l'utilisation de bots abusifs, le contournement d'un blocage géographique et toute activité illégale.",
-      "La Plateforme peut geler l'accès à l'interface pour tout compte suspect. Les fonds restant dans les smart contracts demeurent retirables par leur propriétaire.",
+      "La Plateforme peut geler tout compte suspect le temps d'une vérification. Sauf fraude avérée, le solde d'un compte gelé reste retirable vers le wallet lié au compte.",
     ],
   },
   {
     id: "confidentialite",
     title: "8. Confidentialité",
     body: [
-      "La Plateforme ne collecte que les données strictement nécessaires : adresse publique du wallet, historique de transactions on-chain (par nature publiques), adresse email si vous choisissez la connexion par email, et données techniques de connexion.",
+      "La Plateforme ne collecte que les données strictement nécessaires : adresse publique du wallet, historique de vos dépôts, mises et retraits, et données techniques de connexion (navigateur, dates de session).",
       "Aucune donnée n'est vendue à des tiers. Vous pouvez demander la suppression de vos données hors chaîne à tout moment.",
     ],
   },
@@ -101,7 +105,7 @@ export default function TermsPage() {
       </aside>
       <article className="card p-6 md:p-10 fade-up">
         <h1 className="text-3xl font-bold">Conditions d&apos;utilisation</h1>
-        <p className="mt-2 text-sm text-muted">Dernière mise à jour : 9 octobre 2026</p>
+        <p className="mt-2 text-sm text-muted">Dernière mise à jour : 10 octobre 2026</p>
         {SECTIONS.map((s) => (
           <section key={s.id} id={s.id} className="mt-8 scroll-mt-28">
             <h2 className="text-lg font-bold">{s.title}</h2>

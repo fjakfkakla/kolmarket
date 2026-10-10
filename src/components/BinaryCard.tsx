@@ -3,7 +3,8 @@ import { Bookmark } from "lucide-react";
 import type { BinaryMarket } from "@/data/markets";
 import { kolById } from "@/data/kols";
 import { Avatar } from "./Avatar";
-import { pct, usd } from "@/lib/format";
+import { odds } from "@/lib/pot";
+import { fmtOdds, pct, usd } from "@/lib/format";
 
 export function BinaryCard({ market }: { market: BinaryMarket }) {
   const kol = kolById(market.kolId)!;
@@ -25,14 +26,14 @@ export function BinaryCard({ market }: { market: BinaryMarket }) {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <span className="btn-up">Oui {Math.round(market.yes * 100)}¢</span>
-        <span className="btn-down">Non {Math.round((1 - market.yes) * 100)}¢</span>
+        <span className="btn-up">Oui <span className="mono">{fmtOdds(odds(market.pool, market.pool * market.yes))}</span></span>
+        <span className="btn-down">Non <span className="mono">{fmtOdds(odds(market.pool, market.pool * (1 - market.yes)))}</span></span>
       </div>
       <div className="mt-3 flex items-center justify-between text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" />
           <span className="font-semibold text-down">EN DIRECT</span>
-          <span>· {usd(market.volume, { compact: true })} Vol. · {market.period}</span>
+          <span>· pot {usd(market.pool, { compact: true })} · {market.period}</span>
         </span>
         <Bookmark size={14} />
       </div>

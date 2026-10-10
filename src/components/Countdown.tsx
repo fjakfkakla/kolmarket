@@ -1,13 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-
-function subscribe(cb: () => void) {
-  const id = setInterval(cb, 1000);
-  return () => clearInterval(id);
-}
-const getNow = () => Math.floor(Date.now() / 1000) * 1000;
-const getServerNow = () => null;
+import { useNow } from "@/lib/useNow";
 
 const Cell = ({ v, u }: { v: number; u: string }) => (
   <div className="text-center">
@@ -28,7 +21,7 @@ function parts(ms: number) {
 
 export function Countdown({ to, label = "Fermeture des mises", compact = false }: { to: string; label?: string; compact?: boolean }) {
   const target = new Date(to).getTime();
-  const now = useSyncExternalStore(subscribe, getNow, getServerNow);
+  const now = useNow();
   const p = parts(now === null ? 0 : target - now);
   const closed = now !== null && now >= target;
 

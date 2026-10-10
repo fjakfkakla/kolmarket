@@ -1,31 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Bookmark, ChevronDown, Code2, ExternalLink, Link2, Send, TrendingDown, TrendingUp } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Bookmark, ChevronDown, Code2, ExternalLink, Link2, Send } from "lucide-react";
 import type { Market, Period } from "@/data/markets";
 import type { Kol } from "@/data/kols";
 import { Avatar } from "./Avatar";
+import { BetPanel } from "./BetPanel";
 import { Countdown } from "./Countdown";
 import { CopyButton } from "./CopyButton";
 import { PnlChart } from "./PnlChart";
 import { Podium } from "./Podium";
-import { TradePanel } from "./TradePanel";
-import { cents, dateFr, pct, shortWallet, usd } from "@/lib/format";
+import { type Bet, useWallet } from "@/lib/wallet";
+import { MAX_STAKE_PER_MARKET } from "@/lib/limits";
+import { odds } from "@/lib/pot";
+import { useNow } from "@/lib/useNow";
+import { dateFr, fmtOdds, pct, shortWallet, usd } from "@/lib/format";
 
 const ACTIVITY = [
-  { who: "7Gx2…xVq", side: "OUI", who2: "Cooker", amt: 250, price: 0.33, ago: "il y a 12 s" },
-  { who: "Bq91…aa4", side: "NON", who2: "zeropnl", amt: 40, price: 0.93, ago: "il y a 48 s" },
-  { who: "3Fkd…m0P", side: "OUI", who2: "Cented", amt: 120, price: 0.22, ago: "il y a 2 min" },
-  { who: "9zLm…Qe7", side: "OUI", who2: "decu", amt: 75, price: 0.21, ago: "il y a 3 min" },
-  { who: "Hh3s…k2R", side: "NON", who2: "Cooker", amt: 500, price: 0.67, ago: "il y a 5 min" },
+  { who: "7Gx2…xVq", who2: "Cooker", amt: 250, ago: "il y a 12 s" },
+  { who: "Bq91…aa4", who2: "zeropnl", amt: 40, ago: "il y a 48 s" },
+  { who: "3Fkd…m0P", who2: "Cented", amt: 120, ago: "il y a 2 min" },
+  { who: "9zLm…Qe7", who2: "decu", amt: 75, ago: "il y a 3 min" },
+  { who: "Hh3s…k2R", who2: "Cooker", amt: 500, ago: "il y a 5 min" },
 ];
 
-export function MarketView({ market, kols: KOLS, sibling }: { market: Market; kols: Kol[]; sibling?: Market }) {
-  const [selected, setSelected] = useState(market.outcomes[0]);
-  const [side, setSide] = useState<"OUI" | "NON">("OUI");
+/** Ajoute les mises de démo du joueur au pot (les vraies mises seront déjà comptées par le serveur). */
+function withMyBets(market: Market, bets: Bet[]): Market {
+  const mine = bets.filter((b) => b.marketSlug === market.slug);
+  if (mine.length === 0) return market;
+  const extra = (kolId: string) => mine.filter((b) => b.kolId === kolId).reduce((s, b) => s + b.amount, 0);
+  const pool = market.pool + mine.reduce((s, b) => s + b.amount, 0);
+  const outcomes = market.outcomes.map((o) => {
+    const p = o.pool + extra(o.kol.id);
+    return { ...o, pool: p, prob: pool > 0 ? p / pool : 0 };
+  });
+  return { ...market, pool, outcomes };
+}
+
+export function MarketView({ market: base, kols: KOLS, sibling }: { market: Market; kols: Kol[]; sibling?: Market }) {
+  const w = useWallet();
+  const market = useMemo(() => withMyBets(base, w.bets), [base, w.bets]);
+  const [selectedId, setSelectedId] = useState(base.outcomes[0].kol.id);
+  const selected = market.outcomes.find((o) => o.kol.id === selectedId) ?? market.outcomes[0];
   const [period, setPeriod] = useState<Period>(market.period);
-  const [open, setOpen] = useState<"book" | "activity" | null>("activity");
+  const [showActivity, setShowActivity] = useState(true);
+  const now = useNow();
+  const open = now === null || now < new Date(market.closesAt).getTime();
   const pnlKey = period === "7D" ? "pnl7d" : "pnl30d";
 
   return (
@@ -52,7 +73,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             <div>
               <h1 className="text-2xl font-bold leading-tight md:text-3xl">{market.title}</h1>
               <p className="mt-1 text-sm text-muted">
-                {usd(market.volume, { compact: true })} Vol. · {market.traders} traders · pool {usd(market.pool, { compact: true })}
+                Pot {usd(market.pool, { compact: true })} · {market.traders} joueurs · 0 frais
               </p>
             </div>
           </div>
@@ -75,7 +96,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
               </div>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted">Pool</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted">Pot commun</div>
               <div className="mono mt-1 text-xl font-bold">{usd(market.pool, { compact: true })}</div>
             </div>
           </div>
@@ -100,7 +121,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             {KOLS.map((k) => (
               <button
                 key={k.id}
-                onClick={() => setSelected(market.outcomes.find((o) => o.kol.id === k.id)!)}
+                onClick={() => setSelectedId(k.id)}
                 className={`flex items-center gap-1.5 rounded-md px-1.5 py-0.5 transition ${selected.kol.id === k.id ? "bg-cream-2 font-semibold" : "text-muted hover:text-ink"}`}
               >
                 <span className="h-2 w-2 rounded-full" style={{ background: k.color }} /> {k.name}
@@ -111,11 +132,11 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
 
         {/* Outcomes */}
         <div className="card overflow-hidden fade-up">
-          <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted md:grid-cols-[1fr_120px_90px_200px]">
-            <span>Résultat</span>
+          <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted md:grid-cols-[1fr_120px_110px_150px]">
+            <span>KOL</span>
             <span className="hidden text-right md:block">PnL {market.period}</span>
-            <span className="text-right">% chance</span>
-            <span className="text-right md:text-center">Trade</span>
+            <span className="text-right">% du pot</span>
+            <span className="text-right md:text-center">Miser</span>
           </div>
           <ul className="stagger">
             {market.outcomes.map((o, i) => {
@@ -123,8 +144,8 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
               return (
                 <li
                   key={o.kol.id}
-                  onClick={() => setSelected(o)}
-                  className={`grid cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line px-5 py-3 transition md:grid-cols-[1fr_120px_90px_200px] ${active ? "bg-gold-soft/40" : "hover:bg-cream-2/60"}`}
+                  onClick={() => setSelectedId(o.kol.id)}
+                  className={`grid cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line px-5 py-3 transition md:grid-cols-[1fr_120px_110px_150px] ${active ? "bg-gold-soft/40" : "hover:bg-cream-2/60"}`}
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="w-4 text-xs font-bold text-muted">{i + 1}</span>
@@ -145,17 +166,19 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
                   <div className="mono hidden text-right font-semibold text-up md:block">{usd(o.kol[pnlKey], { compact: true, sign: true })}</div>
                   <div className="text-right">
                     <div className="text-lg font-bold">{pct(o.prob)}</div>
-                    <div className={`flex items-center justify-end gap-0.5 text-[11px] ${o.change24h >= 0 ? "text-up" : "text-down"}`}>
-                      {o.change24h >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                      {Math.abs(o.change24h).toFixed(1)} pts
-                    </div>
+                    <div className="mono text-[11px] text-muted">{usd(o.pool, { compact: true })} misés</div>
                   </div>
-                  <div className="col-span-3 grid grid-cols-2 gap-2 md:col-span-1">
-                    <button onClick={(e) => { e.stopPropagation(); setSelected(o); setSide("OUI"); }} className={`btn py-2 ${active && side === "OUI" ? "bg-up text-white" : "btn-up"}`}>
-                      Oui {cents(o.prob)}
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); setSelected(o); setSide("NON"); }} className={`btn py-2 ${active && side === "NON" ? "bg-down text-white" : "btn-down"}`}>
-                      Non {cents(1 - o.prob)}
+                  <div className="col-span-3 md:col-span-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedId(o.kol.id);
+                        // Sur mobile le panneau de mise est sous la liste : on l'amène à l'écran.
+                        if (window.innerWidth < 1024) document.getElementById("miser")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      className={`btn w-full py-2 ${active ? "bg-gold text-ink shadow-sm" : "btn-ghost"}`}
+                    >
+                      Miser <span className="mono">{fmtOdds(odds(market.pool, o.pool))}</span>
                     </button>
                   </div>
                 </li>
@@ -173,42 +196,41 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
           <Podium kols={KOLS} period={period} />
         </div>
 
-        {/* Order book / activity */}
+        {/* Pot breakdown */}
+        <div className="card p-5 fade-up">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-bold">Répartition du pot</h2>
+            <span className="mono text-sm font-semibold">{usd(market.pool)}</span>
+          </div>
+          <div className="mb-4 flex h-3 overflow-hidden rounded-full bg-cream-2">
+            {market.outcomes.map((o) => (
+              <span key={o.kol.id} style={{ width: `${o.prob * 100}%`, background: o.kol.color }} title={`${o.kol.name} ${pct(o.prob)}`} />
+            ))}
+          </div>
+          <ul className="space-y-1.5 text-sm">
+            {market.outcomes.map((o) => (
+              <li key={o.kol.id} className="flex items-center gap-2">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: o.kol.color }} />
+                <span className="flex-1 truncate font-medium">{o.kol.name}</span>
+                <span className="mono text-muted">{usd(o.pool)}</span>
+                <span className="mono w-12 text-right font-semibold">{pct(o.prob)}</span>
+                <span className="mono w-14 text-right text-muted">{fmtOdds(odds(market.pool, o.pool))}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs text-muted">
+            0 frais : 100 % du pot revient à ceux qui ont misé sur le KOL gagnant, au prorata de leur mise.
+            La cote = ce que rapporte 1 $ misé si ce KOL gagne.
+          </p>
+        </div>
+
+        {/* Activity */}
         <div className="card fade-up">
-          <button onClick={() => setOpen(open === "book" ? null : "book")} className="flex w-full items-center justify-between px-5 py-4 font-bold">
-            <span>Carnet d&apos;ordres <span className="ml-2 text-xs font-normal text-muted">{selected.kol.name} · {side}</span></span>
-            <span className="flex items-center gap-3 text-xs font-normal text-muted">{usd(market.volume * 0.12, { compact: true })} Vol. <ChevronDown size={16} className={`transition ${open === "book" ? "rotate-180" : ""}`} /></span>
-          </button>
-          {open === "book" && (
-            <div className="grid gap-0 border-t border-line text-sm md:grid-cols-2 pop">
-              {(["Acheteurs", "Vendeurs"] as const).map((col, ci) => (
-                <div key={col} className={ci === 0 ? "border-b border-line md:border-b-0 md:border-r" : ""}>
-                  <div className="grid grid-cols-3 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                    <span>{col}</span><span className="text-right">Prix</span><span className="text-right">Total</span>
-                  </div>
-                  {[0, 1, 2, 3, 4].map((r) => {
-                    const base = side === "OUI" ? selected.prob : 1 - selected.prob;
-                    const p = ci === 0 ? base - 0.01 * (r + 1) : base + 0.01 * (r + 1);
-                    const qty = Math.round(400 + ((r * 977 + ci * 311) % 2600));
-                    const w = Math.min(100, (qty / 3000) * 100);
-                    return (
-                      <div key={r} className="relative grid grid-cols-3 px-5 py-1.5">
-                        <span className="absolute inset-y-0 left-0 opacity-[0.12]" style={{ width: `${w}%`, background: ci === 0 ? "#16a34a" : "#dc2626" }} />
-                        <span className="mono relative">{qty.toLocaleString("fr-FR")}</span>
-                        <span className={`mono relative text-right font-semibold ${ci === 0 ? "text-up" : "text-down"}`}>{cents(Math.max(0.01, Math.min(0.99, p)))}</span>
-                        <span className="mono relative text-right text-muted">{usd(qty * p)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
-          <button onClick={() => setOpen(open === "activity" ? null : "activity")} className="flex w-full items-center justify-between border-t border-line px-5 py-4 font-bold">
+          <button onClick={() => setShowActivity((v) => !v)} className="flex w-full items-center justify-between px-5 py-4 font-bold">
             <span>Activité</span>
-            <ChevronDown size={16} className={`text-muted transition ${open === "activity" ? "rotate-180" : ""}`} />
+            <ChevronDown size={16} className={`text-muted transition ${showActivity ? "rotate-180" : ""}`} />
           </button>
-          {open === "activity" && (
+          {showActivity && (
             <ul className="border-t border-line pop">
               {ACTIVITY.map((a, i) => {
                 const k = KOLS.find((x) => x.name === a.who2) ?? KOLS[0];
@@ -216,10 +238,8 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
                   <li key={i} className="flex items-center gap-3 px-5 py-2.5 text-sm">
                     <span className="mono grid h-7 w-7 place-items-center rounded-full bg-cream-2 text-[10px] font-bold">{a.who.slice(0, 2)}</span>
                     <span className="mono text-xs text-muted">{a.who}</span>
-                    <span>a acheté</span>
-                    <span className={`font-semibold ${a.side === "OUI" ? "text-up" : "text-down"}`}>{a.side}</span>
+                    <span>a misé sur</span>
                     <Avatar kol={k} size={18} /> <span className="font-semibold">{a.who2}</span>
-                    <span className="text-muted">à {cents(a.price)}</span>
                     <span className="mono ml-auto font-semibold">{usd(a.amt)}</span>
                     <span className="hidden text-xs text-muted sm:inline">{a.ago}</span>
                   </li>
@@ -241,6 +261,8 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             ))}
           </ol>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <span className="pill-muted">Pot commun · 0 frais</span>
+            <span className="pill-muted">Max {usd(MAX_STAKE_PER_MARKET)} par compte</span>
             <span className="pill-muted">Résolution : multisig 2/3 + 24h de contestation</span>
             <span className="pill-muted">Source : données on-chain publiques</span>
           </div>
@@ -273,7 +295,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
       </div>
 
       <aside className="space-y-4">
-        <TradePanel market={market} outcome={selected} side={side} onSide={setSide} />
+        <BetPanel market={market} outcome={selected} open={open} />
         {sibling && (
           <Link href={`/market/${sibling.slug}`} className="card card-hover flex items-center gap-3 p-4">
             <div className="flex -space-x-2">
@@ -281,7 +303,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold">{sibling.title}</div>
-              <div className="text-xs text-muted">{sibling.period} · {usd(sibling.volume, { compact: true })} Vol.</div>
+              <div className="text-xs text-muted">{sibling.period} · pot {usd(sibling.pool, { compact: true })}</div>
             </div>
             <span className="font-bold text-up">{pct(sibling.outcomes[0].prob)}</span>
           </Link>

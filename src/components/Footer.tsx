@@ -24,7 +24,7 @@ export function Footer() {
           <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Compte</h4>
           <ul className="space-y-2 text-sm">
             <li><Link href="/compte" className="hover:text-gold-3">Mon portefeuille</Link></li>
-            <li><Link href="/compte#positions" className="hover:text-gold-3">Mes positions</Link></li>
+            <li><Link href="/compte#mises" className="hover:text-gold-3">Mes mises</Link></li>
             <li><Link href="/comment-ca-marche" className="hover:text-gold-3">Comment ça marche</Link></li>
           </ul>
         </div>

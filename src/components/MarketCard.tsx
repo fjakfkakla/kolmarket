@@ -2,7 +2,8 @@ import Link from "next/link";
 import { BarChart3, Bookmark } from "lucide-react";
 import type { Market } from "@/data/markets";
 import { Avatar } from "./Avatar";
-import { pct, usd } from "@/lib/format";
+import { odds } from "@/lib/pot";
+import { fmtOdds, pct, usd } from "@/lib/format";
 
 export function MarketCard({ market }: { market: Market }) {
   const top = market.outcomes.slice(0, 4);
@@ -43,8 +44,7 @@ export function MarketCard({ market }: { market: Market }) {
             <Avatar kol={o.kol} size={20} />
             <span className="flex-1 truncate font-medium">{o.kol.name}</span>
             <span className="mono w-10 text-right font-semibold">{pct(o.prob)}</span>
-            <span className="btn-up h-7 px-2.5 py-0 text-xs">Oui</span>
-            <span className="btn-down h-7 px-2.5 py-0 text-xs">Non</span>
+            <span className="pill-muted mono w-16 justify-center py-0.5">{fmtOdds(odds(market.pool, o.pool))}</span>
           </li>
         ))}
       </ul>
@@ -53,7 +53,7 @@ export function MarketCard({ market }: { market: Market }) {
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" />
           <span className="font-semibold text-down">EN DIRECT</span>
-          <span>· {usd(market.volume, { compact: true })} Vol.</span>
+          <span>· pot {usd(market.pool, { compact: true })} · 0 frais</span>
         </span>
         <span className="flex items-center gap-2">
           <BarChart3 size={14} />

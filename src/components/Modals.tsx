@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Check, Mail, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Check, ExternalLink, Info, Loader2, X } from "lucide-react";
+import type { Wallet } from "@wallet-standard/base";
 import { useWallet } from "@/lib/wallet";
-import { usd } from "@/lib/format";
-import { CopyButton } from "./CopyButton";
-
-const DEPOSIT_ADDRESS = "MCdep1ZxQp9vR4tLd8sH3rWcA1eB6yU5oP0jK2nM9xVq";
+import { DEPOSIT_CAP, MIN_WITHDRAWAL, depositRoom } from "@/lib/limits";
+import { INSTALL_LINKS, openInWalletLinks, useSolanaWallets } from "@/lib/solana-wallets";
+import { shortWallet, usd } from "@/lib/format";
 
 function Shell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   useEffect(() => {
@@ -33,69 +33,112 @@ function Shell({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
-const PROVIDERS = [
-  { id: "Phantom", color: "#ab9ff2", letter: "P" },
-  { id: "Solflare", color: "#fc7227", letter: "S" },
-  { id: "Backpack", color: "#e33e3f", letter: "B" },
-];
+const isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 
 function ConnectModal() {
   const w = useWallet();
+  const wallets = useSolanaWallets();
   const [accepted, setAccepted] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const go = async (wallet: Wallet) => {
+    setErr(null);
+    setBusy(wallet.name);
+    try {
+      await w.signIn(wallet);
+    } catch (e) {
+      setErr((e as Error).message || "Connexion impossible.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <Shell title="Se connecter" onClose={() => w.openModal(null)}>
       <p className="mb-4 text-sm text-muted">
-        Connecte ton wallet Solana. Marketcoins ne détient jamais tes clés privées : tu signes chaque
-        transaction toi-même.
+        Choisis ton wallet Solana. Une signature gratuite suffit pour créer ton compte : ce n&apos;est pas une transaction,
+        aucun fonds ne bouge et ta clé privée ne quitte jamais ton wallet.
       </p>
-      <div className="space-y-2">
-        {PROVIDERS.map((p) => (
-          <button
-            key={p.id}
-            disabled={!accepted}
-            onClick={() => w.connect(p.id)}
-            className="flex w-full items-center gap-3 rounded-xl border border-line p-3 text-left transition hover:border-gold hover:bg-gold-soft/40 disabled:opacity-40"
-          >
-            <span className="grid h-9 w-9 place-items-center rounded-lg font-bold text-white" style={{ background: p.color }}>
-              {p.letter}
-            </span>
-            <span className="flex-1 font-semibold">{p.id}</span>
-            <span className="text-xs text-muted">Solana</span>
-          </button>
-        ))}
-        <button
-          disabled={!accepted}
-          onClick={() => w.connect("Email")}
-          className="flex w-full items-center gap-3 rounded-xl border border-line p-3 text-left transition hover:border-gold hover:bg-gold-soft/40 disabled:opacity-40"
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-ink text-white"><Mail size={16} /></span>
-          <span className="flex-1 font-semibold">Continuer avec un email</span>
-          <span className="text-xs text-muted">wallet intégré</span>
-        </button>
-      </div>
+
+      {wallets.length > 0 ? (
+        <div className="space-y-2">
+          {wallets.map((wl) => (
+            <button
+              key={wl.name}
+              disabled={!accepted || busy !== null}
+              onClick={() => go(wl)}
+              className="flex w-full items-center gap-3 rounded-xl border border-line p-3 text-left transition hover:border-gold hover:bg-gold-soft/40 disabled:opacity-40"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- icône fournie par le wallet (data URI) */}
+              <img src={wl.icon} alt="" width={36} height={36} className="h-9 w-9 rounded-lg" />
+              <span className="flex-1 font-semibold">{wl.name}</span>
+              <span className="flex items-center gap-1 text-xs text-muted">
+                {busy === wl.name ? <><Loader2 size={12} className="animate-spin" /> Signature…</> : "Détecté"}
+              </span>
+            </button>
+          ))}
+          <p className="pt-1 text-xs text-muted">Tous les wallets Solana installés apparaissent ici automatiquement.</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-line p-4 text-sm">
+          <p className="font-semibold">Aucun wallet Solana détecté.</p>
+          {isMobile() ? (
+            <>
+              <p className="mt-1 text-muted">Sur téléphone, ouvre le site dans l&apos;application de ton wallet :</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {openInWalletLinks(location.href, location.origin).map((l) => (
+                  <a key={l.name} href={l.href} className="btn-ghost py-2">Ouvrir dans {l.name}</a>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-muted">Installe un wallet puis recharge la page :</p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {INSTALL_LINKS.map((l) => (
+                  <a key={l.name} href={l.href} target="_blank" rel="noreferrer" className="btn-ghost py-2 text-xs">
+                    {l.name} <ExternalLink size={12} />
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <label className="mt-4 flex cursor-pointer items-start gap-2 text-xs text-muted">
         <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 accent-gold" />
         <span>
           J&apos;ai plus de 18 ans et j&apos;accepte les{" "}
           <a href="/conditions" className="font-semibold text-ink underline">conditions d&apos;utilisation</a>. Je comprends que les
-          marchés de prédiction comportent un risque de perte.
+          paris comportent un risque de perte.
         </span>
       </label>
+      {err && <p className="mt-3 text-sm text-down">{err}</p>}
     </Shell>
   );
 }
 
 function DepositModal() {
   const w = useWallet();
-  const [amount, setAmount] = useState(100);
+  const room = depositRoom(w.balance, w.inPlay);
+  const [amount, setAmount] = useState(Math.min(100, Math.floor(room)));
   const [step, setStep] = useState<"form" | "pending" | "done">("form");
+  const [err, setErr] = useState<string | null>(null);
+
   const confirm = () => {
+    setErr(null);
     setStep("pending");
     setTimeout(() => {
-      w.deposit(amount);
-      setStep("done");
-    }, 1400);
+      const e = w.deposit(amount);
+      if (e) {
+        setErr(e);
+        setStep("form");
+      } else setStep("done");
+    }, 1200);
   };
+
   return (
     <Shell title="Déposer des USDC" onClose={() => w.openModal(null)}>
       {step === "done" ? (
@@ -110,42 +153,38 @@ function DepositModal() {
             <span className="grid h-10 w-10 place-items-center rounded-full bg-[#2775ca] font-bold text-white">$</span>
             <div className="flex-1">
               <div className="font-semibold">USDC · réseau Solana</div>
-              <div className="text-xs text-muted">Arrivée en ~2 secondes, frais ≈ 0,001 SOL</div>
+              <div className="text-xs text-muted">0 frais : on paie le réseau pour toi.</div>
             </div>
           </div>
-          <div>
-            <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Adresse de dépôt</div>
-            <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-2">
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-ink">
-                <svg viewBox="0 0 21 21" className="h-14 w-14" fill="#fff">
-                  {Array.from({ length: 441 }, (_, i) => {
-                    const x = i % 21, y = Math.floor(i / 21);
-                    const finder = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
-                    const h = ((x * 73856093) ^ (y * 19349663) ^ 0x9e3779b9) >>> 0;
-                    const on = finder ? ((x % 7 === 0 || x % 7 === 6 || y % 7 === 0 || y % 7 === 6 || (x % 7 > 1 && x % 7 < 5 && y % 7 > 1 && y % 7 < 5)) && x % 7 !== 7) : h % 5 < 2;
-                    return on ? <rect key={i} x={x} y={y} width="1" height="1" /> : null;
-                  })}
-                </svg>
-              </div>
-              <code className="mono flex-1 break-all text-xs">{DEPOSIT_ADDRESS}</code>
-              <CopyButton value={DEPOSIT_ADDRESS} />
-            </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted">Depuis</span>
+            <span className="mono">{w.provider ?? "Wallet"} · {shortWallet(w.address!)}</span>
           </div>
           <div>
-            <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Montant (démo)</div>
+            <div className="mb-1 flex justify-between text-xs font-semibold uppercase tracking-wider text-muted">
+              <span>Montant</span>
+              <span className="mono normal-case tracking-normal">encore {usd(room)} possibles</span>
+            </div>
             <div className="flex gap-2">
-              <input type="number" min={1} value={amount} onChange={(e) => setAmount(Math.max(1, Number(e.target.value) || 0))} className="input mono" />
-              {[50, 100, 500].map((v) => (
-                <button key={v} onClick={() => setAmount(v)} className="btn-ghost px-3">{v}</button>
+              <input type="number" min={1} max={room} value={amount} onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))} className="input mono" />
+              {[50, 100].map((v) => (
+                <button key={v} onClick={() => setAmount(Math.min(v, room))} className="btn-ghost px-3">{v}</button>
               ))}
+              <button onClick={() => setAmount(room)} className="btn-ghost px-3">Max</button>
             </div>
           </div>
-          <div className="flex items-start gap-2 rounded-xl bg-down-soft p-3 text-xs text-down">
-            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-            N&apos;envoie que des USDC sur Solana. Tout autre token ou réseau sera perdu.
+          <p className="text-xs text-muted">
+            Plafond : {usd(DEPOSIT_CAP)} sur ton compte, mises en cours comprises. Les gains au-delà se gardent, mais tu ne peux plus
+            déposer tant que tu es au-dessus.
+          </p>
+          <div className="flex items-start gap-2 rounded-xl bg-gold-soft p-3 text-xs text-ink">
+            <Info size={16} className="mt-0.5 shrink-0 text-gold-3" />
+            Démo : aucun USDC n&apos;est envoyé pour l&apos;instant. Le vrai dépôt (confirmation dans ton wallet) arrive à l&apos;étape suivante.
           </div>
-          <button onClick={confirm} disabled={step === "pending"} className="btn-gold w-full py-3">
-            <ArrowDownToLine size={16} /> {step === "pending" ? "Confirmation on-chain…" : `Simuler le dépôt de ${usd(amount)}`}
+          {err && <p className="text-sm text-down">{err}</p>}
+          <button onClick={confirm} disabled={step === "pending" || room <= 0} className="btn-gold w-full py-3 disabled:opacity-50">
+            <ArrowDownToLine size={16} />{" "}
+            {room <= 0 ? "Plafond atteint" : step === "pending" ? "Confirmation…" : `Simuler le dépôt de ${usd(amount)}`}
           </button>
         </div>
       )}
@@ -166,23 +205,26 @@ function WithdrawModal() {
         <div>
           <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Montant</div>
           <div className="flex gap-2">
-            <input type="number" min={1} max={w.balance} value={amount} onChange={(e) => setAmount(Number(e.target.value) || 0)} className="input mono" />
+            <input type="number" min={MIN_WITHDRAWAL} max={w.balance} value={amount} onChange={(e) => setAmount(Number(e.target.value) || 0)} className="input mono" />
             <button onClick={() => setAmount(w.balance)} className="btn-ghost px-3">Max</button>
           </div>
+          <div className="mt-1 text-xs text-muted">Minimum {usd(MIN_WITHDRAWAL)} · 0 frais</div>
         </div>
         <div>
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Vers</div>
-          <div className="input mono text-muted">{w.address}</div>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Vers ton wallet</div>
+          <div className="input mono break-all text-xs text-muted">{w.address}</div>
+          <div className="mt-1 text-xs text-muted">Les retraits partent uniquement vers le wallet connecté.</div>
         </div>
         {err && <p className="text-sm text-down">{err}</p>}
         <button
           onClick={() => {
-            if (amount <= 0) return setErr("Montant invalide.");
-            if (!w.withdraw(amount)) setErr("Solde insuffisant.");
+            const e = w.withdraw(amount);
+            if (e) setErr(e);
+            else w.openModal(null);
           }}
           className="btn-dark w-full py-3"
         >
-          <ArrowUpFromLine size={16} /> Retirer {usd(amount)}
+          <ArrowUpFromLine size={16} /> Retirer {usd(amount)} (démo)
         </button>
       </div>
     </Shell>
@@ -192,7 +234,7 @@ function WithdrawModal() {
 export function Modals() {
   const w = useWallet();
   if (w.modal === "connect") return <ConnectModal />;
-  if (w.modal === "deposit") return <DepositModal />;
-  if (w.modal === "withdraw") return <WithdrawModal />;
+  if (w.modal === "deposit" && w.connected) return <DepositModal />;
+  if (w.modal === "withdraw" && w.connected) return <WithdrawModal />;
   return null;
 }

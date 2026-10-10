@@ -42,7 +42,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             </h1>
             <p className="mt-2 max-w-xl text-muted">
               7 KOLs, 7 wallets Solana publics, un seul gagnant : celui qui réalise le plus gros PnL sur la période.
-              Achète des parts Oui / Non, chaque part gagnante vaut 1 $.
+              Mise sur ton KOL : ceux qui ont misé sur le gagnant se partagent tout le pot. 0 frais.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <Link href={`/market/${featured.slug}`} className="btn-gold px-5 py-3 text-base">
@@ -52,18 +52,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
               <div className="ml-1 flex -space-x-2">
                 {KOLS.map((k) => <Avatar key={k.id} kol={k} size={30} className="ring-2 ring-white" />)}
               </div>
-              <span className="flex items-center gap-1 text-xs text-muted"><Users size={13} /> {featured.traders} traders</span>
+              <span className="flex items-center gap-1 text-xs text-muted"><Users size={13} /> {featured.traders} joueurs</span>
             </div>
           </div>
           <div className="card p-5 md:w-64">
             <Countdown to={featured.closesAt} />
             <div className="mt-4 flex justify-between border-t border-line pt-3 text-sm">
-              <span className="text-muted">Pool</span>
+              <span className="text-muted">Pot commun</span>
               <span className="mono font-bold">{usd(featured.pool, { compact: true })}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted">Volume</span>
-              <span className="mono font-bold">{usd(featured.volume, { compact: true })}</span>
+              <span className="text-muted">Frais</span>
+              <span className="mono font-bold text-up">0 %</span>
             </div>
           </div>
         </div>
