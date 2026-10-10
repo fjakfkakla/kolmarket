@@ -7,8 +7,9 @@ import { useI18n } from "@/i18n/client";
 /**
  * La course : où en est chaque coin sur le chemin du palier. La barre se remplit de sa market cap ;
  * `--race` (0 → 1) sur un parent la fait courir, la ligne d'arrivée est le palier.
+ * `deadline` (date déjà écrite, ex. « Dec 31, 2026 ») s'affiche sur la ligne d'arrivée.
  */
-export function RaceCard({ outcomes, target = 1e9, label, compact = false }: { outcomes: CoinOutcome[]; target?: number; label?: string; compact?: boolean }) {
+export function RaceCard({ outcomes, target = 5e8, label, deadline, compact = false }: { outcomes: CoinOutcome[]; target?: number; label?: string; deadline?: string; compact?: boolean }) {
   const { t } = useI18n();
   const r = t.app.race;
   const goal = label ?? r.defaultLabel;
@@ -44,7 +45,7 @@ export function RaceCard({ outcomes, target = 1e9, label, compact = false }: { o
         })}
       </div>
       <div className="mt-2.5 flex items-center justify-end gap-1.5 text-[12.5px] font-bold text-muted">
-        <span className="h-3 w-[3px] rounded-full bg-ink" /> {fmt(r.finish, { label: goal })}
+        <span className="h-3 w-[3px] rounded-full bg-ink" /> {deadline ? fmt(r.finishBy, { label: goal, date: deadline }) : fmt(r.finish, { label: goal })}
       </div>
     </div>
   );

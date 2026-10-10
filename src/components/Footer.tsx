@@ -13,7 +13,7 @@ export async function Footer() {
       links: [
         { label: f.challenge7d, href: "/market/kol-top-profit-7d" },
         { label: f.challenge30d, href: "/market/kol-top-profit-30d" },
-        { label: f.race1b, href: "/market/premier-1md-fdv" },
+        { label: f.race500m, href: "/market/premier-500m-mcap" },
         { label: f.allMarkets, href: "/app" },
       ],
     },

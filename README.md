@@ -37,7 +37,7 @@ Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typech
 |---|---|
 | `/` | **Landing** : héros 3D (planète WebGL + KOLs et memecoins en orbite), « Trade the KOL » et « Trade the potential of your favorite coin » (les vrais écrans de l'app joués au défilement), 0 % de frais, bouton « Lancer l'application » |
 | `/app` | L'application : défi en vedette, filtres (KOL, Memecoins, 7 j, 30 j), défis KOL, marchés memecoins, marchés Oui / Non |
-| `/market/premier-1md-fdv` | Marché memecoin « Premier à toucher 1 Md$ de FDV » : aperçu en pot commun (données mock, mises réelles pas encore ouvertes) |
+| `/market/premier-500m-mcap` | Marché memecoin « Premier à toucher 500 M$ de market cap » : aperçu en pot commun (données mock, mises réelles pas encore ouvertes) |
 | `/market/kol-7d-2026-10-12` | Page d'un défi : course au PnL, % du pot et cote par KOL, panneau de mise, classement du défi puis résultat, répartition du pot, activité, règles, wallets |
 | `/market/kol-top-profit-7d` | Redirige vers le défi 7 jours où l'on peut miser (même chose avec `-30d`) |
 | `/account` | Compte : solde, dépôt / retrait USDC, mises en cours et gain estimé, mises terminées, historique |

@@ -15,7 +15,7 @@ const CATEGORIES = [
   { key: "memecoins", href: "/app?cat=memes" },
   { key: "challenge7d", href: "/market/kol-top-profit-7d" },
   { key: "challenge30d", href: "/market/kol-top-profit-30d" },
-  { key: "race1b", href: "/market/premier-1md-fdv" },
+  { key: "race500m", href: "/market/premier-500m-mcap" },
 ] as const;
 
 export function Nav() {

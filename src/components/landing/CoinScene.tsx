@@ -6,7 +6,7 @@ import type { CoinMarket } from "@/data/coins";
 import { OutcomeCoin } from "../Coin";
 import { pointAt } from "../LineChart";
 import { estimatePayout, odds } from "@/lib/pot";
-import { fmtOdds, pct, usd } from "@/lib/format";
+import { fmtDate, fmtOdds, pct, usd } from "@/lib/format";
 import { fmt } from "@/i18n/config";
 import { useI18n } from "@/i18n/client";
 import { CoinScreenDesktop, CoinScreenPhone } from "./CoinScreen";
@@ -29,7 +29,7 @@ function setOn(el: Element | null | undefined, on: boolean) {
 }
 
 export function CoinScene({ market }: { market: CoinMarket }) {
-  const { t } = useI18n();
+  const { t, intl } = useI18n();
   const L = t.landing.coins;
   const track = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -43,12 +43,14 @@ export function CoinScene({ market }: { market: CoinMarket }) {
   const [active, setActive] = useState(0);
   const activeRef = useRef(0);
   const clicked = useRef({ row: false, press: false });
-  const pick = market.outcomes.find((o) => o.id === "ai") ?? market.outcomes[1];
+  // La démo mise sur le coin en tête de la course.
+  const pick = market.outcomes.find((o) => o.id === "ansem") ?? market.outcomes[1];
   const floating = market.outcomes.filter((o) => o.ticker);
+  const deadline = fmtDate(market.closesAt, intl, { year: "numeric" });
   const stepText = (i: number) =>
     i === 2
       ? fmt(L.pickText, { ticker: pick.ticker ?? "", share: pct(pick.prob), payout: usd(Math.floor(estimatePayout(market.pool, pick.pool, 100))), target: market.target })
-      : L.steps[i].text;
+      : fmt(L.steps[i].text, { date: deadline });
 
   useScrollScene(track, ({ p, time, w, h, reduced }) => {
     const mobile = w < 768;
@@ -120,14 +122,14 @@ export function CoinScene({ market }: { market: CoinMarket }) {
       tip.style.opacity = draw > 0.01 ? "1" : "0";
     });
 
-    // 2. La course : les barres courent vers 1 Md$.
+    // 2. La course : les barres courent vers 500 M$.
     const race = reduced ? 1 : easeOut(seg(p, 0.45, 0.64));
     root.style.setProperty("--race", race.toFixed(4));
     const rc = root.querySelector<HTMLElement>("[data-race-card]");
     if (rc) rc.style.boxShadow = idx === 1 ? "0 0 0 2px #1652f0, 0 0 0 7px rgba(22, 82, 240,.12)" : "none";
     if (rc) rc.style.borderRadius = "20px";
 
-    // 3. La mise : $AI, Oui, 100 $.
+    // 3. La mise : le coin en tête, 100 $.
     const s3 = seg(p, 0.68, 0.95);
     const row = root.querySelector(`[data-row="${pick.id}"]`);
     const rowYes = row?.querySelector("[data-row-yes]");

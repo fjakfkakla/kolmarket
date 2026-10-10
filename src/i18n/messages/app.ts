@@ -13,7 +13,7 @@ export const app = defineMessages({
       memecoins: "Memecoins",
       challenge7d: "7-day challenge",
       challenge30d: "30-day challenge",
-      race1b: "Race to $1B",
+      race500m: "Race to $500M",
       search: "Search a KOL, a coin, a market",
       portfolio: "Portfolio",
       available: "Available",
@@ -55,10 +55,11 @@ export const app = defineMessages({
       cancelled: "Cancelled, refunded",
     },
     race: {
-      defaultLabel: "$1B",
+      defaultLabel: "$500M",
       title: "Race to {label}",
       marketCap: "Market cap",
       finish: "Finish line at {label}",
+      finishBy: "Finish line at {label}, before {date}",
     },
     countdown: {
       betsClose: "Betting closes",
@@ -117,17 +118,17 @@ export const app = defineMessages({
         waiting: "Waiting for reliable data for {who}: automatic retry within the hour.",
       },
       coinMarkets: {
-        "premier-1md-fdv": {
-          title: "First to hit a $1B market cap: TRUMP, WIF, ANSEM or ARC?",
-          question: "First to hit a $1B market cap",
-          target: "$1B",
+        "premier-500m-mcap": {
+          title: "First to hit a $500M market cap: ANSEM, CASHCAT, AI or CATE?",
+          question: "First to hit a $500M market cap",
+          target: "$500M",
           rules: [
-            "The market resolves to the first token on the list whose market cap (circulating supply × price) exceeds $1 billion, as measured on DexScreener, before December 25, 2026 at 11:59 PM (Paris time).",
-            "The market cap must hold above $1B for at least one full hour to count.",
-            "If none of the tokens gets there by that date, the “None” outcome wins.",
+            "The market resolves to the first token on the list whose market cap (circulating supply × price) exceeds $500 million, as measured on DexScreener, before December 31, 2026 at 11:59 PM (Paris time).",
+            "The market cap must hold above $500M for at least one full hour to count.",
+            "If none of the tokens gets there by December 31, the “None” outcome wins.",
             "Shared pot, 0 fees: everyone who bet on the winning outcome splits the entire pot, pro rata to their stake. If nobody bet on it, everyone is refunded.",
           ],
-          outcomes: { none: "None by December 25" },
+          outcomes: { none: "None of them by December 31" },
         },
       },
       binary: {
@@ -147,7 +148,7 @@ export const app = defineMessages({
       memecoins: "Memecoins",
       challenge7d: "Défi 7 jours",
       challenge30d: "Défi 30 jours",
-      race1b: "Course à 1 Md$",
+      race500m: "Course à 500 M$",
       search: "Rechercher un KOL, un coin, un marché",
       portfolio: "Portefeuille",
       available: "Disponible",
@@ -189,10 +190,11 @@ export const app = defineMessages({
       cancelled: "Annulé, remboursé",
     },
     race: {
-      defaultLabel: "1 Md$",
+      defaultLabel: "500 M$",
       title: "Course à {label}",
       marketCap: "Market cap",
       finish: "Arrivée à {label}",
+      finishBy: "Arrivée à {label}, avant le {date}",
     },
     countdown: {
       betsClose: "Fermeture des mises",
@@ -250,17 +252,17 @@ export const app = defineMessages({
         waiting: "En attente de données fiables pour {who} : nouvel essai automatique dans l'heure.",
       },
       coinMarkets: {
-        "premier-1md-fdv": {
-          title: "Premier à toucher 1 Md$ de market cap : TRUMP, WIF, ANSEM ou ARC ?",
-          question: "Premier à toucher 1 Md$ de market cap",
-          target: "1 Md$",
+        "premier-500m-mcap": {
+          title: "Premier à toucher 500 M$ de market cap : ANSEM, CASHCAT, AI ou CATE ?",
+          question: "Premier à toucher 500 M$ de market cap",
+          target: "500 M$",
           rules: [
-            "Le marché se résout sur le premier token de la liste dont la market cap (offre en circulation × prix) dépasse 1 milliard de dollars, mesurée sur DexScreener, avant le 25 décembre 2026 à 23:59 (heure de Paris).",
-            "La market cap doit tenir au-dessus de 1 Md$ pendant au moins une heure pleine pour compter.",
-            "Si aucun des tokens n'y arrive avant la date, le résultat « Aucun » gagne.",
+            "Le marché se résout sur le premier token de la liste dont la market cap (offre en circulation × prix) dépasse 500 millions de dollars, mesurée sur DexScreener, avant le 31 décembre 2026 à 23:59 (heure de Paris).",
+            "La market cap doit tenir au-dessus de 500 M$ pendant au moins une heure pleine pour compter.",
+            "Si aucun des tokens n'y arrive avant le 31 décembre, le résultat « Aucun » gagne.",
             "Pot commun, 0 frais : ceux qui ont misé sur le résultat gagnant se partagent tout le pot, au prorata de leur mise. Si personne n'a misé dessus, tout le monde est remboursé.",
           ],
-          outcomes: { none: "Aucun d'ici le 25 décembre" },
+          outcomes: { none: "Aucun coin avant le 31 décembre" },
         },
       },
       binary: {
@@ -280,7 +282,7 @@ export const app = defineMessages({
       memecoins: "Memecoins",
       challenge7d: "Reto de 7 días",
       challenge30d: "Reto de 30 días",
-      race1b: "Carrera a 1000 M$",
+      race500m: "Carrera a 500 M$",
       search: "Busca un KOL, una moneda, un mercado",
       portfolio: "Cartera",
       available: "Disponible",
@@ -322,10 +324,11 @@ export const app = defineMessages({
       cancelled: "Anulado, reembolsado",
     },
     race: {
-      defaultLabel: "1000 M$",
+      defaultLabel: "500 M$",
       title: "Carrera a {label}",
       marketCap: "Market cap",
       finish: "Meta en {label}",
+      finishBy: "Meta en {label}, antes del {date}",
     },
     countdown: {
       betsClose: "Cierre de apuestas",
@@ -383,17 +386,17 @@ export const app = defineMessages({
         waiting: "Esperando datos fiables para {who}: nuevo intento automático dentro de una hora.",
       },
       coinMarkets: {
-        "premier-1md-fdv": {
-          title: "El primero en alcanzar 1000 M$ de market cap: ¿TRUMP, WIF, ANSEM o ARC?",
-          question: "El primero en alcanzar 1000 M$ de market cap",
-          target: "1000 M$",
+        "premier-500m-mcap": {
+          title: "El primero en alcanzar 500 M$ de market cap: ¿ANSEM, CASHCAT, AI o CATE?",
+          question: "El primero en alcanzar 500 M$ de market cap",
+          target: "500 M$",
           rules: [
-            "El mercado se resuelve a favor del primer token de la lista cuya market cap (oferta en circulación × precio) supere los 1000 millones de dólares, medida en DexScreener, antes del 25 de diciembre de 2026 a las 23:59 (hora de París).",
-            "La market cap debe mantenerse por encima de 1000 M$ durante al menos una hora completa para contar.",
-            "Si ninguno de los tokens lo consigue antes de esa fecha, gana el resultado «Ninguno».",
+            "El mercado se resuelve a favor del primer token de la lista cuya market cap (oferta en circulación × precio) supere los 500 millones de dólares, medida en DexScreener, antes del 31 de diciembre de 2026 a las 23:59 (hora de París).",
+            "La market cap debe mantenerse por encima de 500 M$ durante al menos una hora completa para contar.",
+            "Si ninguno de los tokens lo consigue antes del 31 de diciembre, gana el resultado «Ninguno».",
             "Bote común, 0 comisiones: quienes apostaron por el resultado ganador se reparten todo el bote, en proporción a su apuesta. Si nadie apostó por él, se reembolsa a todos.",
           ],
-          outcomes: { none: "Ninguno antes del 25 de diciembre" },
+          outcomes: { none: "Ninguna coin antes del 31 de diciembre" },
         },
       },
       binary: {

@@ -165,7 +165,7 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
         </section>
 
         <section className="fade-up">
-          <RaceCard outcomes={market.outcomes} label={market.target} />
+          <RaceCard outcomes={market.outcomes} label={market.target} deadline={fmtDate(market.closesAt, intl, { year: "numeric" })} />
         </section>
 
         <section className="card fade-up overflow-hidden">
@@ -217,7 +217,7 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
           soon
           choice={{
             id: selected.id,
-            name: selected.ticker ? `$${selected.ticker}` : tc.none,
+            name: selected.ticker ? `$${selected.ticker}` : selected.name,
             pool: selected.pool,
             prob: selected.prob,
             visual: <OutcomeCoin outcome={selected} size={46} />,

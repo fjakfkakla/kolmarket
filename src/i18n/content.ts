@@ -16,7 +16,7 @@ import type { ClientDictionary } from "./messages";
 export type ContentT = Pick<ClientDictionary, "app">;
 
 type Content = ContentT["app"]["content"];
-type CoinText = Content["coinMarkets"]["premier-1md-fdv"];
+type CoinText = Content["coinMarkets"]["premier-500m-mcap"];
 
 /** Question fixe des défis KOL, telle que stockée. */
 const FR_QUESTION = "Quel KOL fera le plus de profit ?";
