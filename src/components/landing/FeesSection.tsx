@@ -76,7 +76,7 @@ export function FeesSection() {
   });
 
   return (
-    <section ref={track} id="frais" className="relative" style={{ height: "260vh" }} aria-label={t.landing.nav.fees}>
+    <section ref={track} id="fees" className="relative" style={{ height: "260vh" }} aria-label={t.landing.nav.fees}>
       <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden pt-[68px] md:pt-[84px]">
         <div className="mx-auto grid w-full max-w-[1240px] items-center gap-8 px-4 md:grid-cols-[1fr_1fr] md:gap-14 md:px-8">
           <Coin3D refEl={coin} />

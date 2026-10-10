@@ -81,7 +81,7 @@ function SettingsCard({ compact = false }: { compact?: boolean }) {
     );
   }
   return (
-    <section id="parametres" className="card fade-up scroll-mt-32 p-5 md:p-6">
+    <section id="settings" className="card fade-up scroll-mt-32 p-5 md:p-6">
       <h2 className="text-[15px] font-bold text-muted">{t.common.settings}</h2>
       <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4">
         <div className="min-w-0 flex-1">
@@ -328,7 +328,7 @@ export function AccountView({ markets }: { markets: Market[] }) {
       </section>
 
       {/* Mises, terminées, historique */}
-      <section id="mises" className="card fade-up scroll-mt-32 overflow-hidden">
+      <section id="bets" className="card fade-up scroll-mt-32 overflow-hidden">
         <div className="flex items-end gap-6 overflow-x-auto border-b border-line px-5 pt-4 scrollbar-none">
           <button className="tab shrink-0" data-active={tab === "bets"} onClick={() => setTab("bets")}>
             {ta.tabs.bets} <span className="num ml-1 text-faint">{w.bets.length}</span>

@@ -8,7 +8,7 @@ export async function LandingNav() {
   const LINKS = [
     { label: "Trade the KOL", href: "#kol-anchor" },
     { label: t.landing.nav.memecoins, href: "#coins" },
-    { label: t.landing.nav.fees, href: "#frais" },
+    { label: t.landing.nav.fees, href: "#fees" },
   ];
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-paper/88 backdrop-blur-md">

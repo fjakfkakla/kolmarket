@@ -273,7 +273,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
               <AppLink hide href="/app" className="pill-white">
                 {t.landing.nav.launchLong} <ArrowRight size={18} />
               </AppLink>
-              <AppLink hide href="/comment-ca-marche" className="hidden h-[54px] items-center rounded-[14px] px-5 text-[15px] font-bold text-white/80 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+              <AppLink hide href="/how-it-works" className="hidden h-[54px] items-center rounded-[14px] px-5 text-[15px] font-bold text-white/80 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                 {t.common.howItWorks}
               </AppLink>
             </div>

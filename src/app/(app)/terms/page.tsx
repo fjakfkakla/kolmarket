@@ -6,13 +6,25 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.pages.terms.metaTitle };
 }
 
-/** Ancres des sections (identiques dans toutes les langues). */
+/** Sections dans l'ordre, avec leur ancre d'URL (identique dans toutes les langues). */
 const IDS = ["objet", "eligibilite", "fonds", "marches", "resolution", "risques", "conduite", "confidentialite", "responsabilite", "modifications"] as const;
+const ANCHOR: Record<(typeof IDS)[number], string> = {
+  objet: "purpose",
+  eligibilite: "eligibility",
+  fonds: "funds",
+  marches: "markets",
+  resolution: "resolution",
+  risques: "risks",
+  conduite: "conduct",
+  confidentialite: "privacy",
+  responsabilite: "liability",
+  modifications: "changes",
+};
 
 export default async function TermsPage() {
   const { t } = await getI18n();
   const terms = t.pages.terms;
-  const SECTIONS = IDS.map((id) => ({ id, ...terms.sections[id] }));
+  const SECTIONS = IDS.map((key) => ({ id: ANCHOR[key], ...terms.sections[key] }));
   return (
     <div className="grid gap-8 md:grid-cols-[230px_1fr]">
       <aside className="md:sticky md:top-32 md:self-start">

@@ -134,7 +134,7 @@ function ConnectModal() {
         <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#1652f0]" />
         <span>
           {m.consentBefore}{" "}
-          <a href="/conditions" className="link">
+          <a href="/terms" className="link">
             {t.common.terms}
           </a>{" "}
           {m.consentAfter}
