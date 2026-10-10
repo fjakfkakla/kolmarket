@@ -1,17 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE } from "@/lib/auth";
-import { canEnterApp } from "@/lib/launch";
+import { getLaunch } from "@/lib/launch";
 
 /**
- * Verrou de lancement : avant l'ouverture publique, les pages de l'app affichent le chrono
- * (même adresse, contenu remplacé avant tout rendu). Seuls les wallets admin passent.
- * /admin reste accessible : c'est là que l'admin se connecte et lance le chrono.
+ * Verrou de lancement : avant l'ouverture, seule la landing répond. Toute autre adresse
+ * (pages, /admin, /api…) renvoie vers / ; une API renvoie 404. Personne n'entre, admin compris.
+ * Restent servis : les fichiers de Next (_next) et les images publiques de la landing.
  */
-export async function proxy(req: NextRequest) {
-  if (await canEnterApp(req.cookies.get(SESSION_COOKIE)?.value)) return NextResponse.next();
-  return NextResponse.rewrite(new URL("/launch", req.url));
+const PUBLIC_FILE = /^\/(kols|coins)\/[\w.-]+\.(jpg|png|webp)$|^\/favicon\.ico$/;
+
+export function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  if (pathname === "/" || PUBLIC_FILE.test(pathname) || getLaunch().open) return NextResponse.next();
+  if (pathname.startsWith("/api/")) return new NextResponse(null, { status: 404 });
+  return NextResponse.redirect(new URL("/", req.url));
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/market/:path*", "/compte/:path*", "/comment-ca-marche/:path*", "/conditions/:path*"],
+  matcher: ["/((?!_next/static|_next/image).*)"],
 };

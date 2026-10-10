@@ -12,9 +12,7 @@ export type AdminAction =
   | { action: "resolve_now"; marketId: string; slug: string }
   | { action: "propose_winner"; marketId: string; slug: string; kolId: string; note: string }
   | { action: "settle_now"; marketId: string; slug: string }
-  | { action: "cancel_market"; marketId: string; slug: string; reason: string }
-  | { action: "start_launch" }
-  | { action: "reset_launch" };
+  | { action: "cancel_market"; marketId: string; slug: string; reason: string };
 
 export type AdminActionName = AdminAction["action"];
 
@@ -26,8 +24,6 @@ export const ACTION_LABEL: Record<AdminActionName, string> = {
   propose_winner: "Choisir le gagnant",
   settle_now: "Payer le pot maintenant",
   cancel_market: "Annuler le defi et rembourser",
-  start_launch: "Lancer le chrono de 7 jours",
-  reset_launch: "Arreter le chrono et refermer l'app",
 };
 
 const str = (v: unknown, max = 500) => (typeof v === "string" && v.length <= max ? v : null);
@@ -64,9 +60,6 @@ export function parseAdminAction(x: unknown): AdminAction | null {
       const [marketId, slug, reason] = [s("marketId", 40), s("slug", 120), s("reason", 500)];
       return marketId !== null && slug !== null && reason !== null ? { action: a.action, marketId, slug, reason } : null;
     }
-    case "start_launch":
-    case "reset_launch":
-      return { action: a.action };
     default:
       return null;
   }
@@ -94,9 +87,6 @@ function details(a: AdminAction): string[] {
       return [`Defi: ${a.slug}`, `Gagnant: ${a.kolId}`, `Note: ${a.note}`];
     case "cancel_market":
       return [`Defi: ${a.slug}`, `Raison: ${a.reason}`];
-    case "start_launch":
-    case "reset_launch":
-      return [];
   }
 }
 

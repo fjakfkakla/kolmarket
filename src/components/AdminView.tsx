@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ExternalLink, Loader2, PenLine, Rocket, ShieldCheck, Wallet } from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2, PenLine, ShieldCheck, Wallet } from "lucide-react";
 import type { AdminData, AdminKol, AdminMarket } from "@/lib/admin-data";
 import { type AdminAction, type AdminActionName, adminMessage, parseAdminAction } from "@/lib/admin-message";
 import {
@@ -23,7 +23,6 @@ import { fmt } from "@/i18n/config";
 import { useI18n } from "@/i18n/client";
 import { Avatar } from "./Avatar";
 import { CopyButton } from "./CopyButton";
-import { LaunchCountdown } from "./LaunchCountdown";
 
 const HOUR = 3600_000;
 const PHASE_CLS: Record<Phase, string> = {
@@ -200,38 +199,6 @@ function MarketAdmin({ m, kols, act, now, trackerKey }: { m: AdminMarket; kols: 
   );
 }
 
-/** Lancement public : le chrono de 7 jours affiché sur la landing, et l'ouverture de l'app à zéro. */
-function LaunchAdmin({ at, act, now }: { at: number | null; act: Act; now: number }) {
-  const { t, intl } = useI18n();
-  const l = t.admin.launch;
-  const open = at !== null && at <= now;
-  const date = at === null ? "" : utc(new Date(at).toISOString(), intl);
-  return (
-    <section className="card p-5 fade-up">
-      <h2 className="flex items-center gap-2 font-bold"><Rocket size={16} /> {l.title}</h2>
-      <p className="mt-1 text-sm text-muted">{l.intro}</p>
-      {!open && (
-        <div className="mt-5">
-          <LaunchCountdown at={at} serverNow={now} />
-        </div>
-      )}
-      <p className="mt-5 text-sm font-semibold">{at === null ? l.notStarted : fmt(open ? l.open : l.running, { date })}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <SignButton act={act} k="launch" onClick={() => confirm(l.confirmStart) && act.run("launch", { action: "start_launch" })}>
-          {at === null ? l.start : l.restart}
-        </SignButton>
-        {at !== null && (
-          <SignButton act={act} k="unlaunch" tone="ghost" onClick={() => confirm(l.confirmReset) && act.run("unlaunch", { action: "reset_launch" })}>
-            {l.reset}
-          </SignButton>
-        )}
-      </div>
-      <Feedback act={act} k="launch" />
-      <Feedback act={act} k="unlaunch" />
-    </section>
-  );
-}
-
 function NewChallenge({ kols, act, now }: { kols: AdminKol[]; act: Act; now: number }) {
   const { t, intl } = useI18n();
   const c = t.admin.newChallenge;
@@ -373,7 +340,7 @@ function Kols({ kols, act, trackerKey }: { kols: AdminKol[]; act: Act; trackerKe
   );
 }
 
-export function AdminView({ data, now, launchAt }: { data: AdminData; now: number; launchAt: number | null }) {
+export function AdminView({ data, now }: { data: AdminData; now: number }) {
   const w = useWallet();
   const { t, intl } = useI18n();
   const a = t.admin;
@@ -397,8 +364,6 @@ export function AdminView({ data, now, launchAt }: { data: AdminData; now: numbe
         </p>
         {!data.trackerKey && <p className="mt-2 text-sm font-semibold text-down">{a.missingKey}</p>}
       </div>
-
-      <LaunchAdmin at={launchAt} act={act} now={now} />
 
       <section className="card fade-up">
         <h2 className="px-5 py-4 font-bold">{a.current}</h2>

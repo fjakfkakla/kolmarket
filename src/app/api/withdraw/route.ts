@@ -7,7 +7,7 @@ import { processWithdrawal, requestWithdrawal } from "@/lib/withdrawals";
 
 /** Demande de retrait vers le wallet du compte. Le compte est débité tout de suite, l'envoi suit. */
 export async function POST(req: NextRequest) {
-  const auth = await requireAccount(req, { write: true, beforeLaunch: true });
+  const auth = await requireAccount(req, { write: true });
   if (!auth.ok) return auth.response;
   const cfg = await solanaConfig();
   if (!cfg) return fail(503, "Les retraits ne sont pas encore ouverts.");

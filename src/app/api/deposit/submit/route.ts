@@ -7,7 +7,7 @@ import { DepositError, sendSignedDeposit, solanaConfig } from "@/lib/solana";
 
 /** Envoie la transaction signée par le joueur. Le crédit n'a lieu qu'une fois la transaction définitive. */
 export async function POST(req: NextRequest) {
-  const auth = await requireAccount(req, { write: true, beforeLaunch: true });
+  const auth = await requireAccount(req, { write: true });
   if (!auth.ok) return auth.response;
   const cfg = await solanaConfig();
   if (!cfg) return fail(503, "Les dépôts ne sont pas encore ouverts.");

@@ -5,6 +5,7 @@ import { FeesSection } from "@/components/landing/FeesSection";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { HeroScene } from "@/components/landing/HeroScene";
 import { LandingNav } from "@/components/landing/LandingNav";
+import { LockProvider } from "@/components/landing/AppLink";
 import { LaunchCountdown } from "@/components/LaunchCountdown";
 import { COIN_MARKETS } from "@/data/coins";
 import { getKols, getMarkets, requestTime } from "@/lib/data";
@@ -20,12 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Landing() {
-  const [markets, kols, { t }, launch] = await Promise.all([getMarkets(), getKols(), getI18n(), getLaunch()]);
+  const [markets, kols, { t }] = await Promise.all([getMarkets(), getKols(), getI18n()]);
+  const launch = getLaunch();
   const raw = markets.find((m) => m.period === "7D") ?? markets[0];
   const kolMarket = localizeMarket(raw, t);
   const coinMarket = localizeCoinMarket(COIN_MARKETS[0], t);
   return (
-    <>
+    <LockProvider locked={!launch.open}>
       <LandingNav />
       <main className="flex-1">
         {!launch.open && (
@@ -38,7 +40,7 @@ export default async function Landing() {
         <FeesSection />
         <FinalCta kols={kols} kolMarket={kolMarket} coinMarket={coinMarket} />
       </main>
-      <Footer />
-    </>
+      <Footer locked={!launch.open} />
+    </LockProvider>
   );
 }

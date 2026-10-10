@@ -33,13 +33,18 @@ Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typech
 
 ## Lancement public (chrono)
 
-Tant que le lancement n'est pas passé, l'app est fermée : `/app`, `/market/*`, `/compte`, `/comment-ca-marche` et `/conditions`
-affichent seulement « App opens in: » et le chrono (voir `src/proxy.ts`). Seuls les wallets de `ADMIN_WALLETS` entrent.
-Les mises et les dépôts sont refusés côté API pour les autres ; retraits et dépôts déjà envoyés passent toujours.
+Avant l'ouverture, **seule la landing (`/`) répond** : toute autre adresse (app, marchés, compte, `/admin`, `/api/*`…)
+renvoie vers `/` (404 pour une API). Personne n'entre, admin compris. La landing n'a plus aucun lien vers l'app
+et affiche « Access opens in: » avec le chrono. Voir `src/proxy.ts` et `src/lib/launch.ts`.
 
-Pour lancer le chrono : `/admin` → connexion avec le wallet admin → **Lancer le chrono de 7 jours** (action signée).
-La landing affiche le chrono en direct ; à zéro, l'app s'ouvre à tous. Avant ça, le chrono est figé sur 7 jours.
-Le même bloc permet de relancer 7 jours ou d'arrêter le chrono. L'heure est gardée dans `app_state` (clé `launch`).
+Le chrono se règle uniquement par une variable Railway, aucune page à trouver :
+
+| `LAUNCH_START` | Effet |
+|---|---|
+| absente | tout fermé, chrono figé sur 7 jours |
+| `2026-10-12T18:00:00Z` | le chrono part à cette heure (UTC), l'accès ouvre 7 jours plus tard |
+
+Pour le lancer tout de suite : Railway → Variables → `LAUNCH_START` = l'heure actuelle en UTC → redéploiement.
 
 ## Pages
 

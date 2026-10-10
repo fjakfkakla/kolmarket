@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { ArrowRight } from "lucide-react";
 import { getI18n } from "@/i18n/server";
 import { Logo } from "../Logo";
@@ -21,11 +21,11 @@ export async function LandingNav() {
             </a>
           ))}
         </nav>
-        <Link href="/app" className="plaque ml-auto h-11 px-5 text-[15px] lg:ml-0 md:h-12 md:px-6">
+        <AppLink hide href="/app" className="plaque ml-auto h-11 px-5 text-[15px] lg:ml-0 md:h-12 md:px-6">
           <span className="sm:hidden">{t.common.launchApp}</span>
           <span className="hidden sm:inline">{t.landing.nav.launchLong}</span>
           <ArrowRight size={17} />
-        </Link>
+        </AppLink>
       </div>
     </header>
   );
