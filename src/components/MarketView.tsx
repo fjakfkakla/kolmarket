@@ -55,7 +55,7 @@ const when = (ms: number) =>
   `${dateFr(new Date(ms).toISOString(), { weekday: "long", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC`;
 
 /** Où en est le défi : mises fermées, résultat proposé, payé ou annulé. */
-function PhaseBanner({ market, phase, kols }: { market: Market; phase: Phase; kols: Kol[] }) {
+function PhaseBanner({ market, phase, kols, now }: { market: Market; phase: Phase; kols: Kol[]; now: number }) {
   const winner = kols.find((k) => k.id === market.winnerId);
   const resultAt = Math.ceil((Date.parse(market.endsAt) + RESOLVE_DELAY_HOURS * HOUR) / HOUR) * HOUR;
   const payAt = market.proposedAt ? Date.parse(market.proposedAt) + CORRECTION_HOURS * HOUR : null;
@@ -81,7 +81,11 @@ function PhaseBanner({ market, phase, kols }: { market: Market; phase: Phase; ko
     case "proposed":
       return box("border-gold", <Trophy size={18} className="text-gold-3" />,
         `Résultat proposé : ${winner?.name ?? "?"} gagne.`,
-        <>{market.resolutionNote} {payAt && <>Pot payé automatiquement {when(payAt)}, sauf correction d&apos;une erreur de données.</>}</>);
+        <>
+          {market.resolutionNote}{" "}
+          {payAt && payAt > now && <>Pot payé automatiquement {when(payAt)}, sauf correction d&apos;une erreur de données.</>}
+          {payAt && payAt <= now && <>Dernière vérification des chiffres avant le paiement, en cours.</>}
+        </>);
     case "resolved":
       return box("border-up", <CheckCircle2 size={18} className="text-up" />,
         `Terminé : ${winner?.name ?? "?"} a gagné.`,
@@ -212,7 +216,7 @@ export function MarketView({ market: base, kols: KOLS, sibling, serverNow }: { m
           )}
         </div>
 
-        <PhaseBanner market={market} phase={phase} kols={KOLS} />
+        <PhaseBanner market={market} phase={phase} kols={KOLS} now={now ?? serverNow} />
 
         {/* Chart */}
         <div className="card p-5 fade-up">

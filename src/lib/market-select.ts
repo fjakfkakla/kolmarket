@@ -1,5 +1,5 @@
 import type { Market, Period } from "@/data/markets";
-import { marketPhase } from "./challenge-calendar";
+import { isAutoChallenge, marketPhase } from "./challenge-calendar";
 
 /** Un défi terminé reste affiché sur l'accueil une semaine après son résultat. */
 const KEEP_FINISHED_MS = 7 * 86_400_000;
@@ -20,9 +20,10 @@ export function currentMarkets(markets: Market[], now: number): Market[] {
   );
 }
 
-/** Le défi d'une période où l'on peut miser ; à défaut, le plus récent. */
+/** Le défi automatique d'une période où l'on peut miser ; à défaut, le plus récent. */
 export function currentChallenge(markets: Market[], period: Period, now: number): Market | undefined {
-  const same = markets.filter((m) => m.period === period);
+  const auto = markets.filter((m) => m.period === period && isAutoChallenge(m.slug));
+  const same = auto.length ? auto : markets.filter((m) => m.period === period);
   const betting = same.filter((m) => marketPhase(m, now) === "betting").sort((a, b) => Date.parse(a.closesAt) - Date.parse(b.closesAt));
   return betting[0] ?? same.sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt))[0];
 }

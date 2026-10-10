@@ -15,6 +15,8 @@ Paris en pot commun sur les KOLs crypto. « Quel KOL fera le plus de profit sur 
 - **Défis** (`src/lib/challenge-calendar.ts`) : un défi 7 jours chaque semaine (lundi 00:00 → dimanche 23:59 UTC) et un défi par mois calendaire. Chacun est créé automatiquement dès que le précédent démarre, avec tous les KOLs actifs ; ses mises sont ouvertes jusqu'à son départ.
 - **PnL des KOLs** : Solana Tracker (PnL V2), PnL réalisé jour par jour du wallet principal, en journées UTC. Synchro toutes les 3 h (~1 700 requêtes par mois pour 7 KOLs : offre gratuite).
 - **Résultat** : 12 h après la fin (vers 12:00 UTC le lendemain), le PnL de chaque KOL sur la période est relu, contrôlé (somme des journées = total de la source) et publié ; le gagnant est proposé. 24 h plus tard, le pot est payé automatiquement, au micro-USDC près (méthode du plus grand reste). Égalité → annulé et remboursé. Données manquantes ou incohérentes → nouvel essai chaque heure, puis annulation et remboursement 72 h après la fin.
+- **Relecture avant paiement** : juste avant de payer, le PnL de chaque KOL est relu. Gagnant changé ou chiffre qui a bougé (plus de 1 $ et 0,1 %) → rien n'est payé, le résultat est republié et les 24 h repartent. Source indisponible → nouvel essai dans l'heure. Après 3 republications, la décision revient à l'admin. Un gagnant choisi dans `/admin` est payé sans relecture.
+- **Administration** (`/admin`) : réservée aux wallets de `ADMIN_WALLETS`. Chaque action est signée par le wallet admin (message lisible + empreinte SHA-256 de l'action, nonce à usage unique, 10 min de validité) et inscrite au journal `admin_actions`.
 
 **État actuel** :
 - Avec Supabase : connexion, solde, dépôts, retraits USDC (devnet), mises, résultats et paiement des pots sont réels.
@@ -36,7 +38,8 @@ Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typech
 | `/` | Accueil : défi en vedette, sidebar de filtres (7D / 30D), cartes de marchés, marchés Oui/Non |
 | `/market/kol-7d-2026-10-12` | Page d'un défi : course au PnL, % du pot et cote par KOL, panneau de mise, classement du défi puis résultat, répartition du pot, activité, règles, wallets |
 | `/market/kol-top-profit-7d` | Redirige vers le défi 7 jours où l'on peut miser (même chose avec `-30d`) |
-| `/compte` | Compte : solde, dépôt / retrait USDC, mises en cours et gain estimé, historique |
+| `/compte` | Compte : solde, dépôt / retrait USDC, mises en cours et gain estimé, mises terminées, historique |
+| `/admin` | Administration : lancer un défi, ajouter ou retirer un KOL, lire / corriger un résultat, payer, annuler, journal |
 | `/comment-ca-marche` | Explication du fonctionnement |
 | `/conditions` | Conditions d'utilisation |
 
@@ -65,6 +68,8 @@ src/lib/solanatracker.ts    client Solana Tracker (PnL V2)
 src/lib/kol-pnl.ts          synchro du PnL des KOLs (pnl_snapshots, kol_stats)
 src/lib/jobs.ts             toutes les tâches planifiées, dans l'ordre
 src/instrumentation.ts      démarre le planificateur intégré (toutes les 10 min) sur Railway
+src/lib/admin*.ts           administration : accès, message signé, actions, données de la page
+src/app/api/admin/          action signée ; vérification d'un wallet chez Solana Tracker
 src/app/api/cron/sync/      lance les tâches planifiées à la demande (Bearer CRON_SECRET)
 src/lib/limits.ts           plafonds (1000 $, mise max, retrait min)
 src/lib/pot.ts              calculs du pot commun (cote, gain estimé)
@@ -81,7 +86,8 @@ public/kols/            avatars des KOLs
 4. Puis `supabase/migrations/0003_ledger.sql` (registre, dépôts, mises, contrôle du coffre). **Obligatoire pour les dépôts et les mises.**
 5. Puis `supabase/migrations/0004_withdrawals.sql` (retraits). **Obligatoire pour les retraits.**
 6. Puis `supabase/migrations/0005_challenges.sql` (résultats, paiement des pots, remboursements ; recale les deux premiers défis sur le calendrier UTC). **Obligatoire pour les défis.**
-7. Tous les scripts sont rejouables sans danger.
+7. Puis `supabase/migrations/0006_admin.sql` (journal des actions admin, origine du résultat). **Obligatoire pour /admin et la relecture.**
+8. Tous les scripts sont rejouables sans danger.
 
 Tables : `kols`, `kol_stats`, `pnl_snapshots`, `markets`, `outcomes`, `market_results` (PnL final de chaque KOL, public), `accounts`, `sessions`, `vault_signatures`, `ledger_entries`, `bets`, `withdrawals`, `solvency_checks`, `app_state` (+ `trades`, `positions` de l'ancien modèle Oui/Non, plus utilisées).
 Vues publiques : `market_stats` (pot, joueurs), `outcome_pools` (pot par KOL), `recent_bets` (dernières mises, adresse raccourcie), `kol_pnl_series`.
@@ -150,12 +156,15 @@ Le wallet chaud (payeur des frais + réserve des retraits) ne détient que quelq
 |---|---|---|
 | `SOLANATRACKER_API_KEY` | clé API gratuite : solanatracker.io → Data API | **non, secret** |
 | `SCHEDULER` | `on` / `off`. Par défaut `on` sur Railway : les tâches tournent toutes les 10 minutes dans le serveur, sans service en plus | non |
+| `ADMIN_WALLETS` | adresse(s) des wallets admin, séparées par des virgules | non |
 
 Sans `SOLANATRACKER_API_KEY`, les défis sont créés mais le PnL et les résultats restent en pause (voir `/api/health`, section `defis`).
 
-Tout se passe dans Supabase → SQL Editor. Pendant les 24 h qui suivent la proposition :
+Le plus simple : `/admin`, connecté avec le wallet admin. Chaque bouton ouvre ton wallet pour signer.
+
+En secours, dans Supabase → SQL Editor. Pendant les 24 h qui suivent la proposition :
 - **Voir le résultat proposé** : `select slug, status, resolution_note, proposed_at from markets where status = 'PROPOSED';` et `select * from market_results where market_id = '…' order by realized_pnl_usd desc;`
-- **Corriger le gagnant** (relance les 24 h) : `select propose_result('<id du marché>', '<id du KOL>', 'raison');`
+- **Corriger le gagnant** (relance les 24 h ; `manual` évite que la relecture le remplace par les chiffres) : `select propose_result('<id du marché>', '<id du KOL>', 'raison'); update markets set result_source = 'manual' where id = '<id du marché>';`
 - **Annuler et rembourser tout le monde** : `select cancel_market('<id du marché>', 'raison affichée aux joueurs');`
 - **Payer sans attendre** (après vérification) : `select settle_market('<id du marché>', '0 seconds');`
 - **Retirer un KOL des prochains défis** : `update kols set active = false where id = '…';` (les défis déjà ouverts le gardent).

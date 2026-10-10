@@ -80,21 +80,46 @@ export async function signInWithWallet(wallet: Wallet): Promise<{ address: strin
   return post("/api/auth/verify", { signature: toBase64(signature), walletApp: wallet.name });
 }
 
+const findWallet = (walletName: string | null) =>
+  getWallets()
+    .get()
+    .filter(isSolanaWallet)
+    .find((w) => w.name === walletName);
+
+async function sessionAccount(wallet: Wallet, address: string) {
+  const { accounts } = await (wallet.features as StandardConnectFeature)[StandardConnect].connect();
+  const account = accounts.find((a) => a.address === address);
+  if (!account) throw new Error(`Sélectionne le compte ${address.slice(0, 4)}…${address.slice(-4)} dans ${wallet.name}.`);
+  return account;
+}
+
+/** Fait signer un message texte (actions admin) par le wallet de la session. Renvoie la signature en base64. */
+export async function signMessageWith(walletName: string | null, address: string, text: string): Promise<string> {
+  const wallet = findWallet(walletName);
+  if (!wallet) throw new Error(`Ouvre ${walletName ?? "ton wallet"} pour signer.`);
+  try {
+    const account = await sessionAccount(wallet, address);
+    const [signed] = await (wallet.features as SolanaSignMessageFeature)[SolanaSignMessage].signMessage({
+      account,
+      message: new TextEncoder().encode(text),
+    });
+    return toBase64(signed.signature);
+  } catch (e) {
+    if (rejected(e)) throw new Error("Signature refusée dans le wallet.");
+    throw e instanceof Error ? e : new Error("Signature impossible.");
+  }
+}
+
 /**
  * Fait signer une transaction préparée par le serveur, avec le wallet utilisé à la connexion.
  * Le wallet doit être sur le même compte que la session, sinon on refuse.
  */
 export async function signTransactionWith(walletName: string | null, address: string, transactionB64: string): Promise<string> {
-  const wallet = getWallets()
-    .get()
-    .filter(isSolanaWallet)
-    .find((w) => w.name === walletName);
+  const wallet = findWallet(walletName);
   if (!wallet) throw new Error(`Ouvre ${walletName ?? "ton wallet"} pour signer le dépôt.`);
   if (!(SolanaSignTransaction in wallet.features)) throw new Error(`${wallet.name} ne sait pas signer cette transaction.`);
   try {
-    const { accounts } = await (wallet.features as StandardConnectFeature)[StandardConnect].connect();
-    const account = accounts.find((a) => a.address === address);
-    if (!account) throw new Error(`Sélectionne le compte ${address.slice(0, 4)}…${address.slice(-4)} dans ${wallet.name}.`);
+    const account = await sessionAccount(wallet, address);
     const [out] = await (wallet.features as SolanaSignTransactionFeature)[SolanaSignTransaction].signTransaction({
       account,
       transaction: fromBase64(transactionB64),

@@ -66,12 +66,45 @@ export type ChallengeSpec = {
   rules: string[];
 };
 
+/** Règles d'un défi qui compte les journées UTC de `dataStart` à `dataEnd`. */
+function rulesFor(dataStart: string, dataEnd: string) {
+  return [
+    `Gagnant : le KOL dont le wallet principal affiche le plus gros PnL réalisé, en USD, du ${dayFr(dataStart)} 00:00 au ${dayFr(dataEnd)} 23:59, heure UTC.`,
+    "PnL réalisé : gains et pertes des ventes faites pendant le défi, positions encore ouvertes exclues. Source : Solana Tracker, journée UTC par journée UTC. Les positions jugées suspectes, par exemple des tokens reçus sans achat, comptent pour zéro.",
+    `Résultat proposé le ${dayFr(addDays(dataEnd, 1))} vers 12:00 UTC, avec le PnL de chaque KOL. Il est payé ${CORRECTION_HOURS} h plus tard : ce délai sert à corriger une erreur de données.`,
+    ...POT_RULES,
+    "En cas d'égalité, de données indisponibles ou incohérentes, le défi est annulé et toutes les mises sont remboursées.",
+  ];
+}
+
+const timesFor = (dataStart: string, dataEnd: string) => ({
+  startsAt: `${dataStart}T00:00:00.000Z`,
+  closesAt: `${dataStart}T00:00:00.000Z`,
+  endsAt: `${dataEnd}T23:59:59.000Z`,
+});
+
+/** Durée maximale d'un défi créé à la main, en jours. */
+export const MAX_CUSTOM_DAYS = 31;
+
+/** Défi créé dans /admin : titre et dates au choix (journées UTC, de 1 à 31 jours). */
+export function customChallengeSpec(title: string, dataStart: string, dataEnd: string): ChallengeSpec {
+  return {
+    period: daysBetween(dataStart, dataEnd).length <= 7 ? "7D" : "30D",
+    slug: `defi-${dataStart}-${dataEnd}`,
+    title,
+    question: "Quel KOL fera le plus de profit ?",
+    dataStart,
+    dataEnd,
+    ...timesFor(dataStart, dataEnd),
+    rules: rulesFor(dataStart, dataEnd),
+  };
+}
+
 /** Le défi d'une période qui commence le jour UTC `dataStart` (un lundi, ou un 1er du mois). */
 export function challengeSpec(period: Period, dataStart: string): ChallengeSpec {
   const start = utc(dataStart);
   const dataEnd =
     period === "7D" ? addDays(dataStart, 6) : isoDay(new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0)));
-  const resultDay = addDays(dataEnd, 1);
   return {
     period,
     slug: period === "7D" ? `kol-7d-${dataStart}` : `kol-30d-${dataStart.slice(0, 7)}`,
@@ -82,18 +115,13 @@ export function challengeSpec(period: Period, dataStart: string): ChallengeSpec 
     question: "Quel KOL fera le plus de profit ?",
     dataStart,
     dataEnd,
-    startsAt: `${dataStart}T00:00:00.000Z`,
-    closesAt: `${dataStart}T00:00:00.000Z`,
-    endsAt: `${dataEnd}T23:59:59.000Z`,
-    rules: [
-      `Gagnant : le KOL dont le wallet principal affiche le plus gros PnL réalisé, en USD, du ${dayFr(dataStart)} 00:00 au ${dayFr(dataEnd)} 23:59, heure UTC.`,
-      "PnL réalisé : gains et pertes des ventes faites pendant le défi, positions encore ouvertes exclues. Source : Solana Tracker, journée UTC par journée UTC. Les positions jugées suspectes, par exemple des tokens reçus sans achat, comptent pour zéro.",
-      `Résultat proposé le ${dayFr(resultDay)} vers 12:00 UTC, avec le PnL de chaque KOL. Il est payé ${CORRECTION_HOURS} h plus tard : ce délai sert à corriger une erreur de données.`,
-      ...POT_RULES,
-      "En cas d'égalité, de données indisponibles ou incohérentes, le défi est annulé et toutes les mises sont remboursées.",
-    ],
+    ...timesFor(dataStart, dataEnd),
+    rules: rulesFor(dataStart, dataEnd),
   };
 }
+
+/** Les défis du calendrier automatique (les autres sont créés dans /admin). */
+export const isAutoChallenge = (slug: string) => /^kol-(7d|30d)-/.test(slug);
 
 /** Le prochain défi de la période, celui dont le départ est strictement après `now` : ses mises sont ouvertes. */
 export function upcomingChallenge(period: Period, now: Date): ChallengeSpec {
