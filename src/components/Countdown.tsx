@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useI18n } from "@/i18n/client";
 
 function subscribe(cb: () => void) {
   const id = setInterval(cb, 1000);
@@ -26,7 +27,9 @@ function parts(ms: number) {
   };
 }
 
-export function Countdown({ to, label = "Fermeture des mises", compact = false }: { to: string; label?: string; compact?: boolean }) {
+export function Countdown({ to, label, compact = false }: { to: string; label?: string; compact?: boolean }) {
+  const { t } = useI18n();
+  const c = t.countdown;
   const target = new Date(to).getTime();
   const now = useSyncExternalStore(subscribe, getNow, getServerNow);
   const p = parts(now === null ? 0 : target - now);
@@ -35,22 +38,22 @@ export function Countdown({ to, label = "Fermeture des mises", compact = false }
   if (compact) {
     return (
       <span className="mono text-xs text-muted">
-        {closed ? "Fermé" : `${p.d}j ${String(p.h).padStart(2, "0")}h ${String(p.m).padStart(2, "0")}m`}
+        {closed ? c.closedShort : `${p.d}${c.d} ${String(p.h).padStart(2, "0")}${c.h} ${String(p.m).padStart(2, "0")}m`}
       </span>
     );
   }
 
   return (
     <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{closed ? "Mises fermées" : label}</div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{closed ? c.closed : (label ?? c.closes)}</div>
       <div className="flex items-start gap-3">
-        <Cell v={p.d} u="jours" />
+        <Cell v={p.d} u={c.days} />
         <span className="mt-1 text-xl font-bold text-muted">:</span>
-        <Cell v={p.h} u="h" />
+        <Cell v={p.h} u={c.h} />
         <span className="mt-1 text-xl font-bold text-muted">:</span>
-        <Cell v={p.m} u="min" />
+        <Cell v={p.m} u={c.min} />
         <span className="mt-1 text-xl font-bold text-muted">:</span>
-        <Cell v={p.s} u="sec" />
+        <Cell v={p.s} u={c.sec} />
       </div>
     </div>
   );

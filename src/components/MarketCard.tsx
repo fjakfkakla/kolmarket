@@ -3,8 +3,10 @@ import { BarChart3, Bookmark } from "lucide-react";
 import type { Market } from "@/data/markets";
 import { Avatar } from "./Avatar";
 import { pct, usd } from "@/lib/format";
+import { fmt } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/dictionaries";
 
-export function MarketCard({ market }: { market: Market }) {
+export function MarketCard({ market, t }: { market: Market; t: Dictionary }) {
   const top = market.outcomes.slice(0, 4);
   const leader = market.outcomes[0];
   return (
@@ -20,7 +22,7 @@ export function MarketCard({ market }: { market: Market }) {
         <div className="min-w-0 flex-1">
           <h3 className="line-clamp-2 font-semibold leading-snug group-hover:text-gold-3">{market.title}</h3>
           <div className="mt-1 flex items-center gap-2 text-xs text-muted">
-            <span className="pill-gold py-0">Défi #{market.challenge}</span>
+            <span className="pill-gold py-0">{fmt(t.common.challenge, { n: market.challenge })}</span>
             <span className="pill-muted py-0">{market.period}</span>
           </div>
         </div>
@@ -43,8 +45,8 @@ export function MarketCard({ market }: { market: Market }) {
             <Avatar kol={o.kol} size={20} />
             <span className="flex-1 truncate font-medium">{o.kol.name}</span>
             <span className="mono w-10 text-right font-semibold">{pct(o.prob)}</span>
-            <span className="btn-up h-7 px-2.5 py-0 text-xs">Oui</span>
-            <span className="btn-down h-7 px-2.5 py-0 text-xs">Non</span>
+            <span className="btn-up h-7 px-2.5 py-0 text-xs">{t.common.yes}</span>
+            <span className="btn-down h-7 px-2.5 py-0 text-xs">{t.common.no}</span>
           </li>
         ))}
       </ul>
@@ -52,8 +54,8 @@ export function MarketCard({ market }: { market: Market }) {
       <div className="mt-3 flex items-center justify-between text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" />
-          <span className="font-semibold text-down">EN DIRECT</span>
-          <span>· {usd(market.volume, { compact: true })} Vol.</span>
+          <span className="font-semibold text-down">{t.common.live}</span>
+          <span>· {usd(market.volume, { compact: true })} {t.common.vol}</span>
         </span>
         <span className="flex items-center gap-2">
           <BarChart3 size={14} />

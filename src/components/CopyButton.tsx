@@ -2,13 +2,15 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { useI18n } from "@/i18n/client";
 
 export function CopyButton({ value, className = "" }: { value: string; className?: string }) {
   const [done, setDone] = useState(false);
+  const { t } = useI18n();
   return (
     <button
       type="button"
-      title="Copier"
+      title={t.common.copy}
       onClick={async (e) => {
         e.preventDefault();
         e.stopPropagation();

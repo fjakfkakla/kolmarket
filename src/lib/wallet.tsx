@@ -23,7 +23,10 @@ export type Position = {
 export type Activity = {
   id: string;
   type: "DEPOT" | "RETRAIT" | "ACHAT" | "VENTE";
+  /** Libellé brut (repli) ; l'affichage est traduit à partir du type, du côté et du résultat. */
   label: string;
+  side?: Position["side"];
+  outcome?: string;
   amount: number;
   at: number;
 };
@@ -128,7 +131,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         if (cost > balance) return false;
         setBalance((b) => Math.round((b - cost) * 100) / 100);
         setPositions((prev) => [{ ...p, id: crypto.randomUUID(), createdAt: Date.now() }, ...prev]);
-        log({ type: "ACHAT", label: `${p.side} · ${p.outcome}`, amount: -cost });
+        log({ type: "ACHAT", label: `${p.side} · ${p.outcome}`, side: p.side, outcome: p.outcome, amount: -cost });
         return true;
       },
       sell: (id) => {
@@ -137,7 +140,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           if (pos) {
             const proceeds = Math.round(pos.shares * pos.currentPrice * 100) / 100;
             setBalance((b) => Math.round((b + proceeds) * 100) / 100);
-            log({ type: "VENTE", label: `${pos.side} · ${pos.outcome}`, amount: proceeds });
+            log({ type: "VENTE", label: `${pos.side} · ${pos.outcome}`, side: pos.side, outcome: pos.outcome, amount: proceeds });
           }
           return prev.filter((x) => x.id !== id);
         });

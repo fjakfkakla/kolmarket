@@ -3,10 +3,13 @@ import type { Kol } from "@/data/kols";
 import type { Period } from "@/data/markets";
 import { Avatar } from "./Avatar";
 import { usd } from "@/lib/format";
+import { fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 
 type PnlKey = "pnl7d" | "pnl30d";
 
 function Card({ k, rank, first, pnlKey: key }: { k: Kol; rank: 1 | 2 | 3; first: Kol; pnlKey: PnlKey }) {
+    const { t } = useI18n();
     const gap = k[key] - first[key];
     const rankStyle =
       rank === 1
@@ -39,7 +42,7 @@ function Card({ k, rank, first, pnlKey: key }: { k: Kol; rank: 1 | 2 | 3; first:
         <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-muted">
           <span className="pill-muted py-0.5">Vol {usd(k.volume7d, { compact: true })}</span>
           <span className="pill-muted py-0.5">WR {k.winRate}%</span>
-          {rank !== 1 && <span className="pill-down py-0.5">{usd(gap, { compact: true })} vs n°1</span>}
+          {rank !== 1 && <span className="pill-down py-0.5">{fmt(t.market.vsFirst, { gap: usd(gap, { compact: true }) })}</span>}
         </div>
       </div>
     );

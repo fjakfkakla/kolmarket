@@ -11,14 +11,17 @@ import { CopyButton } from "./CopyButton";
 import { PnlChart } from "./PnlChart";
 import { Podium } from "./Podium";
 import { TradePanel } from "./TradePanel";
-import { cents, dateFr, pct, shortWallet, usd } from "@/lib/format";
+import { cents, fmtDate, pct, shortWallet, usd } from "@/lib/format";
+import { INTL_LOCALE, fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 
+/** `ago` en secondes. */
 const ACTIVITY = [
-  { who: "7Gx2…xVq", side: "OUI", who2: "Cooker", amt: 250, price: 0.33, ago: "il y a 12 s" },
-  { who: "Bq91…aa4", side: "NON", who2: "zeropnl", amt: 40, price: 0.93, ago: "il y a 48 s" },
-  { who: "3Fkd…m0P", side: "OUI", who2: "Cented", amt: 120, price: 0.22, ago: "il y a 2 min" },
-  { who: "9zLm…Qe7", side: "OUI", who2: "decu", amt: 75, price: 0.21, ago: "il y a 3 min" },
-  { who: "Hh3s…k2R", side: "NON", who2: "Cooker", amt: 500, price: 0.67, ago: "il y a 5 min" },
+  { who: "7Gx2…xVq", side: "OUI", who2: "Cooker", amt: 250, price: 0.33, ago: 12 },
+  { who: "Bq91…aa4", side: "NON", who2: "zeropnl", amt: 40, price: 0.93, ago: 48 },
+  { who: "3Fkd…m0P", side: "OUI", who2: "Cented", amt: 120, price: 0.22, ago: 120 },
+  { who: "9zLm…Qe7", side: "OUI", who2: "decu", amt: 75, price: 0.21, ago: 180 },
+  { who: "Hh3s…k2R", side: "NON", who2: "Cooker", amt: 500, price: 0.67, ago: 300 },
 ];
 
 export function MarketView({ market, kols: KOLS, sibling }: { market: Market; kols: Kol[]; sibling?: Market }) {
@@ -27,6 +30,10 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
   const [period, setPeriod] = useState<Period>(market.period);
   const [open, setOpen] = useState<"book" | "activity" | null>("activity");
   const pnlKey = period === "7D" ? "pnl7d" : "pnl30d";
+  const { locale, t } = useI18n();
+  const tm = t.market;
+  const intl = INTL_LOCALE[locale];
+  const sideLabel = (s: string) => (s === "OUI" ? t.common.yes : t.common.no);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -34,9 +41,9 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
         {/* Header */}
         <div className="fade-up">
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="pill-gold">Défi #{market.challenge}</span>
+            <span className="pill-gold">{fmt(t.common.challenge, { n: market.challenge })}</span>
             <span className="pill-muted">KOL · {market.period}</span>
-            <span className="pill-muted">{dateFr(market.startsAt)} → {dateFr(market.endsAt)}</span>
+            <span className="pill-muted">{fmtDate(market.startsAt, intl)} → {fmtDate(market.endsAt, intl)}</span>
             <span className="ml-auto flex items-center gap-1 text-muted">
               <Code2 size={16} className="cursor-pointer hover:text-ink" />
               <Link2 size={16} className="cursor-pointer hover:text-ink" />
@@ -52,7 +59,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             <div>
               <h1 className="text-2xl font-bold leading-tight md:text-3xl">{market.title}</h1>
               <p className="mt-1 text-sm text-muted">
-                {usd(market.volume, { compact: true })} Vol. · {market.traders} traders · pool {usd(market.pool, { compact: true })}
+                {usd(market.volume, { compact: true })} {t.common.vol} · {market.traders} {t.common.traders} · {t.common.pool.toLowerCase()} {usd(market.pool, { compact: true })}
               </p>
             </div>
           </div>
@@ -62,20 +69,20 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
         <div className="card flex flex-wrap items-center justify-between gap-6 p-5 fade-up">
           <div className="flex flex-wrap gap-8">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted">Favori</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted">{tm.favorite}</div>
               <div className="mt-1 flex items-center gap-2 font-bold">
                 <Avatar kol={market.outcomes[0].kol} size={22} /> {market.outcomes[0].kol.name}
                 <span className="text-up">{pct(market.outcomes[0].prob)}</span>
               </div>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted">Leader PnL {market.period}</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted">{fmt(tm.pnlLeader, { period: market.period })}</div>
               <div className="mono mt-1 text-xl font-bold text-up">
                 {usd(Math.max(...KOLS.map((k) => k[market.period === "7D" ? "pnl7d" : "pnl30d"])), { compact: true, sign: true })}
               </div>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted">Pool</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted">{t.common.pool}</div>
               <div className="mono mt-1 text-xl font-bold">{usd(market.pool, { compact: true })}</div>
             </div>
           </div>
@@ -85,9 +92,9 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
         {/* Chart */}
         <div className="card p-5 fade-up">
           <div className="mb-3 flex flex-wrap items-center gap-3">
-            <h2 className="font-bold">Course au PnL</h2>
+            <h2 className="font-bold">{tm.pnlRace}</h2>
             <span className="flex items-center gap-1.5 text-xs text-muted">
-              <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" /> on-chain · MàJ 22:17
+              <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" /> {tm.updated}
             </span>
             <div className="seg ml-auto">
               {(["7D", "30D"] as Period[]).map((p) => (
@@ -112,10 +119,10 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
         {/* Outcomes */}
         <div className="card overflow-hidden fade-up">
           <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted md:grid-cols-[1fr_120px_90px_200px]">
-            <span>Résultat</span>
+            <span>{tm.outcome}</span>
             <span className="hidden text-right md:block">PnL {market.period}</span>
-            <span className="text-right">% chance</span>
-            <span className="text-right md:text-center">Trade</span>
+            <span className="text-right">{tm.chance}</span>
+            <span className="text-right md:text-center">{tm.trade}</span>
           </div>
           <ul className="stagger">
             {market.outcomes.map((o, i) => {
@@ -132,7 +139,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 font-semibold">
                         {o.kol.name}
-                        {i === 0 && <span className="pill-gold py-0 text-[10px]">favori</span>}
+                        {i === 0 && <span className="pill-gold py-0 text-[10px]">{tm.favoriteTag}</span>}
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted">
                         <a href={`https://x.com/${o.kol.handle}`} target="_blank" rel="noreferrer" className="hover:text-ink" onClick={(e) => e.stopPropagation()}>@{o.kol.handle}</a>
@@ -147,15 +154,15 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
                     <div className="text-lg font-bold">{pct(o.prob)}</div>
                     <div className={`flex items-center justify-end gap-0.5 text-[11px] ${o.change24h >= 0 ? "text-up" : "text-down"}`}>
                       {o.change24h >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                      {Math.abs(o.change24h).toFixed(1)} pts
+                      {Math.abs(o.change24h).toFixed(1)} {tm.pts}
                     </div>
                   </div>
                   <div className="col-span-3 grid grid-cols-2 gap-2 md:col-span-1">
                     <button onClick={(e) => { e.stopPropagation(); setSelected(o); setSide("OUI"); }} className={`btn py-2 ${active && side === "OUI" ? "bg-up text-white" : "btn-up"}`}>
-                      Oui {cents(o.prob)}
+                      {t.common.yes} {cents(o.prob)}
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); setSelected(o); setSide("NON"); }} className={`btn py-2 ${active && side === "NON" ? "bg-down text-white" : "btn-down"}`}>
-                      Non {cents(1 - o.prob)}
+                      {t.common.no} {cents(1 - o.prob)}
                     </button>
                   </div>
                 </li>
@@ -167,8 +174,8 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
         {/* Podium */}
         <div className="fade-up">
           <div className="mb-3 flex items-center gap-3">
-            <h2 className="font-bold">Classement en direct · {period}</h2>
-            <span className="text-xs text-muted">PnL réalisé sur le wallet listé</span>
+            <h2 className="font-bold">{fmt(tm.leaderboard, { period })}</h2>
+            <span className="text-xs text-muted">{tm.leaderboardHint}</span>
           </div>
           <Podium kols={KOLS} period={period} />
         </div>
@@ -176,15 +183,15 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
         {/* Order book / activity */}
         <div className="card fade-up">
           <button onClick={() => setOpen(open === "book" ? null : "book")} className="flex w-full items-center justify-between px-5 py-4 font-bold">
-            <span>Carnet d&apos;ordres <span className="ml-2 text-xs font-normal text-muted">{selected.kol.name} · {side}</span></span>
-            <span className="flex items-center gap-3 text-xs font-normal text-muted">{usd(market.volume * 0.12, { compact: true })} Vol. <ChevronDown size={16} className={`transition ${open === "book" ? "rotate-180" : ""}`} /></span>
+            <span>{tm.orderBook} <span className="ml-2 text-xs font-normal text-muted">{selected.kol.name} · {sideLabel(side)}</span></span>
+            <span className="flex items-center gap-3 text-xs font-normal text-muted">{usd(market.volume * 0.12, { compact: true })} {t.common.vol} <ChevronDown size={16} className={`transition ${open === "book" ? "rotate-180" : ""}`} /></span>
           </button>
           {open === "book" && (
             <div className="grid gap-0 border-t border-line text-sm md:grid-cols-2 pop">
-              {(["Acheteurs", "Vendeurs"] as const).map((col, ci) => (
+              {[tm.buyers, tm.sellers].map((col, ci) => (
                 <div key={col} className={ci === 0 ? "border-b border-line md:border-b-0 md:border-r" : ""}>
                   <div className="grid grid-cols-3 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                    <span>{col}</span><span className="text-right">Prix</span><span className="text-right">Total</span>
+                    <span>{col}</span><span className="text-right">{tm.price}</span><span className="text-right">{tm.total}</span>
                   </div>
                   {[0, 1, 2, 3, 4].map((r) => {
                     const base = side === "OUI" ? selected.prob : 1 - selected.prob;
@@ -194,7 +201,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
                     return (
                       <div key={r} className="relative grid grid-cols-3 px-5 py-1.5">
                         <span className="absolute inset-y-0 left-0 opacity-[0.12]" style={{ width: `${w}%`, background: ci === 0 ? "#16a34a" : "#dc2626" }} />
-                        <span className="mono relative">{qty.toLocaleString("fr-FR")}</span>
+                        <span className="mono relative">{qty.toLocaleString(intl)}</span>
                         <span className={`mono relative text-right font-semibold ${ci === 0 ? "text-up" : "text-down"}`}>{cents(Math.max(0.01, Math.min(0.99, p)))}</span>
                         <span className="mono relative text-right text-muted">{usd(qty * p)}</span>
                       </div>
@@ -205,7 +212,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             </div>
           )}
           <button onClick={() => setOpen(open === "activity" ? null : "activity")} className="flex w-full items-center justify-between border-t border-line px-5 py-4 font-bold">
-            <span>Activité</span>
+            <span>{tm.activity}</span>
             <ChevronDown size={16} className={`text-muted transition ${open === "activity" ? "rotate-180" : ""}`} />
           </button>
           {open === "activity" && (
@@ -216,12 +223,12 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
                   <li key={i} className="flex items-center gap-3 px-5 py-2.5 text-sm">
                     <span className="mono grid h-7 w-7 place-items-center rounded-full bg-cream-2 text-[10px] font-bold">{a.who.slice(0, 2)}</span>
                     <span className="mono text-xs text-muted">{a.who}</span>
-                    <span>a acheté</span>
-                    <span className={`font-semibold ${a.side === "OUI" ? "text-up" : "text-down"}`}>{a.side}</span>
+                    <span>{tm.bought}</span>
+                    <span className={`font-semibold ${a.side === "OUI" ? "text-up" : "text-down"}`}>{sideLabel(a.side)}</span>
                     <Avatar kol={k} size={18} /> <span className="font-semibold">{a.who2}</span>
-                    <span className="text-muted">à {cents(a.price)}</span>
+                    <span className="text-muted">{tm.at} {cents(a.price)}</span>
                     <span className="mono ml-auto font-semibold">{usd(a.amt)}</span>
-                    <span className="hidden text-xs text-muted sm:inline">{a.ago}</span>
+                    <span className="hidden text-xs text-muted sm:inline">{a.ago < 60 ? fmt(tm.agoSec, { n: a.ago }) : fmt(tm.agoMin, { n: Math.round(a.ago / 60) })}</span>
                   </li>
                 );
               })}
@@ -231,7 +238,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
 
         {/* Rules */}
         <div className="card p-5 fade-up" id="regles">
-          <h2 className="mb-3 font-bold">Règles</h2>
+          <h2 className="mb-3 font-bold">{tm.rules}</h2>
           <ol className="space-y-2 text-sm text-muted">
             {market.rules.map((r, i) => (
               <li key={i} className="flex gap-3">
@@ -241,14 +248,14 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             ))}
           </ol>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <span className="pill-muted">Résolution : multisig 2/3 + 24h de contestation</span>
-            <span className="pill-muted">Source : données on-chain publiques</span>
+            <span className="pill-muted">{tm.resolution}</span>
+            <span className="pill-muted">{tm.source}</span>
           </div>
         </div>
 
         {/* Traders & wallets */}
         <div className="card p-5 fade-up">
-          <h2 className="mb-3 font-bold">Traders &amp; wallets suivis</h2>
+          <h2 className="mb-3 font-bold">{tm.tracked}</h2>
           <div className="grid gap-2 sm:grid-cols-2">
             {KOLS.map((k) => (
               <div key={k.id} className="flex items-center gap-3 rounded-xl border border-line p-3 transition hover:border-gold">
@@ -281,7 +288,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold">{sibling.title}</div>
-              <div className="text-xs text-muted">{sibling.period} · {usd(sibling.volume, { compact: true })} Vol.</div>
+              <div className="text-xs text-muted">{sibling.period} · {usd(sibling.volume, { compact: true })} {t.common.vol}</div>
             </div>
             <span className="font-bold text-up">{pct(sibling.outcomes[0].prob)}</span>
           </Link>

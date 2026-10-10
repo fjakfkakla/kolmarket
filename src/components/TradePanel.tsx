@@ -6,6 +6,8 @@ import type { Market, Outcome } from "@/data/markets";
 import { useWallet } from "@/lib/wallet";
 import { cents, usd } from "@/lib/format";
 import { Avatar } from "./Avatar";
+import { fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 
 export function TradePanel({
   market,
@@ -19,6 +21,9 @@ export function TradePanel({
   onSide: (s: "OUI" | "NON") => void;
 }) {
   const w = useWallet();
+  const { t } = useI18n();
+  const tt = t.trade;
+  const sideLabel = side === "OUI" ? t.common.yes : t.common.no;
   const [tab, setTab] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState(10);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -32,7 +37,7 @@ export function TradePanel({
   const submit = () => {
     setMsg(null);
     if (!w.connected) return w.openModal("connect");
-    if (amount <= 0) return setMsg({ ok: false, text: "Montant invalide." });
+    if (amount <= 0) return setMsg({ ok: false, text: tt.invalid });
     const ok = w.buy(
       {
         marketSlug: market.slug,
@@ -45,7 +50,7 @@ export function TradePanel({
       },
       amount,
     );
-    setMsg(ok ? { ok: true, text: `Position ouverte : ${shares.toFixed(1)} parts ${side} · ${outcome.kol.name}` } : { ok: false, text: "Solde insuffisant. Dépose des USDC." });
+    setMsg(ok ? { ok: true, text: fmt(tt.opened, { shares: shares.toFixed(1), side: sideLabel, name: outcome.kol.name }) } : { ok: false, text: tt.insufficient });
   };
 
   return (
@@ -61,9 +66,9 @@ export function TradePanel({
       </div>
 
       <div className="mb-4 flex items-center gap-5 border-b border-line">
-        <button className="tab" data-active={tab === "buy"} onClick={() => setTab("buy")}>Acheter</button>
-        <button className="tab" data-active={tab === "sell"} onClick={() => setTab("sell")}>Vendre</button>
-        <span className="ml-auto pb-2 text-xs text-muted">Marché ▾</span>
+        <button className="tab" data-active={tab === "buy"} onClick={() => setTab("buy")}>{tt.buy}</button>
+        <button className="tab" data-active={tab === "sell"} onClick={() => setTab("sell")}>{tt.sell}</button>
+        <span className="ml-auto pb-2 text-xs text-muted">{tt.marketOrder}</span>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-2">
@@ -71,19 +76,19 @@ export function TradePanel({
           onClick={() => onSide("OUI")}
           className={`btn py-3 text-base ${side === "OUI" ? "bg-up text-white shadow-md" : "bg-up-soft text-up hover:bg-up/20"}`}
         >
-          Oui {cents(outcome.prob)}
+          {t.common.yes} {cents(outcome.prob)}
         </button>
         <button
           onClick={() => onSide("NON")}
           className={`btn py-3 text-base ${side === "NON" ? "bg-down text-white shadow-md" : "bg-down-soft text-down hover:bg-down/20"}`}
         >
-          Non {cents(1 - outcome.prob)}
+          {t.common.no} {cents(1 - outcome.prob)}
         </button>
       </div>
 
       <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted">
-        <span>Montant</span>
-        {w.connected && <span className="mono normal-case tracking-normal">Solde {usd(w.balance)}</span>}
+        <span>{tt.amount}</span>
+        {w.connected && <span className="mono normal-case tracking-normal">{fmt(tt.balance, { amount: usd(w.balance) })}</span>}
       </div>
       <div className="relative mb-2">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xl font-bold text-muted">$</span>
@@ -99,24 +104,24 @@ export function TradePanel({
         {[1, 20, 100].map((v) => (
           <button key={v} onClick={() => setAmount((a) => a + v)} className="btn-ghost py-1.5">+${v}</button>
         ))}
-        <button onClick={() => setAmount(Math.floor(w.balance))} className="btn-ghost py-1.5">Max</button>
+        <button onClick={() => setAmount(Math.floor(w.balance))} className="btn-ghost py-1.5">{t.common.max}</button>
       </div>
 
       <div className="mb-4 rounded-xl bg-cream-2 p-3 text-sm">
         <div className="flex justify-between py-0.5">
-          <span className="text-muted">Prix moyen</span>
+          <span className="text-muted">{tt.avgPrice}</span>
           <span className="mono font-semibold">{cents(price)}</span>
         </div>
         <div className="flex justify-between py-0.5">
-          <span className="text-muted">Parts</span>
+          <span className="text-muted">{tt.shares}</span>
           <span className="mono font-semibold">{shares.toFixed(2)}</span>
         </div>
         <div className="flex justify-between py-0.5">
-          <span className="text-muted">Frais (2 %)</span>
+          <span className="text-muted">{tt.fees}</span>
           <span className="mono font-semibold">{usd(fee)}</span>
         </div>
         <div className="mt-1 flex justify-between border-t border-line pt-2">
-          <span className="font-semibold">Gain potentiel</span>
+          <span className="font-semibold">{tt.potential}</span>
           <span className="mono font-bold text-up">
             {usd(payout)} <span className="text-xs">({profit >= 0 ? "+" : ""}{((profit / Math.max(amount, 1)) * 100).toFixed(0)} %)</span>
           </span>
@@ -127,17 +132,17 @@ export function TradePanel({
 
       {tab === "buy" ? (
         <button onClick={submit} className={`w-full py-3 text-base ${side === "OUI" ? "btn bg-up text-white hover:bg-green-700" : "btn bg-down text-white hover:bg-red-700"}`}>
-          {w.connected ? `Acheter ${side}` : <><Wallet size={16} /> Connecter le wallet</>}
+          {w.connected ? fmt(tt.buySide, { side: sideLabel }) : <><Wallet size={16} /> {tt.connect}</>}
         </button>
       ) : (
-        <button onClick={() => setMsg({ ok: false, text: "Aucune part à vendre sur ce choix. Va dans Mon compte." })} className="btn-dark w-full py-3 text-base">
-          Vendre {side}
+        <button onClick={() => setMsg({ ok: false, text: tt.nothingToSell })} className="btn-dark w-full py-3 text-base">
+          {fmt(tt.sellSide, { side: sideLabel })}
         </button>
       )}
 
       <p className="mt-3 flex items-start gap-1.5 text-[11px] text-muted">
         <Info size={12} className="mt-0.5 shrink-0" />
-        En négociant, tu acceptes les <a href="/conditions" className="underline">conditions d&apos;utilisation</a>. Chaque part gagnante vaut 1 $ à la résolution.
+        <span>{tt.disclaimerA}<a href="/conditions" className="underline">{t.common.terms}</a>{tt.disclaimerB}</span>
       </p>
     </div>
   );

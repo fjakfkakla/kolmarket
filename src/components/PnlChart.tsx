@@ -5,6 +5,8 @@ import type { Kol } from "@/data/kols";
 import type { Period } from "@/data/markets";
 import { usd } from "@/lib/format";
 import { Avatar } from "./Avatar";
+import { fmt } from "@/i18n/config";
+import { useI18n } from "@/i18n/client";
 
 const W = 720;
 const H = 260;
@@ -12,6 +14,7 @@ const PAD = { l: 56, r: 16, t: 16, b: 28 };
 
 export function PnlChart({ kols, period, highlight }: { kols: Kol[]; period: Period; highlight?: string }) {
   const [hover, setHover] = useState<number | null>(null);
+  const { t } = useI18n();
   const key = period === "7D" ? "series7d" : "series30d";
   const n = kols[0][key].length;
 
@@ -32,7 +35,7 @@ export function PnlChart({ kols, period, highlight }: { kols: Kol[]; period: Per
 
   const ticks = [max, (max + min) / 2, min];
   const labels = Array.from({ length: n }, (_, i) =>
-    period === "7D" ? ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"][i] : i % 5 === 0 ? `J${i + 1}` : "",
+    period === "7D" ? t.chart.weekdays[i] : i % 5 === 0 ? fmt(t.chart.dayShort, { n: i + 1 }) : "",
   );
 
   return (
@@ -103,7 +106,7 @@ export function PnlChart({ kols, period, highlight }: { kols: Kol[]; period: Per
           className="card pointer-events-none absolute top-2 z-10 w-44 p-2 text-xs pop"
           style={{ left: `${Math.min(78, Math.max(2, (xs[hover] / W) * 100))}%` }}
         >
-          <div className="mb-1 font-semibold text-muted">{period === "7D" ? labels[hover] : `Jour ${hover + 1}`}</div>
+          <div className="mb-1 font-semibold text-muted">{period === "7D" ? labels[hover] : fmt(t.chart.day, { n: hover + 1 })}</div>
           {[...kols]
             .sort((a, b) => b[key][hover] - a[key][hover])
             .map((k) => (

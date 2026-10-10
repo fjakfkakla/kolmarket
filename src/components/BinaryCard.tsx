@@ -4,8 +4,9 @@ import type { BinaryMarket } from "@/data/markets";
 import { kolById } from "@/data/kols";
 import { Avatar } from "./Avatar";
 import { pct, usd } from "@/lib/format";
+import type { Dictionary } from "@/i18n/dictionaries";
 
-export function BinaryCard({ market }: { market: BinaryMarket }) {
+export function BinaryCard({ market, t }: { market: BinaryMarket; t: Dictionary }) {
   const kol = kolById(market.kolId)!;
   return (
     <Link href={`/market/kol-top-profit-${market.period.toLowerCase()}`} className="card card-hover group block p-4">
@@ -20,19 +21,19 @@ export function BinaryCard({ market }: { market: BinaryMarket }) {
           </svg>
           <div className="absolute text-center leading-none">
             <div className="text-[11px] font-bold">{pct(market.yes)}</div>
-            <div className="text-[9px] text-muted">Oui</div>
+            <div className="text-[9px] text-muted">{t.common.yes}</div>
           </div>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <span className="btn-up">Oui {Math.round(market.yes * 100)}¢</span>
-        <span className="btn-down">Non {Math.round((1 - market.yes) * 100)}¢</span>
+        <span className="btn-up">{t.common.yes} {Math.round(market.yes * 100)}¢</span>
+        <span className="btn-down">{t.common.no} {Math.round((1 - market.yes) * 100)}¢</span>
       </div>
       <div className="mt-3 flex items-center justify-between text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" />
-          <span className="font-semibold text-down">EN DIRECT</span>
-          <span>· {usd(market.volume, { compact: true })} Vol. · {market.period}</span>
+          <span className="font-semibold text-down">{t.common.live}</span>
+          <span>· {usd(market.volume, { compact: true })} {t.common.vol} · {market.period}</span>
         </span>
         <Bookmark size={14} />
       </div>
