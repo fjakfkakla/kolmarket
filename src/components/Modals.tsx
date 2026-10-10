@@ -256,7 +256,8 @@ function WithdrawModal() {
             if (e) setErr(e);
             else w.openModal(null);
           }}
-          className="btn-dark w-full py-3"
+          disabled={w.live}
+          className="btn-dark w-full py-3 disabled:opacity-50"
         >
           <ArrowUpFromLine size={16} /> Retirer {usd(amount)}{w.live ? "" : " (démo)"}
         </button>
