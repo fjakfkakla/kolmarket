@@ -22,8 +22,9 @@ const SESSION_TTL_S = 7 * 24 * 3600;
 export const NONCE_TTL_S = 5 * 60;
 
 
-const STATEMENT =
-  "Connexion à Marketcoins. Cette signature est gratuite : ce n'est pas une transaction et elle ne donne accès à aucun de tes fonds.";
+// Format imposé par Sign In With Solana (Phantom refuse d'afficher le message sinon) :
+// lettres sans accent, chiffres, espaces et ponctuation simple uniquement, sur une seule ligne.
+const STATEMENT = "Connexion sur Marketcoins. Signature gratuite : ce n'est pas une transaction, aucun fonds ne bouge.";
 
 // ---------------------------------------------------------------
 // Jetons signés (HMAC) : cookie de nonce et cookie de session
