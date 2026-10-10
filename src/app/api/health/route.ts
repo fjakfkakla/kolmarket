@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { allowedOrigins, managedHost } from "@/lib/auth";
 import { CLUSTER } from "@/lib/cluster";
 import { hotBalanceMicro, solanaConfig } from "@/lib/solana";
+import { adminWallets } from "@/lib/admin";
 import { readState } from "@/lib/app-state";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -62,6 +63,10 @@ export async function GET(req: NextRequest) {
           ? "actif : toutes les 10 minutes"
           : "inactif (SCHEDULER=on pour l'activer, ou appeler /api/cron/sync)",
       derniere_synchro_pnl: await lastPnl(),
+    },
+    admin: {
+      migration_0006: await table("admin_actions"),
+      ADMIN_WALLETS: adminWallets().length ? `${adminWallets().length} wallet(s)` : "manquant (page /admin fermée)",
     },
     depots: {
       reseau: CLUSTER,

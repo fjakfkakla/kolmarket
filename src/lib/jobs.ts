@@ -31,7 +31,7 @@ export async function runScheduledJobs() {
   await step("defis", () => ensureChallenges(db));
   await step("pnl", () => (key ? syncKolPnl(db, key) : noKey()));
   await step("resultats", () => (key ? resolveChallenges(db, key) : noKey()));
-  await step("paiements", () => settleChallenges(db));
+  await step("paiements", () => settleChallenges(db, key));
 
   const cfg = await solanaConfig();
   if (cfg) {
