@@ -31,6 +31,21 @@ npm run dev        # http://localhost:3000
 
 Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`.
 
+## Lancement public (chrono)
+
+Avant l'ouverture, **seule la landing (`/`) répond** : toute autre adresse (app, marchés, compte, `/admin`, `/api/*`…)
+renvoie vers `/` (404 pour une API). Personne n'entre, admin compris. La landing n'a plus aucun lien vers l'app
+et affiche « Access opens in: » avec le chrono. Voir `src/proxy.ts` et `src/lib/launch.ts`.
+
+Le chrono se règle uniquement par une variable Railway, aucune page à trouver :
+
+| `LAUNCH_START` | Effet |
+|---|---|
+| absente | tout fermé, chrono figé sur 7 jours |
+| `2026-10-12T18:00:00Z` | le chrono part à cette heure (UTC), l'accès ouvre 7 jours plus tard |
+
+Pour le lancer tout de suite : Railway → Variables → `LAUNCH_START` = l'heure actuelle en UTC → redéploiement.
+
 ## Pages
 
 | Route | Contenu |

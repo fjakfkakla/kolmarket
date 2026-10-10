@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import type { Kol } from "@/data/kols";
@@ -270,12 +270,12 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
               {L.subtitle}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:mt-8 md:justify-start">
-              <Link href="/app" className="pill-white">
+              <AppLink hide href="/app" className="pill-white">
                 {t.landing.nav.launchLong} <ArrowRight size={18} />
-              </Link>
-              <Link href="/how-it-works" className="hidden h-[54px] items-center rounded-[14px] px-5 text-[15px] font-bold text-white/80 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+              </AppLink>
+              <AppLink hide href="/how-it-works" className="hidden h-[54px] items-center rounded-[14px] px-5 text-[15px] font-bold text-white/80 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                 {t.common.howItWorks}
-              </Link>
+              </AppLink>
             </div>
           </div>
           <div ref={cue} className="absolute bottom-5 left-1/2 z-[5] -translate-x-1/2" aria-hidden>
@@ -324,14 +324,14 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
               </p>
             </div>
             <div ref={screenBox} className="relative min-h-0 flex-1 self-stretch">
-              <Link href={`/market/${market.slug}`} aria-label={fmt(L.openMarket, { title: market.title })}>
+              <AppLink href={`/market/${market.slug}`} aria-label={fmt(L.openMarket, { title: market.title })}>
                 <div ref={screenDesk} className="pointer-events-auto absolute left-0 top-0 origin-top" style={{ visibility: "hidden" }}>
                   <KolScreenDesktop market={market} kols={kols} />
                 </div>
                 <div ref={screenPhone} className="pointer-events-auto absolute left-0 top-0 origin-top" style={{ visibility: "hidden", display: "none" }}>
                   <KolScreenPhone market={market} kols={kols} />
                 </div>
-              </Link>
+              </AppLink>
             </div>
           </div>
         </div>

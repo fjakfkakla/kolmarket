@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { useRef, useState } from "react";
 import type { CoinMarket } from "@/data/coins";
 import { OutcomeCoin } from "../Coin";
@@ -240,14 +240,14 @@ export function CoinScene({ market }: { market: CoinMarket }) {
             ))}
             <div ref={glass} className="glass absolute inset-[3%] z-[2] p-2.5 md:inset-[5%] md:p-3" style={{ opacity: 0 }}>
               <div ref={box} className="relative h-full w-full">
-                <Link href={`/market/${market.slug}`} aria-label={fmt(t.landing.hero.openMarket, { title: market.title })}>
+                <AppLink href={`/market/${market.slug}`} aria-label={fmt(t.landing.hero.openMarket, { title: market.title })}>
                   <div ref={desk} className="absolute left-0 top-0 origin-top overflow-hidden rounded-[26px] shadow-[0_30px_60px_-36px_rgba(13,32,84,.5)]">
                     <CoinScreenDesktop market={market} pick={pick} />
                   </div>
                   <div ref={phone} className="absolute left-0 top-0 origin-top" style={{ display: "none" }}>
                     <CoinScreenPhone market={market} pick={pick} />
                   </div>
-                </Link>
+                </AppLink>
               </div>
             </div>
           </div>

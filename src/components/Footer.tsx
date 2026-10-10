@@ -3,8 +3,8 @@ import { getI18n } from "@/i18n/server";
 import { LanguageSelect } from "./LanguageSelect";
 import { Logo } from "./Logo";
 
-/** Le pied : la marque et sa phrase, les sections, l'accès, et le choix de la langue (DA §14.2). */
-export async function Footer() {
+/** Le pied : la marque et sa phrase, les sections, l'accès, et le choix de la langue (DA §14.2). Verrouillé : sans liens. */
+export async function Footer({ locked = false }: { locked?: boolean }) {
   const { t } = await getI18n();
   const f = t.landing.footer;
   const COLS = [
@@ -32,12 +32,12 @@ export async function Footer() {
     <footer className="mt-20 border-t border-line bg-paper">
       <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-12 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
-          <Logo size={24} />
+          <Logo size={24} href={locked ? "/" : undefined} />
           <p className="display mt-6 text-[clamp(2.1rem,4.2vw,3.4rem)]">
             Trade <span className="text-blue">the future.</span>
           </p>
         </div>
-        {COLS.map((c) => (
+        {!locked && COLS.map((c) => (
           <div key={c.title}>
             <h4 className="mb-3 font-display text-[18px] font-extrabold tracking-[-0.02em]">{c.title}</h4>
             <ul className="space-y-2.5">
