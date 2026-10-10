@@ -3,6 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Modals } from "@/components/Modals";
 import { WalletProvider } from "@/lib/wallet";
+import { I18nProvider } from "@/i18n/client";
+import { toClientDictionary } from "@/i18n/messages";
+import { getI18n } from "@/i18n/server";
 
 const inter = localFont({
   src: [{ path: "./fonts/inter-var-latin.woff2", weight: "100 900", style: "normal" }],
@@ -15,22 +18,24 @@ const sora = localFont({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: { default: "Marketcoins · Trade the future", template: "%s · Marketcoins" },
-  description:
-    "Le marché de prédiction des memecoins. Parie sur les KOLs qui tradent et sur les coins qui vont exploser, en USDC sur Solana, avec 0 % de frais.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: { default: t.meta.title, template: "%s · Marketcoins" }, description: t.meta.description };
+}
 
 export const viewport: Viewport = { themeColor: "#1652f0" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { locale, t } = await getI18n();
   return (
-    <html lang="fr" className={`${inter.variable} ${sora.variable} h-full antialiased`}>
+    <html lang={locale} className={`${inter.variable} ${sora.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
-        <WalletProvider>
-          {children}
-          <Modals />
-        </WalletProvider>
+        <I18nProvider locale={locale} dict={toClientDictionary(t)}>
+          <WalletProvider>
+            {children}
+            <Modals />
+          </WalletProvider>
+        </I18nProvider>
       </body>
     </html>
   );
