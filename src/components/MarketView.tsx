@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Bookmark, ChevronDown, Code2, ExternalLink, Link2, Send, TrendingDown, TrendingUp } from "lucide-react";
 import type { Market, Period } from "@/data/markets";
-import { KOLS } from "@/data/kols";
+import type { Kol } from "@/data/kols";
 import { Avatar } from "./Avatar";
 import { Countdown } from "./Countdown";
 import { CopyButton } from "./CopyButton";
@@ -21,7 +21,7 @@ const ACTIVITY = [
   { who: "Hh3s…k2R", side: "NON", who2: "Cooker", amt: 500, price: 0.67, ago: "il y a 5 min" },
 ];
 
-export function MarketView({ market, sibling }: { market: Market; sibling?: Market }) {
+export function MarketView({ market, kols: KOLS, sibling }: { market: Market; kols: Kol[]; sibling?: Market }) {
   const [selected, setSelected] = useState(market.outcomes[0]);
   const [side, setSide] = useState<"OUI" | "NON">("OUI");
   const [period, setPeriod] = useState<Period>(market.period);
@@ -211,7 +211,7 @@ export function MarketView({ market, sibling }: { market: Market; sibling?: Mark
           {open === "activity" && (
             <ul className="border-t border-line pop">
               {ACTIVITY.map((a, i) => {
-                const k = KOLS.find((x) => x.name === a.who2)!;
+                const k = KOLS.find((x) => x.name === a.who2) ?? KOLS[0];
                 return (
                   <li key={i} className="flex items-center gap-3 px-5 py-2.5 text-sm">
                     <span className="mono grid h-7 w-7 place-items-center rounded-full bg-cream-2 text-[10px] font-bold">{a.who.slice(0, 2)}</span>

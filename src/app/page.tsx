@@ -4,24 +4,24 @@ import { Avatar } from "@/components/Avatar";
 import { BinaryCard } from "@/components/BinaryCard";
 import { MarketCard } from "@/components/MarketCard";
 import { Countdown } from "@/components/Countdown";
-import { KOLS } from "@/data/kols";
-import { BINARY_MARKETS, MARKETS } from "@/data/markets";
+import { BINARY_MARKETS } from "@/data/markets";
+import { getKols, getMarkets } from "@/lib/data";
 import { usd } from "@/lib/format";
 
-const SIDEBAR = [
-  { label: "Tous", count: MARKETS.length + BINARY_MARKETS.length, icon: LayoutGrid, href: "/" },
-  { label: "7 jours", count: 1 + BINARY_MARKETS.filter((b) => b.period === "7D").length, icon: Calendar, href: "/?period=7D" },
-  { label: "30 jours", count: 1 + BINARY_MARKETS.filter((b) => b.period === "30D").length, icon: CalendarDays, href: "/?period=30D" },
-  { label: "Défis", count: MARKETS.length, icon: Trophy, href: "/?cat=kol" },
-  { label: "Nouveau", count: 3, icon: Sparkles, href: "/?sort=new" },
-];
-
-const KOL_SIDEBAR = KOLS.slice(0, 7);
+export const dynamic = "force-dynamic";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ period?: string; cat?: string }> }) {
-  const sp = await searchParams;
+  const [sp, MARKETS, KOLS] = await Promise.all([searchParams, getMarkets(), getKols()]);
   const period = sp.period === "7D" || sp.period === "30D" ? sp.period : null;
-  const featured = MARKETS.find((m) => m.featured)!;
+  const featured = MARKETS.find((m) => m.featured) ?? MARKETS[0];
+  const KOL_SIDEBAR = KOLS.slice(0, 7);
+  const SIDEBAR = [
+    { label: "Tous", count: MARKETS.length + BINARY_MARKETS.length, icon: LayoutGrid, href: "/" },
+    { label: "7 jours", count: MARKETS.filter((m) => m.period === "7D").length + BINARY_MARKETS.filter((b) => b.period === "7D").length, icon: Calendar, href: "/?period=7D" },
+    { label: "30 jours", count: MARKETS.filter((m) => m.period === "30D").length + BINARY_MARKETS.filter((b) => b.period === "30D").length, icon: CalendarDays, href: "/?period=30D" },
+    { label: "Défis", count: MARKETS.length, icon: Trophy, href: "/?cat=kol" },
+    { label: "Nouveau", count: 3, icon: Sparkles, href: "/?sort=new" },
+  ];
   const markets = period ? MARKETS.filter((m) => m.period === period) : MARKETS;
   const binaries = period ? BINARY_MARKETS.filter((b) => b.period === period) : BINARY_MARKETS;
 

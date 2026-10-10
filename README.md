@@ -35,6 +35,16 @@ src/app/                pages (App Router, Next 16)
 public/kols/            avatars des KOLs
 ```
 
+## Base de données (Supabase)
+
+1. Supabase → SQL Editor → coller et exécuter `supabase/migrations/0001_init.sql`.
+2. Puis `supabase/seed/0001_kols_and_markets.sql` (7 KOLs, 30 jours de PnL, 2 défis, quelques trades).
+3. Les deux scripts sont rejouables sans danger.
+
+Tables : `kols`, `kol_stats`, `pnl_snapshots`, `markets`, `outcomes`, `trades`, `positions`.
+Vues : `market_stats` (volume, pool, traders), `kol_pnl_series` (PnL cumulé 30 j).
+RLS : lecture publique des données de marché, aucune écriture côté client, `positions` invisible pour `anon`.
+
 ## Prochaines étapes
 
 1. **Wallet réel** : `@solana/wallet-adapter-react` + Phantom/Solflare/Backpack, lecture du solde USDC.
@@ -52,6 +62,5 @@ public/kols/            avatars des KOLs
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL | oui |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon public | oui |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role | **non, serveur uniquement** |
-| `NEXT_PUBLIC_SOLANA_RPC_URL` | Helius, QuickNode ou le RPC public | oui |
 
 Sans ces variables, le site fonctionne avec les données mock.
