@@ -113,7 +113,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
       heroText.current.style.transform = reduced ? "" : `translate3d(0, ${-out * 70}px, 0)`;
       heroText.current.style.visibility = out >= 1 ? "hidden" : "visible";
     }
-    if (cue.current) cue.current.style.opacity = String(1 - seg(p, 0.04, 0.12));
+    if (cue.current) cue.current.style.opacity = String(1 - seg(p, 0.005, 0.03));
 
     // Les mots qui encadrent la planète, comme dans la vidéo.
     const fin = easeOut(seg(p, 0.13, 0.24));
@@ -232,7 +232,9 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
     <section ref={track} id="top" className="relative" style={{ height: "780vh" }} aria-label="The future of memecoins">
       <span id="kol-anchor" className="absolute left-0" style={{ top: "392vh" }} aria-hidden />
       <div className="sticky top-0 h-[100svh] overflow-hidden">
-        <div ref={plank} className="planche on-plank absolute inset-x-2 bottom-2 top-[68px] md:inset-x-5 md:bottom-4 md:top-[84px]">
+        <div ref={plank} className="planche on-plank absolute inset-x-2 bottom-2 top-[68px] rounded-[26px] md:inset-x-5 md:bottom-4 md:top-[84px] md:rounded-[34px]">
+          {/* le grain du papier : la planche est imprimée, pas peinte */}
+          <div className="pointer-events-none absolute inset-0 opacity-[.07] mix-blend-overlay" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.9) 0.6px, transparent 0.7px)", backgroundSize: "3px 3px" }} />
 
           <div className="absolute inset-0 z-[2]">
             <Planet state={planet} className="h-full w-full" label="La planète des memecoins, ses traders et ses coins en orbite" />
@@ -253,54 +255,34 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
           ))}
 
           {/* 1. Le héros */}
-          <div ref={heroText} className="absolute inset-x-0 top-[6%] z-[5] px-5 text-center md:top-[7%]">
-            <p className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full bg-ink/25 py-1.5 pl-2 pr-3.5 text-[13px] font-bold text-white md:mb-6 md:text-sm">
-              <span className="relative grid h-5 w-5 place-items-center rounded-full bg-volt">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink" />
-              </span>
-              En direct · Défi {market.period === "7D" ? "7 jours" : "30 jours"} · pot <span className="num">{usd(market.pool)}</span>
-            </p>
-            <h1 className="display mx-auto max-w-[13ch] text-[clamp(38px,5.6vw,92px)] text-white md:max-w-none">
+          <div ref={heroText} className="absolute inset-x-0 top-[7%] z-[5] px-5 text-center md:top-[9%]">
+            <h1 className="display mx-auto max-w-[15ch] text-[clamp(40px,6.6vw,106px)] text-white md:max-w-none">
               The future of memecoins.
-              <span className="accent mt-1 block text-volt">Trade the future.</span>
+              <span className="block text-blue-sky">Trade the future.</span>
             </h1>
             <div className="mt-6 flex justify-center md:mt-8">
-              <Link href="/app" className="pill-volt">
+              <Link href="/app" className="pill-white">
                 Lancer l&apos;application <ArrowRight size={18} />
               </Link>
             </div>
           </div>
-          <div ref={cue} className="ticker absolute inset-x-0 bottom-0 z-[5] border-t border-white/15 bg-ink/20 py-2.5 md:py-3" aria-hidden>
-            <div className="ticker-track">
-              {[0, 1].map((dup) => (
-                <div key={dup} className="flex shrink-0 items-center">
-                  {market.outcomes.map((o) => (
-                    <span key={o.kol.id} className="flex items-center gap-2 px-5 text-[13px] font-bold text-white md:text-sm">
-                      <Avatar kol={o.kol} size={20} />
-                      {o.kol.name}
-                      <span className="num text-white/70">{pct(o.prob)}</span>
-                      <span className={`num ${o.change24h >= 0 ? "text-volt" : "text-[#ffb1b3]"}`}>
-                        {o.change24h >= 0 ? "▲" : "▼"} {Math.abs(o.change24h).toFixed(1).replace(".", ",")}
-                      </span>
-                      <span className="ml-3 h-1 w-1 rounded-full bg-white/40" />
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
+          <div ref={cue} className="absolute bottom-5 left-1/2 z-[5] -translate-x-1/2" aria-hidden>
+            <span className="relative block h-10 w-6 rounded-full border-2 border-white/70">
+              <span className="scroll-cue-dot absolute left-1/2 top-2 h-2 w-1 -translate-x-1/2 rounded-full bg-white" />
+            </span>
           </div>
 
           {/* 2. Les mots qui encadrent la planète */}
           <div ref={flankL} className="absolute left-5 top-[13%] z-[5] md:left-[5%] md:top-[30%]" style={{ opacity: 0, visibility: "hidden" }}>
             <p className="display text-[clamp(36px,5vw,84px)] text-white">
               Parie sur
-              <span className="accent block text-volt">les traders</span>
+              <span className="block text-blue-sky">les traders</span>
             </p>
           </div>
           <div ref={flankR} className="absolute bottom-[12%] right-5 z-[5] text-right md:bottom-auto md:right-[5%] md:top-[70%]" style={{ opacity: 0, visibility: "hidden" }}>
             <p className="display text-[clamp(36px,5vw,84px)] text-white">
               et sur
-              <span className="accent block text-volt">les memecoins.</span>
+              <span className="block text-blue-sky">les memecoins.</span>
             </p>
           </div>
 
@@ -308,7 +290,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
           <div className="pointer-events-none absolute inset-0 z-[6] flex flex-col gap-4 p-4 pt-5 md:p-8 xl:flex-row xl:items-center xl:gap-10 xl:p-12">
             <div ref={kolText} className="pointer-events-auto shrink-0 xl:w-[340px]" style={{ opacity: 0, visibility: "hidden" }}>
               <h2 className="display text-[clamp(38px,5vw,78px)] text-white">
-                Trade <span className="accent text-volt">the KOL.</span>
+                Trade <span className="text-blue-sky">the KOL.</span>
               </h2>
               <div className="scrollbar-none -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:mt-4 md:flex-wrap md:overflow-visible md:px-0 xl:mt-7 xl:flex-col xl:items-start">
                 {STEPS.map((st, i) => (

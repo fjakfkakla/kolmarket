@@ -53,10 +53,10 @@ export default async function AppHome({ searchParams }: { searchParams: Promise<
               <span className="chip bg-white/16 text-white">Pot commun · 0 frais</span>
             </div>
             <h1 className="display max-w-2xl text-[32px] md:text-[46px]">
-              Quel KOL fera le plus de profit <span className="accent text-volt">cette semaine ?</span>
+              Quel KOL fera le plus de profit <span className="text-blue-sky">cette semaine ?</span>
             </h1>
             <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Link href={`/market/${featured.slug}`} className="pill-volt">
+              <Link href={`/market/${featured.slug}`} className="pill-white">
                 {featuredOpen ? "Miser maintenant" : "Voir le défi"} <ArrowRight size={18} />
               </Link>
               <div className="flex -space-x-2.5">

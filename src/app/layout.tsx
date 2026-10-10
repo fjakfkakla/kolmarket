@@ -9,15 +9,9 @@ const inter = localFont({
   variable: "--font-inter",
   display: "swap",
 });
-const archivo = localFont({
-  src: [{ path: "./fonts/archivo-var-latin.woff2", weight: "100 900", style: "normal" }],
-  variable: "--font-archivo",
-  display: "swap",
-  declarations: [{ prop: "font-stretch", value: "62% 125%" }],
-});
-const instrument = localFont({
-  src: [{ path: "./fonts/instrument-serif-italic-latin.woff2", weight: "400", style: "italic" }],
-  variable: "--font-instrument",
+const bricolage = localFont({
+  src: [{ path: "./fonts/bricolage-grotesque-var-latin.woff2", weight: "200 800", style: "normal" }],
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -31,7 +25,7 @@ export const viewport: Viewport = { themeColor: "#2e5cff" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${archivo.variable} ${instrument.variable} h-full antialiased`}>
+    <html lang="fr" className={`${inter.variable} ${bricolage.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <WalletProvider>
           {children}
