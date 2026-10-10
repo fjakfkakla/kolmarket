@@ -42,3 +42,16 @@ public/kols/            avatars des KOLs
 3. **Smart contract** : programme Anchor parimutuel ou AMM simple, résolution par multisig.
 4. **Backend Supabase** : tables `kols`, `markets`, `outcomes`, `pnl_snapshots`, `positions` ; RLS en lecture publique.
 5. **Déploiement** : Railway ou Vercel, variables d'environnement pour Supabase et le RPC Solana.
+
+## Variables d'environnement
+
+À définir dans Railway (Variables) ou Vercel (Environment Variables). Voir `.env.example`.
+
+| Variable | Où la trouver | Exposée au navigateur ? |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL | oui |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon public | oui |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role | **non, serveur uniquement** |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Helius, QuickNode ou le RPC public | oui |
+
+Sans ces variables, le site fonctionne avec les données mock.
