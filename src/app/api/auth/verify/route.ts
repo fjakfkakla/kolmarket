@@ -7,7 +7,7 @@ import {
   createSession,
   fail,
   openNonce,
-  sameOrigin,
+ 
   siteUrl,
   siwsMessage,
   verifySignature,
@@ -16,8 +16,7 @@ import {
 /** Étape 2 : vérifie la signature, crée le compte au besoin et ouvre la session. */
 export async function POST(req: NextRequest) {
   const site = siteUrl(req);
-  if (!site) return fail(500, "Configuration du site manquante (APP_URL).");
-  if (!sameOrigin(req, site)) return fail(403, "Origine refusée.");
+  if (!site) return fail(403, "Origine refusée.");
 
   const body = await req.json().catch(() => null);
   const signature = typeof body?.signature === "string" ? Buffer.from(body.signature, "base64") : null;

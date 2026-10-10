@@ -138,26 +138,44 @@ export function openNonce(token: string | undefined): SiwsFields | null {
 // Origine du site
 // ---------------------------------------------------------------
 
+/** Origines autorisées : APP_URL (plusieurs possibles, séparées par des virgules) et domaines fournis par Vercel / Railway. */
+function allowedOrigins(): string[] {
+  const hosts = [
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_URL,
+    process.env.RAILWAY_PUBLIC_DOMAIN,
+  ]
+    .filter(Boolean)
+    .map((h) => `https://${h}`);
+  const app = (process.env.APP_URL ?? "").split(",").map((u) => u.trim()).filter(Boolean);
+  return [...app, ...hosts].flatMap((u) => {
+    try {
+      return [new URL(u).origin];
+    } catch {
+      return [];
+    }
+  });
+}
+
 /**
- * Adresse publique du site. En production elle vient de la config, jamais de l'en-tête Host :
+ * Adresse du site pour cette requête, ou null si la requête vient d'ailleurs (CSRF, site imitateur).
+ * En production, seules les origines configurées sont acceptées, jamais l'en-tête Host :
  * sinon un site imitateur pourrait faire signer un message à son propre nom.
  */
 export function siteUrl(req: Request): URL | null {
-  const configured =
-    process.env.APP_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "");
-  if (configured) {
-    try {
-      return new URL(configured);
-    } catch {
+  const origin = req.headers.get("origin");
+  const allowed = allowedOrigins();
+  if (allowed.length === 0) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[auth] aucune origine configurée : définir APP_URL");
       return null;
     }
+    const local = new URL(req.url).origin; // dev
+    return origin === local ? new URL(local) : null;
   }
-  if (process.env.NODE_ENV === "production") return null;
-  return new URL(new URL(req.url).origin);
+  return origin && allowed.includes(origin) ? new URL(origin) : null;
 }
-
-/** Refuse les requêtes envoyées depuis un autre site (CSRF). */
-export const sameOrigin = (req: Request, site: URL) => req.headers.get("origin") === site.origin;
 
 export const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
 

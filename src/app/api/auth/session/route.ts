@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, cookieBase, fail, readSession, revokeSession, sameOrigin, siteUrl } from "@/lib/auth";
+import { SESSION_COOKIE, cookieBase, fail, readSession, revokeSession, siteUrl } from "@/lib/auth";
 
 /** Session en cours : adresse du wallet connecté, ou null. */
 export async function GET(req: NextRequest) {
@@ -15,8 +15,7 @@ export async function GET(req: NextRequest) {
 /** Déconnexion : la session est révoquée en base et le cookie effacé. */
 export async function DELETE(req: NextRequest) {
   const site = siteUrl(req);
-  if (!site) return fail(500, "Configuration du site manquante (APP_URL).");
-  if (!sameOrigin(req, site)) return fail(403, "Origine refusée.");
+  if (!site) return fail(403, "Origine refusée.");
   try {
     await revokeSession(req.cookies.get(SESSION_COOKIE)?.value);
   } catch (e) {

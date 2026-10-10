@@ -69,7 +69,8 @@ RLS : lecture publique des données de marché, aucune écriture côté client. 
 
 ## Variables d'environnement
 
-À définir dans Railway (Variables) ou Vercel (Environment Variables). Voir `.env.example`.
+À définir dans Vercel (Settings → Environment Variables), ou Railway (Variables). Voir `.env.example`.
+Le site est déployé par Vercel à partir de la branche `main`.
 
 | Variable | Où la trouver | Exposée au navigateur ? |
 |---|---|---|
@@ -77,9 +78,9 @@ RLS : lecture publique des données de marché, aucune écriture côté client. 
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon public | oui |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role | **non, serveur uniquement** |
 | `SESSION_SECRET` | à générer : `openssl rand -hex 32` (64 caractères) | **non, serveur uniquement** |
-| `APP_URL` | l'adresse publique du site, ex. `https://marketcoins.app` | non |
+| `APP_URL` | adresse(s) publique(s) du site, ex. `https://marketcoins.app,https://www.marketcoins.app` | non |
 | `NEXT_PUBLIC_SOLANA_CLUSTER` | `devnet` (défaut) ou `mainnet` | oui |
 
 - `SESSION_SECRET` est **obligatoire en production** : sans lui, la connexion est refusée.
-- `APP_URL` doit être l'adresse que les joueurs utilisent. Elle est écrite dans le message signé et sert à refuser les requêtes venues d'un autre site. Sur Railway, si elle est absente, le domaine `RAILWAY_PUBLIC_DOMAIN` est utilisé.
+- `APP_URL` : les adresses que les joueurs utilisent. L'adresse est écrite dans le message signé, et les requêtes venues d'une autre adresse sont refusées. Les domaines fournis automatiquement par Vercel (`VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_URL`, `VERCEL_BRANCH_URL`) et Railway (`RAILWAY_PUBLIC_DOMAIN`) sont acceptés d'office. Si ton domaine perso a plusieurs variantes (avec et sans `www`), mets-les toutes dans `APP_URL`.
 - Sans les variables Supabase, le site fonctionne avec les données mock et la session tient seulement dans le cookie signé.
