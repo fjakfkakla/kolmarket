@@ -9,9 +9,9 @@ const inter = localFont({
   variable: "--font-inter",
   display: "swap",
 });
-const bricolage = localFont({
-  src: [{ path: "./fonts/bricolage-grotesque-var-latin.woff2", weight: "200 800", style: "normal" }],
-  variable: "--font-bricolage",
+const sora = localFont({
+  src: [{ path: "./fonts/sora-var-latin.woff2", weight: "100 800", style: "normal" }],
+  variable: "--font-sora",
   display: "swap",
 });
 
@@ -25,7 +25,7 @@ export const viewport: Viewport = { themeColor: "#1652f0" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${bricolage.variable} h-full antialiased`}>
+    <html lang="fr" className={`${inter.variable} ${sora.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <WalletProvider>
           {children}

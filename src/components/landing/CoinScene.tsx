@@ -11,8 +11,8 @@ import { CoinScreenDesktop, CoinScreenPhone } from "./CoinScreen";
 import { easeInOut, easeOut, lerp, scrollToProgress, seg, useScrollScene } from "./scroll";
 
 const STEPS = [
-  { id: "coin", name: "Choisis ton coin", text: "ANSEM, CASHCAT, AI ou NET : chaque ligne montre la part du pot misée sur un coin.", at: 0.2, end: 0.45 },
-  { id: "race", name: "La course à 1 Md$", text: "Le premier à passer 1 milliard de FDV gagne. Les barres montrent où chacun en est.", at: 0.45, end: 0.68 },
+  { id: "coin", name: "Choisis ton coin", text: "TRUMP, WIF, ANSEM ou ARC : chaque ligne montre la part du pot misée sur un coin.", at: 0.2, end: 0.45 },
+  { id: "race", name: "La course à 1 Md$", text: "Le premier à passer 1 milliard de market cap gagne. Les barres montrent où chacun en est.", at: 0.45, end: 0.68 },
   { id: "bet", name: "Mise sur son potentiel", text: "", at: 0.68, end: 0.96 },
 ];
 

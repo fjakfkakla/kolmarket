@@ -50,10 +50,18 @@ export function CalendarGlyph({ size = 16 }: { size?: number }) {
 }
 
 /** La pièce d'un résultat de marché memecoin. */
-export function OutcomeCoin({ outcome, size = 36, ring = false }: { outcome: { mark: string; tint: [string, string, string]; name: string }; size?: number; ring?: boolean }) {
+export function OutcomeCoin({ outcome, size = 36, ring = false }: { outcome: { mark: string; logo?: string; tint: [string, string, string]; name: string }; size?: number; ring?: boolean }) {
   return (
     <Coin tint={outcome.tint} size={size} ring={ring}>
-      {outcome.mark ? <span aria-label={outcome.name}>{outcome.mark}</span> : <CalendarGlyph size={size * 0.5} />}
+      {outcome.logo ? (
+        // Le vrai logo du token remplit la pièce ; le liseré et le reflet restent par-dessus.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={outcome.logo} alt={outcome.name} width={size} height={size} className="!absolute inset-0 h-full w-full object-cover" draggable={false} />
+      ) : outcome.mark ? (
+        <span aria-label={outcome.name}>{outcome.mark}</span>
+      ) : (
+        <CalendarGlyph size={size * 0.5} />
+      )}
     </Coin>
   );
 }

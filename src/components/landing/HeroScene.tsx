@@ -67,12 +67,14 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
     const a = easeInOut(seg(p, 0.07, 0.34));
     const b = easeInOut(seg(p, 0.34, 0.56));
     const r0 = mobile ? 0.5 : 0.4, r1 = mobile ? 0.6 : 0.52, r2 = mobile ? 2.6 : 2.15;
-    const y0 = mobile ? -0.42 : -0.4, y1 = mobile ? -0.05 : 0;
+    const y0 = mobile ? -0.42 : -0.06, y1 = mobile ? -0.05 : 0;
+    // Sur grand écran, la planète se lève à droite du titre, puis revient au centre.
+    const x0 = mobile ? 0 : (W * 0.21) / (m / 2);
     const radius = lerp(lerp(r0, r1, a), r2, b);
     const yTop = mobile ? 0.62 : 0.78; // le haut de la planète, en part de la hauteur, une fois horizon
     const yHorizon = -((yTop * H + radius * (m / 2)) - H / 2) / (m / 2);
     S.radius = radius;
-    S.x = 0;
+    S.x = lerp(x0, 0, a);
     S.y = lerp(lerp(y0, y1, a), yHorizon, b);
     S.spin = p * 7.5;
     S.speed = 0.12;
@@ -233,8 +235,6 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
       <span id="kol-anchor" className="absolute left-0" style={{ top: "392vh" }} aria-hidden />
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div ref={plank} className="planche on-plank absolute inset-x-2 bottom-2 top-[68px] rounded-[26px] md:inset-x-5 md:bottom-4 md:top-[84px] md:rounded-[34px]">
-          {/* le grain du papier : la planche est imprimée, pas peinte */}
-          <div className="pointer-events-none absolute inset-0 opacity-[.07] mix-blend-overlay" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.9) 0.6px, transparent 0.7px)", backgroundSize: "3px 3px" }} />
 
           <div className="absolute inset-0 z-[2]">
             <Planet state={planet} className="h-full w-full" label="La planète des memecoins, ses traders et ses coins en orbite" />
@@ -255,14 +255,20 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
           ))}
 
           {/* 1. Le héros */}
-          <div ref={heroText} className="absolute inset-x-0 top-[7%] z-[5] px-5 text-center md:top-[9%]">
-            <h1 className="display mx-auto max-w-[15ch] text-[clamp(40px,6.6vw,106px)] text-white md:max-w-none">
+          <div ref={heroText} className="absolute inset-x-0 top-[6%] z-[5] px-5 text-center md:inset-x-auto md:left-[6%] md:top-1/2 md:max-w-[min(44%,620px)] md:-translate-y-1/2 md:px-0 md:text-left">
+            <h1 className="display mx-auto max-w-[14ch] text-[clamp(38px,4.6vw,80px)] text-white md:mx-0">
               The future of memecoins.
               <span className="block text-blue-sky">Trade the future.</span>
             </h1>
-            <div className="mt-6 flex justify-center md:mt-8">
+            <p className="mx-auto mt-4 max-w-[38ch] text-[15px] font-medium leading-relaxed text-white/70 md:mx-0 md:mt-6 md:text-[18px]">
+              Parie sur les KOLs qui tradent et sur les memecoins qui vont exploser. USDC sur Solana, 0&nbsp;% de frais.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:mt-8 md:justify-start">
               <Link href="/app" className="pill-white">
                 Lancer l&apos;application <ArrowRight size={18} />
+              </Link>
+              <Link href="/comment-ca-marche" className="hidden h-[54px] items-center rounded-[14px] px-5 text-[15px] font-bold text-white/80 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                Comment ça marche
               </Link>
             </div>
           </div>

@@ -10,8 +10,12 @@ export type CoinOutcome = {
   name: string;
   /** Ticker, sans le $ */
   ticker: string | null;
-  /** Ce qu'on écrit sur la pièce : l'initiale du token, faute de vrai logo. */
+  /** Ce qu'on écrit sur la pièce quand il n'y a pas de logo. */
   mark: string;
+  /** Le vrai logo du token (public/coins), repris de ses métadonnées on-chain. */
+  logo?: string;
+  /** Adresse du token sur Solana. */
+  mint?: string;
   /** Dégradé de la pièce [clair, milieu, profond] ; la couleur de sa ligne est celle du milieu. */
   tint: [string, string, string];
   /** Part du pot misée sur ce résultat, 0..1 */
@@ -20,8 +24,8 @@ export type CoinOutcome = {
   pool: number;
   /** Variation sur 24 h, en points */
   change24h: number;
-  /** FDV actuelle en dollars (null pour « Aucun ») */
-  fdv: number | null;
+  /** Market cap actuelle en dollars (null pour « Aucun ») */
+  mcap: number | null;
   /** Historique de la part du pot, 0..1 */
   series: number[];
 };
@@ -67,16 +71,16 @@ const N = 42;
 export const COIN_MARKETS: CoinMarket[] = [
   {
     slug: "premier-1md-fdv",
-    title: "Premier à toucher 1 Md$ de FDV : ANSEM, CASHCAT, AI ou NET ?",
-    question: "Premier à toucher 1 Md$ de FDV",
+    title: "Premier à toucher 1 Md$ de market cap : TRUMP, WIF, ANSEM ou ARC ?",
+    question: "Premier à toucher 1 Md$ de market cap",
     category: "MEME",
     target: "1 Md$",
     closesAt: "2026-12-25T23:59:00+01:00",
     pool: 398269,
     traders: 2140,
     rules: [
-      "Le marché se résout sur le premier token de la liste dont la FDV (valeur totalement diluée) dépasse 1 milliard de dollars, mesurée sur DexScreener, avant le 25 décembre 2026 à 23:59 (heure de Paris).",
-      "La FDV doit tenir au-dessus de 1 Md$ pendant au moins une heure pleine pour compter.",
+      "Le marché se résout sur le premier token de la liste dont la market cap (offre en circulation × prix) dépasse 1 milliard de dollars, mesurée sur DexScreener, avant le 25 décembre 2026 à 23:59 (heure de Paris).",
+      "La market cap doit tenir au-dessus de 1 Md$ pendant au moins une heure pleine pour compter.",
       "Si aucun des tokens n'y arrive avant la date, le résultat « Aucun » gagne.",
       "Pot commun, 0 frais : ceux qui ont misé sur le résultat gagnant se partagent tout le pot, au prorata de leur mise. Si personne n'a misé dessus, tout le monde est remboursé.",
     ],
@@ -87,59 +91,67 @@ export const COIN_MARKETS: CoinMarket[] = [
         ticker: null,
         mark: "",
         tint: ["#4a76ff", "#1652f0", "#0e3fd0"],
-        prob: 0.88,
+        prob: 0.58,
         pool: 0,
-        change24h: 3.7,
-        fdv: null,
-        series: path([[0, 0.5], [0.08, 0.68], [0.16, 0.62], [0.22, 0.71], [0.34, 0.86], [0.7, 0.84], [0.82, 0.85], [1, 0.88]], N, 7, 0.02),
+        change24h: 2.1,
+        mcap: null,
+        series: path([[0, 0.5], [0.08, 0.6], [0.16, 0.55], [0.22, 0.62], [0.34, 0.6], [0.7, 0.56], [0.82, 0.6], [1, 0.58]], N, 7, 0.02),
       },
       {
-        id: "ai",
-        name: "Artificial Inu",
-        ticker: "AI",
-        mark: "AI",
-        tint: ["#ffc35c", "#f59e0b", "#d97706"],
-        prob: 0.06,
+        id: "trump",
+        name: "Official Trump",
+        ticker: "TRUMP",
+        mark: "T",
+        logo: "/coins/trump.webp",
+        mint: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+        tint: ["#f5d77a", "#d4a62a", "#a67c00"],
+        prob: 0.24,
         pool: 0,
-        change24h: -4.5,
-        fdv: 412_000_000,
-        series: path([[0, 0.5], [0.06, 0.12], [0.3, 0.07], [0.48, 0.11], [0.84, 0.11], [1, 0.06]], N, 11, 0.012),
+        change24h: 1.8,
+        mcap: 534_000_000,
+        series: path([[0, 0.3], [0.1, 0.2], [0.3, 0.22], [0.5, 0.26], [0.8, 0.22], [1, 0.24]], N, 11, 0.014),
       },
       {
-        id: "cashcat",
-        name: "Cash Cat",
-        ticker: "CASHCAT",
-        mark: "C",
-        tint: ["#f9a8d4", "#ec4899", "#be185d"],
-        prob: 0.033,
+        id: "wif",
+        name: "dogwifhat",
+        ticker: "WIF",
+        mark: "W",
+        logo: "/coins/wif.webp",
+        mint: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+        tint: ["#f9b8a8", "#e8836b", "#c25a44"],
+        prob: 0.1,
         pool: 0,
-        change24h: -4.7,
-        fdv: 236_000_000,
-        series: path([[0, 0.5], [0.05, 0.08], [0.3, 0.05], [0.6, 0.03], [1, 0.033]], N, 17, 0.01),
+        change24h: -1.6,
+        mcap: 217_000_000,
+        series: path([[0, 0.15], [0.2, 0.12], [0.5, 0.09], [0.8, 0.11], [1, 0.1]], N, 17, 0.01),
       },
       {
         id: "ansem",
-        name: "Le Taureau Noir",
+        name: "The Black Bull",
         ticker: "ANSEM",
         mark: "A",
+        logo: "/coins/ansem.webp",
+        mint: "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
         tint: ["#6fe8b9", "#10b981", "#059669"],
-        prob: 0.014,
+        prob: 0.055,
         pool: 0,
-        change24h: -4.9,
-        fdv: 148_000_000,
-        series: path([[0, 0.5], [0.04, 0.05], [0.3, 0.02], [1, 0.014]], N, 23, 0.006),
+        change24h: -2.4,
+        mcap: 136_000_000,
+        series: path([[0, 0.05], [0.3, 0.04], [0.6, 0.07], [1, 0.055]], N, 23, 0.006),
       },
       {
-        id: "net",
-        name: "NetNet",
-        ticker: "NET",
-        mark: "N",
-        tint: ["#ffd45c", "#f0b429", "#dc9a06"],
-        prob: 0.006,
+        id: "arc",
+        name: "AI Rig Complex",
+        ticker: "ARC",
+        mark: "AI",
+        logo: "/coins/arc.webp",
+        mint: "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump",
+        tint: ["#c7ccd9", "#6b7385", "#3b4252"],
+        prob: 0.025,
         pool: 0,
-        change24h: -0.4,
-        fdv: 71_000_000,
-        series: path([[0, 0.5], [0.03, 0.04], [0.4, 0.012], [1, 0.006]], N, 29, 0.004),
+        change24h: -0.7,
+        mcap: 61_000_000,
+        series: path([[0, 0.04], [0.4, 0.03], [1, 0.025]], N, 29, 0.004),
       },
     ],
   },
