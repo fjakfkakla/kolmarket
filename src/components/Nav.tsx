@@ -59,7 +59,7 @@ export function Nav() {
                 href="/compte"
                 aria-label="Mon compte"
                 className="coin h-10 w-10 text-[14px] transition hover:-translate-y-0.5"
-                style={{ ["--coin" as string]: "linear-gradient(150deg,#5b80ff,#2e5cff 50%,#1f45e0)" }}
+                style={{ ["--coin" as string]: "linear-gradient(150deg,#4a76ff,#1652f0 50%,#0e3fd0)" }}
               >
                 <span>{w.address!.slice(0, 2)}</span>
               </Link>

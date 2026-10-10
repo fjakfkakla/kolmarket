@@ -8,7 +8,7 @@ import { fmtOdds, usd } from "@/lib/format";
 /** La demi-jauge Polymarket : la part du pot sur le Oui, à sa couleur. */
 function Gauge({ p }: { p: number }) {
   const len = Math.PI * 26;
-  const color = p >= 0.5 ? "#00a03c" : p >= 0.2 ? "#2e5cff" : "#e5484d";
+  const color = p >= 0.5 ? "#00a03c" : p >= 0.2 ? "#1652f0" : "#e5484d";
   return (
     <div className="relative h-[40px] w-[64px] shrink-0">
       <svg viewBox="0 0 64 36" className="h-[36px] w-[64px]" aria-hidden>

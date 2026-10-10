@@ -7,7 +7,7 @@ import { KOLS } from "@/data/kols";
 
 export const metadata: Metadata = { title: "Comment ça marche" };
 
-const BLUE: [string, string, string] = ["#5b80ff", "#2e5cff", "#1f45e0"];
+const BLUE: [string, string, string] = ["#4a76ff", "#1652f0", "#0e3fd0"];
 
 const STEPS = [
   { icon: Wallet, title: "Connecte ton wallet", text: "Phantom, Solflare, Backpack ou n'importe quel wallet Solana. Une signature gratuite crée ton compte, ta clé ne quitte jamais ton wallet." },

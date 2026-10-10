@@ -12,7 +12,7 @@ function Card({ k, rank, first, pnlKey: key }: { k: Kol; rank: 1 | 2 | 3; first:
   return (
     <div
       className={`card relative flex-1 p-4 ${lead ? "md:-translate-y-2" : ""}`}
-      style={lead ? { boxShadow: "0 0 0 2px #2e5cff, 0 0 0 7px rgba(46,92,255,.12), 0 26px 46px -28px rgba(13,32,84,.55)" } : undefined}
+      style={lead ? { boxShadow: "0 0 0 2px #1652f0, 0 0 0 7px rgba(22, 82, 240,.12), 0 26px 46px -28px rgba(13,32,84,.55)" } : undefined}
     >
       <div className="absolute right-3 top-3">
         {lead ? (

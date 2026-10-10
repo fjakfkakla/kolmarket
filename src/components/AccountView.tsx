@@ -17,7 +17,7 @@ import { Coin, OutcomeCoin } from "./Coin";
 import { CopyButton } from "./CopyButton";
 import { LogoMark } from "./Logo";
 
-const BLUE: [string, string, string] = ["#5b80ff", "#2e5cff", "#1f45e0"];
+const BLUE: [string, string, string] = ["#4a76ff", "#1652f0", "#0e3fd0"];
 const GREEN: [string, string, string] = ["#2fd36d", "#00a03c", "#007e26"];
 const SLATE: [string, string, string] = ["#8a93a8", "#5b6478", "#3d4558"];
 const INK: [string, string, string] = ["#2a3245", "#141a2c", "#0a0f1e"];

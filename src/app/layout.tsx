@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     "Le marché de prédiction des memecoins. Parie sur les KOLs qui tradent et sur les coins qui vont exploser, en USDC sur Solana, avec 0 % de frais.",
 };
 
-export const viewport: Viewport = { themeColor: "#2e5cff" };
+export const viewport: Viewport = { themeColor: "#1652f0" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

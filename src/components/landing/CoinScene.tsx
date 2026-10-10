@@ -120,7 +120,7 @@ export function CoinScene({ market }: { market: CoinMarket }) {
     const race = reduced ? 1 : easeOut(seg(p, 0.45, 0.64));
     root.style.setProperty("--race", race.toFixed(4));
     const rc = root.querySelector<HTMLElement>("[data-race-card]");
-    if (rc) rc.style.boxShadow = idx === 1 ? "0 0 0 2px #2e5cff, 0 0 0 7px rgba(46,92,255,.12)" : "none";
+    if (rc) rc.style.boxShadow = idx === 1 ? "0 0 0 2px #1652f0, 0 0 0 7px rgba(22, 82, 240,.12)" : "none";
     if (rc) rc.style.borderRadius = "20px";
 
     // 3. La mise : $AI, Oui, 100 $.

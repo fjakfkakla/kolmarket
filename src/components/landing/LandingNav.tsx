@@ -20,7 +20,7 @@ export function LandingNav() {
             </a>
           ))}
         </nav>
-        <Link href="/app" className="plaque ml-auto h-11 rounded-full px-5 text-[15px] lg:ml-0 md:h-12 md:px-6">
+        <Link href="/app" className="plaque ml-auto h-11 px-5 text-[15px] lg:ml-0 md:h-12 md:px-6">
           <span className="sm:hidden">Lancer l&apos;app</span>
           <span className="hidden sm:inline">Lancer l&apos;application</span>
           <ArrowRight size={17} />

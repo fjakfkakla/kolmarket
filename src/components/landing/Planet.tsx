@@ -228,7 +228,7 @@ export function Planet({ state, className = "", label = "" }: { state: RefObject
           className="aspect-square rounded-full"
           style={{
             width: `${(state.current?.radius ?? 0.5) * 100}%`,
-            background: "radial-gradient(circle at 34% 30%, #cfe0ff 0%, #5b80ff 22%, #1f45e0 55%, #0b1d6e 100%)",
+            background: "radial-gradient(circle at 34% 30%, #cfe0ff 0%, #4a76ff 22%, #0e3fd0 55%, #0b1d6e 100%)",
             boxShadow: "inset -18px -24px 60px rgba(4,10,50,.55), 0 0 0 2px rgba(169,193,255,.35)",
           }}
         />

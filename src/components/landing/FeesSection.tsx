@@ -33,7 +33,7 @@ function Coin3D({ refEl }: { refEl: React.RefObject<HTMLDivElement | null> }) {
             style={{
               transform: `translateZ(${side * (LAYERS / 2) * 1.15}px) ${side < 0 ? "rotateY(180deg)" : ""}`,
               backfaceVisibility: "hidden",
-              background: "linear-gradient(150deg,#6d8dff 0%,#2e5cff 48%,#1c3fe6 100%)",
+              background: "linear-gradient(150deg,#5c84ff 0%,#1652f0 48%,#0b39c8 100%)",
               boxShadow: "inset 0 3px 0 rgba(255,255,255,.45), inset 0 -6px 0 rgba(0,0,0,.18)",
             }}
           >

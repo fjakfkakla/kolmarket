@@ -126,7 +126,7 @@ function ConnectModal() {
       )}
 
       <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-2xl bg-paper-2 p-3 text-[14px] font-medium text-ink-2">
-        <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#2e5cff]" />
+        <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#1652f0]" />
         <span>
           J&apos;ai plus de 18 ans, j&apos;accepte les{" "}
           <a href="/conditions" className="link">
@@ -190,7 +190,7 @@ function DepositModal() {
         <p className="py-6 text-center font-display text-[19px] font-extrabold tracking-[-0.02em] text-muted">Dépôts bientôt ouverts</p>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-[#f4f7ff] p-3 shadow-[inset_0_0_0_1px_rgba(46,92,255,.22)]">
+          <div className="flex items-center gap-3 rounded-2xl bg-[#f4f7ff] p-3 shadow-[inset_0_0_0_1px_rgba(22, 82, 240,.22)]">
             <Coin tint={["#4b93e6", "#2775ca", "#1a5aa3"]} size={40}>
               <span>$</span>
             </Coin>

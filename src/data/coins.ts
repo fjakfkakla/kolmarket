@@ -86,7 +86,7 @@ export const COIN_MARKETS: CoinMarket[] = [
         name: "Aucun d'ici le 25 décembre",
         ticker: null,
         mark: "",
-        tint: ["#5b80ff", "#2e5cff", "#1f45e0"],
+        tint: ["#4a76ff", "#1652f0", "#0e3fd0"],
         prob: 0.88,
         pool: 0,
         change24h: 3.7,
