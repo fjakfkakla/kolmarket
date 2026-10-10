@@ -160,19 +160,22 @@ export function allowedOrigins(): string[] {
 
 /**
  * Adresse du site pour cette requête, ou null si la requête vient d'ailleurs (CSRF, site imitateur).
- * En production, on accepte les origines configurées, et sur Vercel l'adresse par laquelle la requête
- * est arrivée : Vercel ne fait parvenir à notre déploiement que les domaines rattachés au projet
- * (un projet a souvent plusieurs adresses *.vercel.app). Ailleurs, on ne se fie jamais à l'en-tête Host :
- * un site imitateur pourrait sinon faire signer un message à son propre nom.
+ * En production, on accepte les origines configurées, et sur Vercel ou Railway l'adresse par laquelle
+ * la requête est arrivée : ces hébergeurs ne font parvenir au site que les domaines rattachés au projet
+ * (souvent plusieurs : *.vercel.app, *.up.railway.app, domaine perso). Ailleurs, on ne se fie jamais à
+ * l'en-tête Host : un site imitateur pourrait sinon faire signer un message à son propre nom.
  */
+export const managedHost = (): "vercel" | "railway" | null =>
+  process.env.VERCEL === "1" ? "vercel" : process.env.RAILWAY_ENVIRONMENT_ID ? "railway" : null;
+
 export function siteUrl(req: Request): URL | null {
   const origin = req.headers.get("origin");
   if (!origin) return null;
   if (allowedOrigins().includes(origin)) return new URL(origin);
   // Seulement l'en-tête Host (jamais X-Forwarded-Host, qu'un intermédiaire peut inventer) :
-  // pour que Vercel route la requête jusqu'ici, il doit valoir un des domaines du projet.
+  // pour que l'hébergeur route la requête jusqu'ici, il doit valoir un des domaines du projet.
   const host = req.headers.get("host");
-  if (process.env.VERCEL === "1" && host && origin === `https://${host}`) return new URL(origin);
+  if (managedHost() && host && origin === `https://${host}`) return new URL(origin);
   if (process.env.NODE_ENV !== "production") {
     const local = new URL(req.url).origin; // dev
     if (origin === local) return new URL(local);

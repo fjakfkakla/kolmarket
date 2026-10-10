@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { allowedOrigins } from "@/lib/auth";
+import { allowedOrigins, managedHost } from "@/lib/auth";
 import { CLUSTER } from "@/lib/cluster";
 import { solanaConfig } from "@/lib/solana";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -8,6 +8,15 @@ import { supabaseAdmin } from "@/lib/supabase";
  * Diagnostic de configuration : dit ce qui est branché, sans jamais montrer de secret.
  * Ouvrir /api/health pour savoir pourquoi la connexion ou les dépôts ne marchent pas.
  */
+async function solBalance(cfg: NonNullable<Awaited<ReturnType<typeof solanaConfig>>>) {
+  try {
+    const { value } = await cfg.rpc.getBalance(cfg.feePayer.address, { commitment: "confirmed" }).send();
+    return Number(value) / 1e9;
+  } catch {
+    return "illisible";
+  }
+}
+
 export async function GET(req: NextRequest) {
   const db = supabaseAdmin();
   const table = async (name: string) => {
@@ -28,7 +37,7 @@ export async function GET(req: NextRequest) {
       SESSION_SECRET: secret.length >= 32 ? "ok" : secret ? "trop court (32 caractères minimum)" : "manquant",
       adresse_de_cette_page: req.headers.get("host"),
       origines_autorisees: allowedOrigins(),
-      vercel_detecte: process.env.VERCEL === "1",
+      hebergeur: managedHost() ?? "inconnu (définir APP_URL)",
     },
     base: {
       supabase: db ? "ok" : "variables Supabase manquantes",
@@ -41,6 +50,10 @@ export async function GET(req: NextRequest) {
       VAULT_ADDRESS: process.env.VAULT_ADDRESS ? "ok" : "manquant",
       FEE_PAYER_SECRET_KEY: process.env.FEE_PAYER_SECRET_KEY ? "ok" : "manquant",
       configuration_valide: solana ? "ok" : "non (voir les variables ci-dessus)",
+      // Adresses publiques : le payeur doit avoir quelques SOL de test, le compte USDC du coffre va dans le webhook.
+      payeur_des_frais: solana?.feePayer.address ?? null,
+      solde_payeur_SOL: solana ? await solBalance(solana) : null,
+      compte_usdc_du_coffre: solana?.vaultAta ?? null,
       ALCHEMY_WEBHOOK_SIGNING_KEY: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY ? "ok" : "manquant (facultatif au début)",
       CRON_SECRET: process.env.CRON_SECRET ? "ok" : "manquant",
     },
