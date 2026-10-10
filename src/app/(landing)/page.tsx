@@ -5,8 +5,10 @@ import { FeesSection } from "@/components/landing/FeesSection";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { HeroScene } from "@/components/landing/HeroScene";
 import { LandingNav } from "@/components/landing/LandingNav";
+import { LaunchCountdown } from "@/components/LaunchCountdown";
 import { COIN_MARKETS } from "@/data/coins";
-import { getKols, getMarkets } from "@/lib/data";
+import { getKols, getMarkets, requestTime } from "@/lib/data";
+import { getLaunch } from "@/lib/launch";
 import { getI18n } from "@/i18n/server";
 import { localizeCoinMarket, localizeMarket } from "@/i18n/content";
 
@@ -18,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Landing() {
-  const [markets, kols, { t }] = await Promise.all([getMarkets(), getKols(), getI18n()]);
+  const [markets, kols, { t }, launch] = await Promise.all([getMarkets(), getKols(), getI18n(), getLaunch()]);
   const raw = markets.find((m) => m.period === "7D") ?? markets[0];
   const kolMarket = localizeMarket(raw, t);
   const coinMarket = localizeCoinMarket(COIN_MARKETS[0], t);
@@ -26,6 +28,11 @@ export default async function Landing() {
     <>
       <LandingNav />
       <main className="flex-1">
+        {!launch.open && (
+          <section id="launch" className="bg-white px-4 pb-14 pt-[112px] md:pb-20 md:pt-[148px]">
+            <LaunchCountdown at={launch.at} serverNow={requestTime()} />
+          </section>
+        )}
         <HeroScene market={kolMarket} kols={kols} coins={coinMarket.outcomes} />
         <CoinScene market={coinMarket} />
         <FeesSection />

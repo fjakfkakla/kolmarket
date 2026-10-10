@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminGate, AdminView } from "@/components/AdminView";
 import { adminSession, adminWallets } from "@/lib/admin";
 import { loadAdminData } from "@/lib/admin-data";
+import { getLaunch } from "@/lib/launch";
 import { requestTime } from "@/lib/data";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getI18n } from "@/i18n/server";
@@ -19,6 +20,7 @@ export default async function AdminPage() {
   if (!db) notFound();
   const { session, admin } = await adminSession();
   if (!admin) return <AdminGate connected={Boolean(session)} configured={adminWallets().length > 0} />;
+  const launch = await getLaunch();
   const data = await loadAdminData(db).catch((e: Error) => {
     console.error("[admin]", e.message);
     return null;
@@ -34,5 +36,5 @@ export default async function AdminPage() {
       </div>
     );
   }
-  return <AdminView data={data} now={requestTime()} />;
+  return <AdminView data={data} now={requestTime()} launchAt={launch.at} />;
 }

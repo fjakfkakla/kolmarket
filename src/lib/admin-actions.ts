@@ -5,6 +5,7 @@ import { isSolanaAddress } from "./auth";
 import { MAX_CUSTOM_DAYS, customChallengeSpec, daysBetween, isoDay } from "./challenge-calendar";
 import { CHALLENGE_FIELDS, type ChallengeRow, resolveMarket } from "./challenges";
 import { trackerKey } from "./solanatracker";
+import { LAUNCH_MS, setLaunchAt } from "./launch";
 
 /** Refus attendu (saisie invalide, défi dans le mauvais état) : le message est montré tel quel. */
 export class AdminError extends Error {}
@@ -156,6 +157,17 @@ export async function runAdminAction(db: SupabaseClient, a: AdminAction, now = n
       check(reason.length >= 5, "Donne la raison : elle est affichée aux joueurs.");
       const status = await rpc(db, "cancel_market", { p_market: m.id, p_reason: reason });
       return status === "CANCELLED" ? "Défi annulé : toutes les mises sont remboursées." : `Statut : ${status}`;
+    }
+
+    case "start_launch": {
+      const at = new Date(now.getTime() + LAUNCH_MS).toISOString();
+      await setLaunchAt(db, at);
+      return `Chrono lancé : l'app s'ouvre le ${at.slice(0, 16).replace("T", " ")} UTC.`;
+    }
+
+    case "reset_launch": {
+      await setLaunchAt(db, null);
+      return "Chrono arrêté : l'app est fermée au public.";
     }
   }
 }
