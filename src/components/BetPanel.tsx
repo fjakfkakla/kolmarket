@@ -81,7 +81,7 @@ export function BetPanel({
   };
 
   return (
-    <div id="miser" className="card scroll-mt-32 p-5 lg:sticky lg:top-[132px]">
+    <div id="bet" className="card scroll-mt-32 p-5 lg:sticky lg:top-[132px]">
       <div className="mb-4 flex items-center gap-3">
         {choice.visual}
         <div className="min-w-0 flex-1">

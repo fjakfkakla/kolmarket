@@ -326,7 +326,7 @@ export function MarketView({ market: base, kols: KOLS, sibling, serverNow }: { m
                 onPick={(scroll) => {
                   setSelectedId(o.kol.id);
                   // Sur mobile le ticket est sous la liste : on l'amène à l'écran.
-                  if (scroll && window.innerWidth < 1024) document.getElementById("miser")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  if (scroll && window.innerWidth < 1024) document.getElementById("bet")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
               />
             ))}
@@ -394,7 +394,7 @@ export function MarketView({ market: base, kols: KOLS, sibling, serverNow }: { m
           )}
         </section>
 
-        <section className="card fade-up p-5" id="regles">
+        <section className="card fade-up p-5" id="rules">
           <h2 className="mb-3 font-display text-[19px] font-extrabold tracking-[-0.02em]">{tm.rules}</h2>
           <ol className="space-y-2.5 text-[15px] text-ink-2">
             {market.rules.map((r, i) => (

@@ -20,10 +20,10 @@ export async function Footer() {
     {
       title: f.access,
       links: [
-        { label: f.account, href: "/compte" },
-        { label: f.bets, href: "/compte#mises" },
-        { label: t.common.howItWorks, href: "/comment-ca-marche" },
-        { label: f.terms, href: "/conditions" },
+        { label: f.account, href: "/account" },
+        { label: f.bets, href: "/account#bets" },
+        { label: t.common.howItWorks, href: "/how-it-works" },
+        { label: f.terms, href: "/terms" },
         { label: f.home, href: "/" },
       ],
     },

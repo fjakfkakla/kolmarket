@@ -35,7 +35,7 @@ export function Nav() {
         </label>
 
         <nav className="ml-auto flex items-center gap-2">
-          <Link href="/comment-ca-marche" className="round h-10 w-10" title={t.common.howItWorks} aria-label={t.common.howItWorks}>
+          <Link href="/how-it-works" className="round h-10 w-10" title={t.common.howItWorks} aria-label={t.common.howItWorks}>
             <CircleHelp size={18} />
           </Link>
 
@@ -44,8 +44,8 @@ export function Nav() {
           ) : w.connected ? (
             <>
               <Link
-                href="/compte"
-                className={`hidden items-center gap-4 rounded-2xl px-3 py-1 transition hover:bg-paper-2 sm:flex ${pathname === "/compte" ? "bg-paper-2" : ""}`}
+                href="/account"
+                className={`hidden items-center gap-4 rounded-2xl px-3 py-1 transition hover:bg-paper-2 sm:flex ${pathname === "/account" ? "bg-paper-2" : ""}`}
               >
                 <span className="text-right leading-tight">
                   <span className="block text-[12px] font-bold text-faint">{n.portfolio}</span>
@@ -60,7 +60,7 @@ export function Nav() {
                 {n.deposit}
               </button>
               <Link
-                href="/compte"
+                href="/account"
                 aria-label={n.myAccount}
                 className="coin h-10 w-10 text-[14px] transition hover:-translate-y-0.5"
                 style={{ ["--coin" as string]: "linear-gradient(150deg,#4a76ff,#1652f0 50%,#0e3fd0)" }}

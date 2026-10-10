@@ -183,14 +183,14 @@ export function CoinMarketView({ market: base, related }: { market: CoinMarket; 
                 active={selected.id === o.id}
                 onPick={(scroll) => {
                   setSelectedId(o.id);
-                  if (scroll && window.innerWidth < 1024) document.getElementById("miser")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  if (scroll && window.innerWidth < 1024) document.getElementById("bet")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
               />
             ))}
           </ul>
         </section>
 
-        <section className="card fade-up p-5" id="regles">
+        <section className="card fade-up p-5" id="rules">
           <h2 className="mb-3 font-display text-[19px] font-extrabold tracking-[-0.02em]">{t.market.rules}</h2>
           <ol className="space-y-2.5 text-[15px] text-ink-2">
             {market.rules.map((r, i) => (

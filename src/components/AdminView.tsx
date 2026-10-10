@@ -21,6 +21,8 @@ import { useWallet } from "@/lib/wallet";
 import { fmtDate, pnlClass, shortWallet, usd } from "@/lib/format";
 import { fmt } from "@/i18n/config";
 import { useI18n } from "@/i18n/client";
+import { translateAdminMessage } from "@/i18n/admin-messages";
+import { challengeRules, localizeResolutionNote } from "@/i18n/content";
 import { Avatar } from "./Avatar";
 import { CopyButton } from "./CopyButton";
 
@@ -47,7 +49,7 @@ type Result = { ok: boolean; text: string; key: string } | null;
 function useSignedAction() {
   const w = useWallet();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<Result>(null);
   const run = async (key: string, raw: AdminAction) => {
@@ -66,11 +68,11 @@ function useSignedAction() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? t.admin.actionFailed);
-      setResult({ ok: true, text: data.message, key });
+      setResult({ ok: true, text: translateAdminMessage(data.message, locale), key });
       router.refresh();
       return true;
     } catch (e) {
-      setResult({ ok: false, text: (e as Error).message, key });
+      setResult({ ok: false, text: translateAdminMessage((e as Error).message, locale), key });
       return false;
     } finally {
       setBusy(null);
@@ -98,7 +100,7 @@ function SignButton({ act, k, onClick, children, tone = "gold", disabled = false
 }
 
 function MarketAdmin({ m, kols, act, now, trackerKey }: { m: AdminMarket; kols: AdminKol[]; act: Act; now: number; trackerKey: boolean }) {
-  const { t, intl } = useI18n();
+  const { t, intl, locale } = useI18n();
   const a = t.admin;
   const phase = marketPhase(m, now);
   const [form, setForm] = useState<"winner" | "cancel" | null>(null);
@@ -130,9 +132,9 @@ function MarketAdmin({ m, kols, act, now, trackerKey }: { m: AdminMarket; kols: 
           </span>
         )}
       </div>
-      {m.resolutionNote && <p className="mt-1 text-sm">{m.resolutionNote}</p>}
+      {m.resolutionNote && <p className="mt-1 text-sm">{localizeResolutionNote(m.resolutionNote, t)}</p>}
       {m.recheck?.blocked && (
-        <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-down"><AlertTriangle size={14} /> {m.recheck.reason} {a.blockedHint}</p>
+        <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-down"><AlertTriangle size={14} /> {translateAdminMessage(m.recheck.reason, locale)} {a.blockedHint}</p>
       )}
       {!m.recheck?.blocked && (m.recheck?.count ?? 0) > 0 && <p className="mt-1 text-xs text-muted">{fmt(a.republished, { n: m.recheck!.count })}</p>}
 
@@ -245,7 +247,7 @@ function NewChallenge({ kols, act, now }: { kols: AdminKol[]; act: Act; now: num
           </div>
           <details className="mt-1 text-muted">
             <summary className="cursor-pointer">{c.rules}</summary>
-            <ol className="mt-1 list-decimal space-y-1 pl-5">{spec.rules.map((r) => <li key={r}>{r}</li>)}</ol>
+            <ol className="mt-1 list-decimal space-y-1 pl-5">{challengeRules(start, end, t).map((r) => <li key={r}>{r}</li>)}</ol>
           </details>
         </div>
       )}
@@ -262,7 +264,7 @@ function NewChallenge({ kols, act, now }: { kols: AdminKol[]; act: Act; now: num
 }
 
 function Kols({ kols, act, trackerKey }: { kols: AdminKol[]; act: Act; trackerKey: boolean }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const kt = t.admin.kols;
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
@@ -280,7 +282,7 @@ function Kols({ kols, act, trackerKey }: { kols: AdminKol[]; act: Act; trackerKe
       if (!res.ok) throw new Error(d.error ?? kt.checkFailed);
       setCheck({ wallet, ok: true, text: fmt(kt.trackerOk, { pnl: usd(d.pnl7d, { sign: true }), trades: d.trades7d, days: plural(d.activeDays, kt.activeDays) }) });
     } catch (e) {
-      setCheck({ wallet, ok: false, text: (e as Error).message });
+      setCheck({ wallet, ok: false, text: translateAdminMessage((e as Error).message, locale) });
     } finally {
       setChecking(false);
     }
@@ -342,7 +344,7 @@ function Kols({ kols, act, trackerKey }: { kols: AdminKol[]; act: Act; trackerKe
 
 export function AdminView({ data, now }: { data: AdminData; now: number }) {
   const w = useWallet();
-  const { t, intl } = useI18n();
+  const { t, intl, locale } = useI18n();
   const a = t.admin;
   const act = useSignedAction();
   const [showDone, setShowDone] = useState(false);
@@ -395,7 +397,7 @@ export function AdminView({ data, now }: { data: AdminData; now: number }) {
                 <span className="num text-xs text-muted">{utc(l.at, intl)}</span>
                 <span className="font-semibold">{a.actions[l.action as AdminActionName] ?? l.action}</span>
                 {l.target && <span className="num text-xs text-muted">{l.target}</span>}
-                <span className={`ml-auto text-xs ${l.outcome?.startsWith("refusé") ? "text-down" : "text-muted"}`}>{l.outcome ?? "…"}</span>
+                <span className={`ml-auto text-xs ${l.outcome?.startsWith("refusé") ? "text-down" : "text-muted"}`}>{l.outcome ? translateAdminMessage(l.outcome, locale) : "…"}</span>
               </li>
             ))}
           </ul>

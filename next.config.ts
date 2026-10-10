@@ -43,6 +43,14 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Anciennes adresses françaises → nouvelles adresses anglaises (liens déjà partagés).
+  async redirects() {
+    return [
+      { source: "/compte", destination: "/account", permanent: true },
+      { source: "/comment-ca-marche", destination: "/how-it-works", permanent: true },
+      { source: "/conditions", destination: "/terms", permanent: true },
+    ];
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

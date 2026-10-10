@@ -40,10 +40,10 @@ Autres commandes : `npm run build`, `npm start`, `npm run lint`, `npm run typech
 | `/market/premier-1md-fdv` | Marché memecoin « Premier à toucher 1 Md$ de FDV » : aperçu en pot commun (données mock, mises réelles pas encore ouvertes) |
 | `/market/kol-7d-2026-10-12` | Page d'un défi : course au PnL, % du pot et cote par KOL, panneau de mise, classement du défi puis résultat, répartition du pot, activité, règles, wallets |
 | `/market/kol-top-profit-7d` | Redirige vers le défi 7 jours où l'on peut miser (même chose avec `-30d`) |
-| `/compte` | Compte : solde, dépôt / retrait USDC, mises en cours et gain estimé, mises terminées, historique |
+| `/account` | Compte : solde, dépôt / retrait USDC, mises en cours et gain estimé, mises terminées, historique |
 | `/admin` | Administration : lancer un défi, ajouter ou retirer un KOL, lire / corriger un résultat, payer, annuler, journal |
-| `/comment-ca-marche` | Explication du fonctionnement |
-| `/conditions` | Conditions d'utilisation |
+| `/how-it-works` | Explication du fonctionnement |
+| `/terms` | Conditions d'utilisation |
 
 ## Direction artistique
 
