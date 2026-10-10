@@ -1,64 +1,67 @@
 import Link from "next/link";
-import { BarChart3, Bookmark } from "lucide-react";
 import type { Market } from "@/data/markets";
+import type { CoinMarket } from "@/data/coins";
 import { Avatar } from "./Avatar";
+import { OutcomeCoin } from "./Coin";
 import { pct, usd } from "@/lib/format";
 
-export function MarketCard({ market }: { market: Market }) {
-  const top = market.outcomes.slice(0, 4);
-  const leader = market.outcomes[0];
+function Row({ visual, name, prob }: { visual: React.ReactNode; name: string; prob: number }) {
   return (
-    <Link href={`/market/${market.slug}`} className="card card-hover group block p-4">
-      <div className="mb-3 flex items-start gap-3">
-        <div className="relative shrink-0">
-          <div className="flex -space-x-2">
-            {market.outcomes.slice(0, 3).map((o) => (
-              <Avatar key={o.kol.id} kol={o.kol} size={28} className="ring-2 ring-white" />
-            ))}
-          </div>
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 font-semibold leading-snug group-hover:text-gold-3">{market.title}</h3>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted">
-            <span className="pill-gold py-0">Défi #{market.challenge}</span>
-            <span className="pill-muted py-0">{market.period}</span>
-          </div>
-        </div>
-        <div className="relative grid h-12 w-12 shrink-0 place-items-center">
-          <svg viewBox="0 0 36 36" className="h-12 w-12 -rotate-90">
-            <circle cx="18" cy="18" r="15" fill="none" stroke="#ebe4d3" strokeWidth="3.5" />
-            <circle cx="18" cy="18" r="15" fill="none" stroke={leader.kol.color} strokeWidth="3.5"
-              strokeDasharray={`${leader.prob * 94.2} 94.2`} strokeLinecap="round" />
-          </svg>
-          <div className="absolute text-center leading-none">
-            <div className="text-[11px] font-bold">{pct(leader.prob)}</div>
-            <div className="text-[9px] text-muted">{leader.kol.name}</div>
-          </div>
-        </div>
-      </div>
+    <li className="flex items-center gap-2.5 text-[14px]">
+      {visual}
+      <span className="min-w-0 flex-1 truncate font-semibold">{name}</span>
+      <span className="num w-11 text-right font-display text-[16px] font-extrabold">{pct(prob)}</span>
+      <span className="soft-up h-8 rounded-[10px] px-2.5 text-[13px]">Oui</span>
+      <span className="soft-down h-8 rounded-[10px] px-2.5 text-[13px]">Non</span>
+    </li>
+  );
+}
 
-      <ul className="space-y-1.5">
-        {top.map((o) => (
-          <li key={o.kol.id} className="flex items-center gap-2 text-sm">
-            <Avatar kol={o.kol} size={20} />
-            <span className="flex-1 truncate font-medium">{o.kol.name}</span>
-            <span className="mono w-10 text-right font-semibold">{pct(o.prob)}</span>
-            <span className="btn-up h-7 px-2.5 py-0 text-xs">Oui</span>
-            <span className="btn-down h-7 px-2.5 py-0 text-xs">Non</span>
-          </li>
+export function MarketCard({ market }: { market: Market }) {
+  return (
+    <Link href={`/market/${market.slug}`} className="card card-hover group flex flex-col p-4">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex shrink-0 -space-x-2.5">
+          {market.outcomes.slice(0, 3).map((o) => (
+            <Avatar key={o.kol.id} kol={o.kol} size={34} className="ring-2 ring-white" />
+          ))}
+        </div>
+        <h3 className="line-clamp-2 flex-1 text-[16px] font-bold leading-snug group-hover:text-blue">{market.title}</h3>
+      </div>
+      <ul className="space-y-2">
+        {market.outcomes.slice(0, 3).map((o) => (
+          <Row key={o.kol.id} visual={<Avatar kol={o.kol} size={24} />} name={o.kol.name} prob={o.prob} />
         ))}
       </ul>
+      <div className="mt-auto flex items-center gap-2 pt-4 text-[13px] font-semibold text-muted">
+        <span className="num">{usd(market.volume, { compact: true })} Vol.</span>
+        <span className="chip ml-auto">{market.period === "7D" ? "7 jours" : "30 jours"}</span>
+      </div>
+    </Link>
+  );
+}
 
-      <div className="mt-3 flex items-center justify-between text-xs text-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" />
-          <span className="font-semibold text-down">EN DIRECT</span>
-          <span>· {usd(market.volume, { compact: true })} Vol.</span>
-        </span>
-        <span className="flex items-center gap-2">
-          <BarChart3 size={14} />
-          <Bookmark size={14} />
-        </span>
+export function CoinMarketCard({ market }: { market: CoinMarket }) {
+  return (
+    <Link href={`/market/${market.slug}`} className="card card-hover group flex flex-col p-4">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex shrink-0 -space-x-2.5">
+          {market.outcomes.slice(1, 4).map((o) => (
+            <span key={o.id} className="rounded-full ring-2 ring-white">
+              <OutcomeCoin outcome={o} size={34} />
+            </span>
+          ))}
+        </div>
+        <h3 className="line-clamp-2 flex-1 text-[16px] font-bold leading-snug group-hover:text-blue">{market.title}</h3>
+      </div>
+      <ul className="space-y-2">
+        {market.outcomes.slice(0, 3).map((o) => (
+          <Row key={o.id} visual={<OutcomeCoin outcome={o} size={24} />} name={o.ticker ? `$${o.ticker}` : "Aucun"} prob={o.prob} />
+        ))}
+      </ul>
+      <div className="mt-auto flex items-center gap-2 pt-4 text-[13px] font-semibold text-muted">
+        <span className="num">{usd(market.volume, { compact: true })} Vol.</span>
+        <span className="chip-blue ml-auto">Memecoins</span>
       </div>
     </Link>
   );

@@ -1,120 +1,411 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/*
+ * Marketcoins : la DA memescanner (papier clair, objets imprimés, une couleur d'action)
+ * repeinte au bleu Polymarket. Bricolage pour ce qui est gros, Inter pour le reste,
+ * aucune mono. Les ombres sont froides et portées, jamais un halo.
+ */
 
-  --color-cream: #fbf7ee;
-  --color-cream-2: #f5efe0;
-  --color-ink: #1b1b1f;
-  --color-muted: #6f6b63;
-  --color-line: #ebe4d3;
-  --color-gold: #f7b801;
-  --color-gold-2: #ffd34d;
-  --color-gold-3: #e0a400;
-  --color-gold-soft: #fff4cc;
-  --color-up: #16a34a;
-  --color-up-soft: #e6f7eb;
-  --color-down: #dc2626;
-  --color-down-soft: #fdeaea;
-  --color-blue: #2563eb;
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-inter), ui-sans-serif, sans-serif;
+
+  --color-paper: #fbfcff;
+  --color-paper-2: #f4f6fb;
+  --color-ink: #0a0f1e;
+  --color-ink-2: #2a3245;
+  --color-muted: #5b6478;
+  --color-faint: #8a93a8;
+  --color-line: #e6e9f2;
+  --color-line-2: #d6dcee;
+  --color-relief: #eef1f9;
+  --color-relief-2: #f3f5fa;
+
+  /* Le bleu Polymarket : il s'écrit et il se clique. */
+  --color-blue: #2e5cff;
+  --color-blue-deep: #1f45e0;
+  --color-blue-light: #5b80ff;
+  --color-blue-sky: #a9c1ff;
+  --color-blue-soft: #eaf0ff;
+
+  /* Le vert et le rouge disent un état : Oui / Non, gain / perte. */
+  --color-up: #00a03c;
+  --color-up-deep: #007e26;
+  --color-up-soft: #e3f6ea;
+  --color-down: #e5484d;
+  --color-down-deep: #c42f33;
+  --color-down-soft: #fdecec;
+  --color-gold: #f0b429;
 }
 
-html { color-scheme: light; }
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
-  background:
-    radial-gradient(1200px 500px at 50% -120px, #fff2c2 0%, rgba(255, 242, 194, 0) 70%),
-    linear-gradient(#fbf7ee, #fbf7ee);
+  background: var(--color-paper);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
 }
 
-/* ---------- primitives ---------- */
-@utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
-         transition-all duration-150 select-none cursor-pointer
-         disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+::selection { background: rgba(46, 92, 255, 0.18); }
+
+/* ---------- typographie ---------- */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
 }
-@utility pill { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold; }
+@utility num { font-variant-numeric: tabular-nums; }
+
+/* ---------- objets ---------- */
+@utility btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 14px;
+  padding: 0.6rem 1.05rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background-color 0.15s ease,
+    color 0.15s ease, border-color 0.15s ease;
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+  &:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 3px; }
+}
 
 @layer components {
-.card {
-  @apply rounded-2xl border border-line bg-white;
-  box-shadow: 0 1px 2px rgba(27, 27, 31, 0.04), 0 8px 24px -16px rgba(120, 90, 0, 0.25);
+  /* La plaque : le beau bouton, une seule recette, seule la couleur change. */
+  .plaque {
+    @apply btn text-white;
+    --pl-a: #5b80ff;
+    --pl-b: #2e5cff;
+    --pl-c: #1f45e0;
+    --pl-shadow: rgba(31, 69, 224, 0.62);
+    background: linear-gradient(135deg, var(--pl-a) 0%, var(--pl-b) 46%, var(--pl-c) 100%);
+    box-shadow: 0 14px 26px -14px var(--pl-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.45),
+      inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+  }
+  .plaque::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform: translateX(-130%);
+    background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.38) 50%, transparent 70%);
+  }
+  .plaque:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 30px -14px var(--pl-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.45),
+      inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+  }
+  .plaque:not(:disabled):hover::after { transform: translateX(130%); transition: transform 0.75s ease; }
+  .plaque:not(:disabled):active {
+    transform: translateY(1px);
+    box-shadow: 0 6px 14px -10px var(--pl-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+  }
+  .plaque-up { --pl-a: #2fd36d; --pl-b: #00a03c; --pl-c: #007e26; --pl-shadow: rgba(0, 126, 38, 0.55); }
+  .plaque-down { --pl-a: #ff7a7d; --pl-b: #e5484d; --pl-c: #c42f33; --pl-shadow: rgba(196, 47, 51, 0.5); }
+  .plaque-ink { --pl-a: #2a3245; --pl-b: #141a2c; --pl-c: #0a0f1e; --pl-shadow: rgba(10, 15, 30, 0.5); }
+
+  /* La pilule blanche : l'action posée sur une planche bleue. */
+  .pill-white {
+    @apply btn rounded-full bg-white px-7 text-blue;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.02rem;
+    height: 54px;
+    box-shadow: 0 5px 0 rgba(8, 24, 90, 0.38), 0 22px 36px -16px rgba(5, 18, 60, 0.62);
+  }
+  .pill-white::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform: translateX(-130%);
+    background: linear-gradient(110deg, transparent 30%, rgba(46, 92, 255, 0.16) 50%, transparent 70%);
+  }
+  .pill-white:hover { transform: translateY(-2px); box-shadow: 0 7px 0 rgba(8, 24, 90, 0.38), 0 26px 40px -16px rgba(5, 18, 60, 0.66); }
+  .pill-white:hover::after { transform: translateX(130%); transition: transform 0.75s ease; }
+  .pill-white:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(8, 24, 90, 0.38), 0 12px 22px -12px rgba(5, 18, 60, 0.6); }
+  .pill-white:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+  /* Le fantôme : l'action secondaire. */
+  .ghost {
+    @apply btn border-[1.5px] border-ink/15 bg-white text-ink;
+  }
+  .ghost:not(:disabled):hover { border-color: var(--color-ink); transform: translateY(-1px); }
+  .ghost:not(:disabled):active { transform: translateY(1px); }
+
+  /* Oui / Non au repos : l'aplat pâle, la couleur écrite. Choisi : la plaque. */
+  .soft-up { @apply btn bg-up-soft text-up-deep; }
+  .soft-up:not(:disabled):hover { background: #cdeed9; transform: translateY(-1px); }
+  .soft-down { @apply btn bg-down-soft text-down-deep; }
+  .soft-down:not(:disabled):hover { background: #fbd9da; transform: translateY(-1px); }
+
+  .card {
+    @apply rounded-[22px] border border-line bg-white;
+    box-shadow: 0 1px 2px rgba(10, 15, 30, 0.04), 0 18px 40px -30px rgba(13, 32, 84, 0.38);
+  }
+  .card-hover { transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, border-color 0.2s; }
+  .card-hover:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-line-2);
+    box-shadow: 0 2px 4px rgba(10, 15, 30, 0.05), 0 26px 48px -28px rgba(13, 32, 84, 0.5);
+  }
+
+  /* La planche : un aplat bleu imprimé, objets blancs dessus. */
+  .planche {
+    position: relative;
+    overflow: hidden;
+    border-radius: 30px;
+    color: #fff;
+    background: linear-gradient(140deg, #1c3fe6 0%, #2e5cff 46%, #5a84ff 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -4px 0 rgba(0, 0, 0, 0.16),
+      0 30px 60px -36px rgba(13, 32, 84, 0.55);
+  }
+  .planche::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(110% 80% at 14% 0%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 56%);
+  }
+
+  .chip, .chip-blue, .chip-up, .chip-down {
+    @apply inline-flex h-[26px] items-center gap-1.5 rounded-full bg-relief px-2.5 text-[12.5px] font-bold whitespace-nowrap text-ink-2;
+  }
+  .chip-blue { @apply bg-blue-soft text-blue; }
+  .chip-up { @apply bg-up-soft text-up-deep; }
+  .chip-down { @apply bg-down-soft text-down-deep; }
+
+  .input {
+    @apply w-full rounded-[14px] border-[1.5px] border-ink/15 bg-white px-3.5 py-2.5 text-[15px] font-semibold text-ink outline-none transition;
+  }
+  .input:focus { border-color: var(--color-blue); box-shadow: 0 0 0 4px rgba(46, 92, 255, 0.13); }
+  .input::placeholder { color: var(--color-faint); font-weight: 500; }
+
+  /* Pilules segmentées : le rail en relief, la choisie pleine. */
+  .seg { @apply inline-flex gap-1 rounded-full bg-relief p-1; }
+  .seg-item {
+    @apply cursor-pointer rounded-full px-3.5 py-1.5 text-[13px] font-bold text-muted transition;
+  }
+  .seg-item:hover { color: var(--color-ink); }
+  .seg-item[data-active="true"] {
+    @apply bg-white text-ink;
+    box-shadow: 0 1px 0 rgba(10, 15, 30, 0.06), 0 6px 14px -8px rgba(13, 32, 84, 0.45);
+  }
+
+  .tab {
+    @apply relative cursor-pointer pb-2.5 text-[15px] font-bold text-faint transition hover:text-ink;
+  }
+  .tab[data-active="true"] { @apply text-ink; }
+  .tab[data-active="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2.5px;
+    border-radius: 2px;
+    background: var(--color-ink);
+  }
+
+  /* Le rond qui se clique. */
+  .round {
+    @apply inline-grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-line bg-white text-muted transition;
+  }
+  .round:hover { color: var(--color-ink); transform: translateY(-1px); border-color: var(--color-line-2); }
+  .round:active { transform: scale(0.9); }
+
+  /* La pièce imprimée : disque plein, liseré clair en haut, assise en bas, reflet, ombre teintée. */
+  .coin {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    overflow: hidden;
+    color: #fff;
+    background: var(--coin, linear-gradient(150deg, #5b80ff, #2e5cff 50%, #1f45e0));
+    box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.45), inset 0 -2.5px 0 rgba(0, 0, 0, 0.16),
+      0 8px 18px -9px var(--coin-shadow, rgba(31, 69, 224, 0.7));
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .coin::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(120% 85% at 28% 12%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 58%);
+  }
+  .coin > * { position: relative; }
+
+  /* La carte de verre : blanche, translucide, posée sur une aura. */
+  .glass {
+    position: relative;
+    border-radius: 30px;
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.62) 52%, rgba(255, 255, 255, 0.78) 100%);
+    -webkit-backdrop-filter: blur(26px) saturate(1.6);
+    backdrop-filter: blur(26px) saturate(1.6);
+    box-shadow: inset 0 1px 0 #fff, 0 1px 1px rgba(10, 15, 30, 0.04), 0 46px 96px -40px rgba(24, 32, 96, 0.5),
+      0 14px 34px -22px rgba(24, 32, 96, 0.26);
+  }
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    pointer-events: none;
+    background: linear-gradient(140deg, #fff 0%, rgba(255, 255, 255, 0.25) 32%, rgba(140, 150, 190, 0.22) 60%, rgba(255, 255, 255, 0.9) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  .link {
+    @apply font-bold text-blue underline decoration-blue/30 decoration-2 underline-offset-4 transition hover:decoration-blue;
+  }
 }
-.card-hover {
-  @apply transition-all duration-200;
-}
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(27, 27, 31, 0.05), 0 18px 36px -18px rgba(120, 90, 0, 0.35);
-  border-color: #f3d98a;
-}
 
-.btn-gold {
-  @apply btn text-ink;
-  background: linear-gradient(180deg, #ffd34d, #f7b801);
-  box-shadow: 0 1px 0 #e0a400, 0 6px 16px -6px rgba(247, 184, 1, 0.7);
-}
-.btn-gold:hover { filter: brightness(1.04); box-shadow: 0 1px 0 #e0a400, 0 10px 22px -8px rgba(247, 184, 1, 0.8); }
-.btn-dark { @apply btn bg-ink text-white hover:bg-black; }
-.btn-ghost { @apply btn border border-line bg-white text-ink hover:bg-cream-2; }
-.btn-up { @apply btn bg-up-soft text-up hover:bg-up hover:text-white; }
-.btn-down { @apply btn bg-down-soft text-down hover:bg-down hover:text-white; }
-
-.pill-gold { @apply pill bg-gold-soft text-gold-3; }
-.pill-up { @apply pill bg-up-soft text-up; }
-.pill-down { @apply pill bg-down-soft text-down; }
-.pill-muted { @apply pill bg-cream-2 text-muted; }
-
-.input {
-  @apply w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none transition
-         focus:border-gold focus:ring-4 focus:ring-gold/20 placeholder:text-muted/70;
-}
-
-.seg { @apply inline-flex rounded-xl border border-line bg-white p-1 gap-1; }
-.seg-item { @apply rounded-lg px-3 py-1.5 text-sm font-semibold text-muted transition cursor-pointer hover:text-ink; }
-.seg-item[data-active="true"] { @apply bg-gold text-ink shadow-sm; }
-
-.tab { @apply border-b-2 border-transparent px-1 pb-2 text-sm font-semibold text-muted transition hover:text-ink cursor-pointer; }
-.tab[data-active="true"] { @apply border-ink text-ink; }
-
-.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-}
-
-/* ---------- motion ---------- */
-@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* ---------- mouvement ---------- */
+@keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes pop { 0% { transform: scale(0.96); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
-@keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes glass-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes scroll-cue { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(10px); opacity: 0; } }
 
-.fade-up { animation: fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.fade-up { animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .pop { animation: pop 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
-.float { animation: float 3s ease-in-out infinite; }
 .stagger > * { animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .stagger > *:nth-child(1) { animation-delay: 0.02s; }
 .stagger > *:nth-child(2) { animation-delay: 0.06s; }
-.stagger > *:nth-child(3) { animation-delay: 0.10s; }
+.stagger > *:nth-child(3) { animation-delay: 0.1s; }
 .stagger > *:nth-child(4) { animation-delay: 0.14s; }
 .stagger > *:nth-child(5) { animation-delay: 0.18s; }
 .stagger > *:nth-child(6) { animation-delay: 0.22s; }
 .stagger > *:nth-child(7) { animation-delay: 0.26s; }
-.stagger > *:nth-child(8) { animation-delay: 0.30s; }
-.stagger > *:nth-child(9) { animation-delay: 0.34s; }
-
-.draw-line {
-  stroke-dasharray: 2000;
-  stroke-dashoffset: 2000;
-  animation: draw 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+.stagger > *:nth-child(8) { animation-delay: 0.3s; }
 
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fade-up, .pop, .stagger > *, .draw-line, .float, .live-dot { animation: none !important; stroke-dashoffset: 0; }
+  .fade-up, .pop, .stagger > * { animation: none !important; }
+  .plaque::after, .pill-white::after { display: none; }
+}
+
+/* ---------- landing : les écrans qui jouent au défilement ---------- */
+.ks-row { transition: background-color 0.35s ease; }
+.ks-row.ks-on { background-color: rgba(234, 240, 255, 0.85); }
+.ks-yes, [data-row-yes] { transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.18s ease; }
+.ks-yes.ks-on, [data-row-yes].ks-on {
+  color: #fff;
+  background: linear-gradient(135deg, #2fd36d 0%, #00a03c 46%, #007e26 100%);
+  box-shadow: 0 12px 22px -12px rgba(0, 126, 38, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+}
+[data-chip] { transition: border-color 0.2s, color 0.2s, transform 0.18s; }
+[data-chip].ks-on { border-color: var(--color-blue); color: var(--color-blue); transform: translateY(1px); }
+.ks-summary { opacity: 0; transform: translateY(6px); transition: opacity 0.4s ease, transform 0.4s ease; }
+.ks-summary.ks-on { opacity: 1; transform: none; }
+.ks-press { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.ks-press.ks-on { transform: translateY(2px) scale(0.985); box-shadow: 0 4px 10px -8px rgba(31, 69, 224, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.18); }
+.ks-toast { opacity: 0; transform: translateY(12px) scale(0.96); transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.ks-toast.ks-on { opacity: 1; transform: none; }
+.ks-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 4px 6px rgba(5, 18, 60, 0.35));
+}
+.ks-cursor::after {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2.5px solid #2e5cff;
+  opacity: 0;
+  transform: scale(0.4);
+}
+.ks-cursor.ks-click::after { animation: ks-ring 0.6s ease-out; }
+.ks-tap::before {
+  content: "";
+  position: absolute;
+  left: -17px;
+  top: -17px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 2.5px #2e5cff, 0 8px 16px -8px rgba(5, 18, 60, 0.6);
+}
+@keyframes ks-ring { 0% { opacity: 0.9; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+
+.scroll-cue-dot { animation: scroll-cue 1.6s ease-in-out infinite; }
+.orbit-coin { position: absolute; left: 0; top: 0; width: max-content; will-change: transform, opacity; }
+
+/* La pastille story : quel moment joue, combien il en reste ; un clic y saute. */
+.story {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem 0.4rem 0.4rem;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s, box-shadow 0.3s, transform 0.18s;
+}
+.story-bar { position: absolute; left: 14px; right: 14px; bottom: 4px; height: 3px; border-radius: 3px; overflow: hidden; }
+.story-bar > i { display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); border-radius: inherit; }
+.on-plank .story { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); }
+.on-plank .story[data-active="true"] { background: #fff; color: var(--color-blue); box-shadow: 0 5px 0 rgba(8, 24, 90, 0.3), 0 18px 30px -16px rgba(5, 18, 60, 0.6); }
+.on-plank .story .story-bar { background: rgba(255, 255, 255, 0.2); }
+.on-plank .story .story-bar > i { background: #fff; }
+.on-plank .story[data-active="true"] .story-bar { background: rgba(46, 92, 255, 0.15); }
+.on-plank .story[data-active="true"] .story-bar > i { background: var(--color-blue); }
+.on-paper .story { background: rgba(255, 255, 255, 0.55); color: var(--color-muted); box-shadow: inset 0 0 0 1px rgba(10, 15, 30, 0.08); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.on-paper .story[data-active="true"] { background: #fff; color: var(--color-ink); box-shadow: 0 14px 28px -16px rgba(13, 32, 84, 0.5), inset 0 0 0 1px rgba(10, 15, 30, 0.06); }
+.on-paper .story .story-bar { background: rgba(10, 15, 30, 0.07); }
+.on-paper .story .story-bar > i { background: var(--color-blue); }
+.story:hover { transform: translateY(-1px); }
+.story:active { transform: translateY(1px); }
+
+/* L'aura : trois taches douces derrière le verre, à la couleur de ce qui joue. */
+.aura-spot {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.6;
+  -webkit-mask: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.55) 46%, transparent 100%);
+  mask: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.55) 46%, transparent 100%);
+  transition: background-color 1.4s ease, transform 2.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-cursor { display: none; }
+  .scroll-cue-dot { animation: none; }
+  .ks-toast, .ks-summary { transition: none; }
 }

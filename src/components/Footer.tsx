@@ -1,45 +1,54 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 
+const COLS = [
+  {
+    title: "Marchés",
+    links: [
+      { label: "Top KOL 7 jours", href: "/market/kol-top-profit-7d" },
+      { label: "Top KOL 30 jours", href: "/market/kol-top-profit-30d" },
+      { label: "Course à 1 Md$", href: "/market/premier-1md-fdv" },
+      { label: "Tous les marchés", href: "/app" },
+    ],
+  },
+  {
+    title: "Accès",
+    links: [
+      { label: "Mon compte", href: "/compte" },
+      { label: "Comment ça marche", href: "/comment-ca-marche" },
+      { label: "Conditions", href: "/conditions" },
+      { label: "Accueil", href: "/" },
+    ],
+  },
+];
+
+/** Le pied : la marque et sa phrase, les sections, l'accès. Rien d'autre (DA §14.2). */
 export function Footer() {
   return (
-    <footer className="mt-16 border-t border-line bg-white/60">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div className="space-y-3">
+    <footer className="mt-20 border-t border-line bg-paper">
+      <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-12 md:grid-cols-[1.5fr_1fr_1fr]">
+        <div>
           <Logo size={24} />
-          <p className="max-w-xs text-sm text-muted">
-            Le marché de prédiction des KOLs crypto. Parie sur ceux qui performent vraiment, données
-            on-chain à l&apos;appui.
+          <p className="display mt-6 text-[clamp(2.1rem,4.2vw,3.4rem)]">
+            Trade <span className="text-blue">the future.</span>
           </p>
         </div>
-        <div>
-          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Marchés</h4>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/market/kol-top-profit-7d" className="hover:text-gold-3">Top KOL · 7 jours</Link></li>
-            <li><Link href="/market/kol-top-profit-30d" className="hover:text-gold-3">Top KOL · 30 jours</Link></li>
-            <li><span className="text-muted/60">Memecoins (bientôt)</span></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Compte</h4>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/compte" className="hover:text-gold-3">Mon portefeuille</Link></li>
-            <li><Link href="/compte#positions" className="hover:text-gold-3">Mes positions</Link></li>
-            <li><Link href="/comment-ca-marche" className="hover:text-gold-3">Comment ça marche</Link></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Légal</h4>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/conditions" className="hover:text-gold-3">Conditions d&apos;utilisation</Link></li>
-            <li><Link href="/conditions#risques" className="hover:text-gold-3">Avertissement sur les risques</Link></li>
-            <li><Link href="/conditions#confidentialite" className="hover:text-gold-3">Confidentialité</Link></li>
-          </ul>
-        </div>
+        {COLS.map((c) => (
+          <div key={c.title}>
+            <h4 className="mb-3 font-display text-[18px] font-extrabold tracking-[-0.02em]">{c.title}</h4>
+            <ul className="space-y-2.5">
+              {c.links.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="inline-block text-[15px] font-semibold text-[#4a5468] transition hover:translate-x-[3px] hover:text-blue active:translate-y-px">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
-      <div className="border-t border-line py-4 text-center text-xs text-muted">
-        © 2026 Marketcoins · Les marchés de prédiction comportent un risque de perte en capital. Réservé aux adultes.
-      </div>
+      <div className="mx-auto max-w-[1200px] border-t border-line px-4 py-5 text-[15px] font-semibold text-faint">© 2026 Marketcoins</div>
     </footer>
   );
 }

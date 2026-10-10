@@ -1,40 +1,40 @@
 import Link from "next/link";
-import { Bookmark } from "lucide-react";
 import type { BinaryMarket } from "@/data/markets";
 import { kolById } from "@/data/kols";
 import { Avatar } from "./Avatar";
-import { pct, usd } from "@/lib/format";
+import { usd } from "@/lib/format";
+
+/** La demi-jauge Polymarket : la chance du Oui, à sa couleur. */
+function Gauge({ p }: { p: number }) {
+  const len = Math.PI * 26;
+  const color = p >= 0.5 ? "#00a03c" : p >= 0.2 ? "#2e5cff" : "#e5484d";
+  return (
+    <div className="relative h-[40px] w-[64px] shrink-0">
+      <svg viewBox="0 0 64 36" className="h-[36px] w-[64px]" aria-hidden>
+        <path d="M6 33a26 26 0 0 1 52 0" fill="none" stroke="#eef1f9" strokeWidth="5" strokeLinecap="round" />
+        <path d="M6 33a26 26 0 0 1 52 0" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${p * len} ${len}`} />
+      </svg>
+      <div className="num absolute inset-x-0 top-[17px] text-center font-display text-[15px] font-extrabold leading-none">{Math.round(p * 100)}%</div>
+    </div>
+  );
+}
 
 export function BinaryCard({ market }: { market: BinaryMarket }) {
   const kol = kolById(market.kolId)!;
   return (
-    <Link href={`/market/kol-top-profit-${market.period.toLowerCase()}`} className="card card-hover group block p-4">
+    <Link href={`/market/kol-top-profit-${market.period.toLowerCase()}`} className="card card-hover group flex flex-col p-4">
       <div className="mb-4 flex items-start gap-3">
-        <Avatar kol={kol} size={40} className="ring-2 ring-white" />
-        <h3 className="line-clamp-2 flex-1 font-semibold leading-snug group-hover:text-gold-3">{market.title}</h3>
-        <div className="relative grid h-12 w-12 shrink-0 place-items-center">
-          <svg viewBox="0 0 36 36" className="h-12 w-12 -rotate-90">
-            <circle cx="18" cy="18" r="15" fill="none" stroke="#ebe4d3" strokeWidth="3.5" />
-            <circle cx="18" cy="18" r="15" fill="none" stroke={market.yes >= 0.5 ? "#16a34a" : "#dc2626"} strokeWidth="3.5"
-              strokeDasharray={`${market.yes * 94.2} 94.2`} strokeLinecap="round" />
-          </svg>
-          <div className="absolute text-center leading-none">
-            <div className="text-[11px] font-bold">{pct(market.yes)}</div>
-            <div className="text-[9px] text-muted">Oui</div>
-          </div>
-        </div>
+        <Avatar kol={kol} size={40} />
+        <h3 className="line-clamp-3 flex-1 text-[15px] font-bold leading-snug group-hover:text-blue">{market.title}</h3>
+        <Gauge p={market.yes} />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <span className="btn-up">Oui {Math.round(market.yes * 100)}¢</span>
-        <span className="btn-down">Non {Math.round((1 - market.yes) * 100)}¢</span>
+      <div className="mt-auto grid grid-cols-2 gap-2">
+        <span className="soft-up h-10">Oui</span>
+        <span className="soft-down h-10">Non</span>
       </div>
-      <div className="mt-3 flex items-center justify-between text-xs text-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" />
-          <span className="font-semibold text-down">EN DIRECT</span>
-          <span>· {usd(market.volume, { compact: true })} Vol. · {market.period}</span>
-        </span>
-        <Bookmark size={14} />
+      <div className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-muted">
+        <span className="num">{usd(market.volume, { compact: true })} Vol.</span>
+        <span className="chip ml-auto">{market.period === "7D" ? "7 jours" : "30 jours"}</span>
       </div>
     </Link>
   );

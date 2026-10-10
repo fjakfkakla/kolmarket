@@ -1,20 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-
-function subscribe(cb: () => void) {
-  const id = setInterval(cb, 1000);
-  return () => clearInterval(id);
-}
-const getNow = () => Math.floor(Date.now() / 1000) * 1000;
-const getServerNow = () => null;
-
-const Cell = ({ v, u }: { v: number; u: string }) => (
-  <div className="text-center">
-    <div className="mono text-2xl font-bold leading-none text-down">{String(v).padStart(2, "0")}</div>
-    <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted">{u}</div>
-  </div>
-);
+import { useNow } from "@/lib/useNow";
 
 function parts(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -26,31 +12,33 @@ function parts(ms: number) {
   };
 }
 
-export function Countdown({ to, label = "Fermeture des mises", compact = false }: { to: string; label?: string; compact?: boolean }) {
+const pad = (n: number) => String(n).padStart(2, "0");
+
+export function Countdown({ to, label = "Fermeture des mises", compact = false, onPlank = false }: { to: string; label?: string; compact?: boolean; onPlank?: boolean }) {
   const target = new Date(to).getTime();
-  const now = useSyncExternalStore(subscribe, getNow, getServerNow);
-  const p = parts(now === null ? 0 : target - now);
-  const closed = now !== null && now >= target;
+  const now = useNow();
+  const p = parts(now === 0 ? 0 : target - now);
+  const closed = now !== 0 && now >= target;
 
   if (compact) {
     return (
-      <span className="mono text-xs text-muted">
-        {closed ? "Fermé" : `${p.d}j ${String(p.h).padStart(2, "0")}h ${String(p.m).padStart(2, "0")}m`}
+      <span className="num text-[14px] font-semibold text-muted">
+        {now === 0 ? " " : closed ? "Mises fermées" : <>Clôture dans <span className="font-bold text-ink">{p.d} j {pad(p.h)} h {pad(p.m)} min</span></>}
       </span>
     );
   }
 
+  const cells: [number, string][] = [[p.d, "jours"], [p.h, "h"], [p.m, "min"], [p.s, "s"]];
   return (
     <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{closed ? "Mises fermées" : label}</div>
-      <div className="flex items-start gap-3">
-        <Cell v={p.d} u="jours" />
-        <span className="mt-1 text-xl font-bold text-muted">:</span>
-        <Cell v={p.h} u="h" />
-        <span className="mt-1 text-xl font-bold text-muted">:</span>
-        <Cell v={p.m} u="min" />
-        <span className="mt-1 text-xl font-bold text-muted">:</span>
-        <Cell v={p.s} u="sec" />
+      <div className={`mb-2 text-[14px] font-bold ${onPlank ? "text-white/80" : "text-muted"}`}>{closed ? "Mises fermées" : label}</div>
+      <div className="flex items-start gap-1.5">
+        {cells.map(([v, u]) => (
+          <div key={u} className={`min-w-[54px] rounded-2xl px-2 py-2 text-center ${onPlank ? "bg-white text-ink shadow-[0_10px_20px_-14px_rgba(5,18,60,.7)]" : "bg-relief"}`}>
+            <div className="num font-display text-[24px] font-extrabold leading-none tracking-[-0.03em]">{now === 0 ? "--" : pad(v)}</div>
+            <div className="mt-1 text-[12px] font-bold text-muted">{u}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

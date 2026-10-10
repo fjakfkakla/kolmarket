@@ -7,7 +7,7 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     id: "objet",
     title: "1. Objet",
     body: [
-      "Marketcoins (« la Plateforme ») est une interface permettant d'acheter et de vendre des parts sur des marchés de prédiction portant sur la performance de traders publics (« KOLs ») mesurée à partir de données blockchain publiques.",
+      "Marketcoins (« la Plateforme ») est une interface permettant d'acheter et de vendre des parts sur des marchés de prédiction portant sur la performance de traders publics (« KOLs ») et de memecoins, mesurée à partir de données blockchain et de marché publiques.",
       "Les présentes conditions régissent l'accès et l'utilisation de la Plateforme. En connectant un wallet ou en négociant, vous les acceptez sans réserve.",
     ],
   },
@@ -35,7 +35,7 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
       "Chaque marché définit une question, une période, une liste de résultats possibles et une règle de résolution publiée avant l'ouverture. Cette règle fait foi.",
       "Une part « Oui » sur un résultat vaut 1 USDC si ce résultat est déclaré gagnant, 0 sinon. Une part « Non » vaut l'inverse. Les prix affichés reflètent la probabilité implicite du marché et évoluent en continu.",
       "Les mises ferment à la date indiquée. Les positions peuvent être revendues au prix du marché jusqu'à la résolution, sous réserve de liquidité.",
-      "Des frais de 2 % sont prélevés sur chaque achat. Les frais de réseau Solana restent à votre charge.",
+      "Aucun frais de trading n'est prélevé : 0 % à l'achat, 0 % à la revente. Les frais de réseau Solana restent à votre charge.",
     ],
   },
   {
@@ -52,7 +52,7 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
     title: "6. Avertissement sur les risques",
     body: [
       "Négocier sur des marchés de prédiction comporte un risque de perte totale du capital engagé. Ne misez jamais plus que ce que vous pouvez vous permettre de perdre.",
-      "Les KOLs listés ne sont ni affiliés ni partenaires de la Plateforme. Leur performance passée ne préjuge pas de leur performance future.",
+      "Les KOLs et les tokens listés ne sont ni affiliés ni partenaires de la Plateforme. Leur performance passée ne préjuge pas de leur performance future.",
       "Les smart contracts peuvent contenir des vulnérabilités. La Plateforme applique des plafonds de mise et fait auditer son code, sans garantie d'absence de faille.",
     ],
   },
@@ -90,22 +90,27 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
 
 export default function TermsPage() {
   return (
-    <div className="grid gap-8 md:grid-cols-[220px_1fr]">
-      <aside className="md:sticky md:top-28 md:self-start">
-        <div className="card p-3">
-          <div className="px-2 pb-2 text-xs font-bold uppercase tracking-wider text-muted">Sommaire</div>
+    <div className="grid gap-8 md:grid-cols-[230px_1fr]">
+      <aside className="md:sticky md:top-32 md:self-start">
+        <nav className="card p-2" aria-label="Sommaire">
           {SECTIONS.map((s) => (
-            <a key={s.id} href={`#${s.id}`} className="block rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-cream-2 hover:text-ink">{s.title}</a>
+            <a key={s.id} href={`#${s.id}`} className="block rounded-xl px-3 py-2 text-[14px] font-semibold text-muted transition hover:bg-paper-2 hover:text-ink">
+              {s.title}
+            </a>
           ))}
-        </div>
+        </nav>
       </aside>
-      <article className="card p-6 md:p-10 fade-up">
-        <h1 className="text-3xl font-bold">Conditions d&apos;utilisation</h1>
-        <p className="mt-2 text-sm text-muted">Dernière mise à jour : 9 octobre 2026</p>
+      <article className="card fade-up p-6 md:p-10">
+        <h1 className="display text-[34px]">Conditions d&apos;utilisation</h1>
+        <span className="chip mt-3">Mise à jour le 10 octobre 2026</span>
         {SECTIONS.map((s) => (
-          <section key={s.id} id={s.id} className="mt-8 scroll-mt-28">
-            <h2 className="text-lg font-bold">{s.title}</h2>
-            {s.body.map((p, i) => <p key={i} className="mt-2 text-sm leading-relaxed text-muted">{p}</p>)}
+          <section key={s.id} id={s.id} className="mt-9 scroll-mt-32">
+            <h2 className="font-display text-[21px] font-extrabold tracking-[-0.02em]">{s.title}</h2>
+            {s.body.map((p, i) => (
+              <p key={i} className="mt-2.5 text-[15px] leading-relaxed text-ink-2">
+                {p}
+              </p>
+            ))}
           </section>
         ))}
       </article>
