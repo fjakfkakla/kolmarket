@@ -4,7 +4,13 @@ import { useSyncExternalStore } from "react";
 import { getWallets } from "@wallet-standard/app";
 import type { Wallet } from "@wallet-standard/base";
 import { StandardConnect, type StandardConnectFeature } from "@wallet-standard/features";
-import { SolanaSignMessage, type SolanaSignMessageFeature } from "@solana/wallet-standard-features";
+import {
+  SolanaSignMessage,
+  SolanaSignTransaction,
+  type SolanaSignMessageFeature,
+  type SolanaSignTransactionFeature,
+} from "@solana/wallet-standard-features";
+import { WALLET_CHAIN } from "./cluster";
 
 /**
  * Détection des wallets via le Wallet Standard : Phantom, Solflare, Backpack, Coinbase Wallet,
@@ -44,7 +50,14 @@ async function post<T>(url: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
+const toBase64 = (bytes: Uint8Array) => {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s);
+};
+const fromBase64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+
+const rejected = (e: unknown) => /reject|denied|cancel|declin|closed/i.test((e as Error)?.message ?? "");
 
 /** Connecte le wallet, fait signer le message de connexion et ouvre la session côté serveur. */
 export async function signInWithWallet(wallet: Wallet): Promise<{ address: string; walletApp: string }> {
@@ -61,11 +74,37 @@ export async function signInWithWallet(wallet: Wallet): Promise<{ address: strin
     });
     signature = signed.signature;
   } catch (e) {
-    const msg = (e as Error)?.message ?? "";
-    if (/reject|denied|cancel|declin|closed/i.test(msg)) throw new Error("Demande refusée dans le wallet.");
+    if (rejected(e)) throw new Error("Demande refusée dans le wallet.");
     throw e instanceof Error ? e : new Error("Connexion impossible.");
   }
   return post("/api/auth/verify", { signature: toBase64(signature), walletApp: wallet.name });
+}
+
+/**
+ * Fait signer une transaction préparée par le serveur, avec le wallet utilisé à la connexion.
+ * Le wallet doit être sur le même compte que la session, sinon on refuse.
+ */
+export async function signTransactionWith(walletName: string | null, address: string, transactionB64: string): Promise<string> {
+  const wallet = getWallets()
+    .get()
+    .filter(isSolanaWallet)
+    .find((w) => w.name === walletName);
+  if (!wallet) throw new Error(`Ouvre ${walletName ?? "ton wallet"} pour signer le dépôt.`);
+  if (!(SolanaSignTransaction in wallet.features)) throw new Error(`${wallet.name} ne sait pas signer cette transaction.`);
+  try {
+    const { accounts } = await (wallet.features as StandardConnectFeature)[StandardConnect].connect();
+    const account = accounts.find((a) => a.address === address);
+    if (!account) throw new Error(`Sélectionne le compte ${address.slice(0, 4)}…${address.slice(-4)} dans ${wallet.name}.`);
+    const [out] = await (wallet.features as SolanaSignTransactionFeature)[SolanaSignTransaction].signTransaction({
+      account,
+      transaction: fromBase64(transactionB64),
+      chain: WALLET_CHAIN,
+    });
+    return toBase64(out.signedTransaction);
+  } catch (e) {
+    if (rejected(e)) throw new Error("Dépôt annulé dans le wallet.");
+    throw e instanceof Error ? e : new Error("Signature impossible.");
+  }
 }
 
 export async function fetchSession(): Promise<{ address: string; walletApp: string | null } | null> {

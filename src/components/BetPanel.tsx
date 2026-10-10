@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Info, Lock, Wallet } from "lucide-react";
 import type { Market, Outcome } from "@/data/markets";
 import { useWallet } from "@/lib/wallet";
@@ -11,7 +12,9 @@ import { Avatar } from "./Avatar";
 
 export function BetPanel({ market, outcome, open }: { market: Market; outcome: Outcome; open: boolean }) {
   const w = useWallet();
+  const router = useRouter();
   const [amount, setAmount] = useState(10);
+  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const staked = w.stakedOn(market.slug);
@@ -20,14 +23,18 @@ export function BetPanel({ market, outcome, open }: { market: Market; outcome: O
   const after = odds(market.pool + amount, outcome.pool + amount);
   const payout = estimatePayout(market.pool, outcome.pool, amount);
 
-  const submit = () => {
+  const submit = async () => {
     setMsg(null);
     if (!w.connected) return w.openModal("connect");
-    const err = w.placeBet(
+    setBusy(true);
+    const err = await w.placeBet(
       { marketSlug: market.slug, marketTitle: market.title, kolId: outcome.kol.id, kolName: outcome.kol.name, amount },
       open,
     );
+    setBusy(false);
     setMsg(err ? { ok: false, text: err } : { ok: true, text: `Mise de ${usd(amount)} sur ${outcome.kol.name} enregistrée.` });
+    // En mode réel, le pot vient du serveur : on le recharge pour voir la nouvelle cote.
+    if (!err && w.live) router.refresh();
   };
 
   return (
@@ -100,7 +107,7 @@ export function BetPanel({ market, outcome, open }: { market: Market; outcome: O
       {!open ? (
         <button disabled className="btn-dark w-full py-3 text-base opacity-60"><Lock size={16} /> Mises fermées</button>
       ) : (
-        <button onClick={submit} className="btn-gold w-full py-3 text-base">
+        <button onClick={submit} disabled={busy} className="btn-gold w-full py-3 text-base disabled:opacity-60">
           {w.connected ? `Miser ${usd(amount)} sur ${outcome.kol.name}` : <><Wallet size={16} /> Se connecter pour miser</>}
         </button>
       )}

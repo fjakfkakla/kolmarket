@@ -12,6 +12,9 @@ export type Outcome = {
   change24h: number;
 };
 
+/** Mise récente affichée dans « Activité » (adresse raccourcie). */
+export type MarketActivity = { id: string; who: string; kolId: string; amount: number; at: string };
+
 export type Market = {
   slug: string;
   title: string;
@@ -30,6 +33,8 @@ export type Market = {
   rules: string[];
   outcomes: Outcome[];
   featured?: boolean;
+  /** Dernières vraies mises ; absent avec les données mock. */
+  activity?: MarketActivity[];
 };
 
 /** Répartition mock du pot : le meilleur PnL attire le plus de mises. */

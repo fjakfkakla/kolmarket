@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac, createPublicKey, randomBytes, randomUUID, timingSafeEqual, verify } from "node:crypto";
 import bs58 from "bs58";
 import { NextResponse } from "next/server";
+import { CLUSTER } from "./cluster";
 import { supabaseAdmin } from "./supabase";
 
 /**
@@ -20,7 +21,6 @@ export const NONCE_COOKIE = "mc_siws";
 const SESSION_TTL_S = 7 * 24 * 3600;
 export const NONCE_TTL_S = 5 * 60;
 
-export const CLUSTER = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet" ? "mainnet" : "devnet";
 
 const STATEMENT =
   "Connexion à Marketcoins. Cette signature est gratuite : ce n'est pas une transaction et elle ne donne accès à aucun de tes fonds.";
@@ -44,12 +44,12 @@ function secret(): string {
 
 const mac = (purpose: string, body: string) => createHmac("sha256", secret()).update(`${purpose}.${body}`).digest();
 
-function seal(purpose: string, payload: unknown): string {
+export function seal(purpose: string, payload: unknown): string {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${body}.${mac(purpose, body).toString("base64url")}`;
 }
 
-function unseal<T>(purpose: string, token: string | undefined): T | null {
+export function unseal<T>(purpose: string, token: string | undefined): T | null {
   if (!token) return null;
   const [body, sig] = token.split(".");
   if (!body || !sig) return null;
@@ -187,7 +187,7 @@ export const cookieBase = (site: URL) => ({ httpOnly: true, secure: site.protoco
 
 type SessionPayload = { sid: string; addr: string; app: string | null; exp: number };
 
-export type Session = { address: string; walletApp: string | null };
+export type Session = { address: string; walletApp: string | null; accountId: string | null };
 
 export const SESSION_MAX_AGE = SESSION_TTL_S;
 
@@ -228,7 +228,7 @@ export async function readSession(token: string | undefined): Promise<Session | 
   if (db) {
     const { data, error } = await db
       .from("sessions")
-      .select("revoked_at, expires_at, accounts!inner(wallet)")
+      .select("account_id, revoked_at, expires_at, accounts!inner(wallet)")
       .eq("id", p.sid)
       .maybeSingle();
     if (error) {
@@ -237,8 +237,9 @@ export async function readSession(token: string | undefined): Promise<Session | 
     }
     const wallet = (data?.accounts as unknown as { wallet: string } | null)?.wallet;
     if (!data || data.revoked_at || Date.parse(data.expires_at) < Date.now() || wallet !== p.addr) return null;
+    return { address: p.addr, walletApp: p.app, accountId: data.account_id as string };
   }
-  return { address: p.addr, walletApp: p.app };
+  return { address: p.addr, walletApp: p.app, accountId: null };
 }
 
 export async function revokeSession(token: string | undefined) {

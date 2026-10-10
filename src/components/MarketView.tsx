@@ -17,13 +17,23 @@ import { odds } from "@/lib/pot";
 import { useNow } from "@/lib/useNow";
 import { dateFr, fmtOdds, pct, shortWallet, usd } from "@/lib/format";
 
-const ACTIVITY = [
-  { who: "7Gx2…xVq", who2: "Cooker", amt: 250, ago: "il y a 12 s" },
-  { who: "Bq91…aa4", who2: "zeropnl", amt: 40, ago: "il y a 48 s" },
-  { who: "3Fkd…m0P", who2: "Cented", amt: 120, ago: "il y a 2 min" },
-  { who: "9zLm…Qe7", who2: "decu", amt: 75, ago: "il y a 3 min" },
-  { who: "Hh3s…k2R", who2: "Cooker", amt: 500, ago: "il y a 5 min" },
+/** Activité d'exemple pour les données mock (sans base). */
+const MOCK_ACTIVITY = [
+  { id: "1", who: "7Gx2…xVq", kolId: "cooker", amount: 250, ago: "il y a 12 s" },
+  { id: "2", who: "Bq91…aa4", kolId: "zeropnl", amount: 40, ago: "il y a 48 s" },
+  { id: "3", who: "3Fkd…m0P", kolId: "cented", amount: 120, ago: "il y a 2 min" },
+  { id: "4", who: "9zLm…Qe7", kolId: "decu", amount: 75, ago: "il y a 3 min" },
+  { id: "5", who: "Hh3s…k2R", kolId: "cooker", amount: 500, ago: "il y a 5 min" },
 ];
+
+function ago(at: string, now: number | null) {
+  if (now === null) return "";
+  const s = Math.max(0, Math.round((now - Date.parse(at)) / 1000));
+  if (s < 60) return `il y a ${s} s`;
+  if (s < 3600) return `il y a ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `il y a ${Math.floor(s / 3600)} h`;
+  return `il y a ${Math.floor(s / 86400)} j`;
+}
 
 /** Ajoute les mises de démo du joueur au pot (les vraies mises seront déjà comptées par le serveur). */
 function withMyBets(market: Market, bets: Bet[]): Market {
@@ -40,7 +50,8 @@ function withMyBets(market: Market, bets: Bet[]): Market {
 
 export function MarketView({ market: base, kols: KOLS, sibling }: { market: Market; kols: Kol[]; sibling?: Market }) {
   const w = useWallet();
-  const market = useMemo(() => withMyBets(base, w.bets), [base, w.bets]);
+  // En démo, les mises du joueur ne sont pas dans les pots venus du serveur ; en réel, elles y sont déjà.
+  const market = useMemo(() => (w.live ? base : withMyBets(base, w.bets)), [base, w.bets, w.live]);
   const [selectedId, setSelectedId] = useState(base.outcomes[0].kol.id);
   const selected = market.outcomes.find((o) => o.kol.id === selectedId) ?? market.outcomes[0];
   const [period, setPeriod] = useState<Period>(market.period);
@@ -48,6 +59,7 @@ export function MarketView({ market: base, kols: KOLS, sibling }: { market: Mark
   const now = useNow();
   const open = now === null || now < new Date(market.closesAt).getTime();
   const pnlKey = period === "7D" ? "pnl7d" : "pnl30d";
+  const activity = market.activity ? market.activity.map((a) => ({ ...a, ago: ago(a.at, now) })) : MOCK_ACTIVITY;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -153,7 +165,7 @@ export function MarketView({ market: base, kols: KOLS, sibling }: { market: Mark
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 font-semibold">
                         {o.kol.name}
-                        {i === 0 && <span className="pill-gold py-0 text-[10px]">favori</span>}
+                        {i === 0 && o.prob > 0 && <span className="pill-gold py-0 text-[10px]">favori</span>}
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted">
                         <a href={`https://x.com/${o.kol.handle}`} target="_blank" rel="noreferrer" className="hover:text-ink" onClick={(e) => e.stopPropagation()}>@{o.kol.handle}</a>
@@ -232,15 +244,16 @@ export function MarketView({ market: base, kols: KOLS, sibling }: { market: Mark
           </button>
           {showActivity && (
             <ul className="border-t border-line pop">
-              {ACTIVITY.map((a, i) => {
-                const k = KOLS.find((x) => x.name === a.who2) ?? KOLS[0];
+              {activity.length === 0 && <li className="px-5 py-6 text-center text-sm text-muted">Aucune mise pour l&apos;instant. Sois le premier.</li>}
+              {activity.map((a) => {
+                const k = KOLS.find((x) => x.id === a.kolId) ?? KOLS[0];
                 return (
-                  <li key={i} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+                  <li key={a.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
                     <span className="mono grid h-7 w-7 place-items-center rounded-full bg-cream-2 text-[10px] font-bold">{a.who.slice(0, 2)}</span>
                     <span className="mono text-xs text-muted">{a.who}</span>
                     <span>a misé sur</span>
-                    <Avatar kol={k} size={18} /> <span className="font-semibold">{a.who2}</span>
-                    <span className="mono ml-auto font-semibold">{usd(a.amt)}</span>
+                    <Avatar kol={k} size={18} /> <span className="font-semibold">{k.name}</span>
+                    <span className="mono ml-auto font-semibold">{usd(a.amount)}</span>
                     <span className="hidden text-xs text-muted sm:inline">{a.ago}</span>
                   </li>
                 );

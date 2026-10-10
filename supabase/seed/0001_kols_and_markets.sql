@@ -104,22 +104,4 @@ where m.slug in ('kol-top-profit-7d', 'kol-top-profit-30d')
 on conflict (market_id, kol_id) do update set
   position = excluded.position, prob = excluded.prob, change_24h = excluded.change_24h, updated_at = now();
 
--- Quelques mises de démo pour alimenter le pot et l'activité
-insert into public.trades (wallet, market_id, outcome_id, side, kind, shares, price, amount_usd, fee_usd, created_at)
-select
-  w.wallet, o.market_id, o.id, w.side, 'BUY',
-  round(w.amount / (case when w.side = 'OUI' then o.prob else 1 - o.prob end), 4),
-  case when w.side = 'OUI' then o.prob else 1 - o.prob end,
-  w.amount, 0,
-  now() - (w.ago || ' minutes')::interval
-from (values
-  ('7Gx2kQmFpZ9vN4tLd8sH3rWcA1eB6yU5oP0jK2nM9xVq', 'cooker',  'OUI', 250.00, 1),
-  ('Bq91mNx3Lp8zR2vK7sT4wY6uA1cE5fH9jD0gS8kQ2aa4', 'zeropnl', 'OUI',  40.00, 2),
-  ('3FkdP0mLz9vN2qR7sT4wY6uA1cE5fH8jD1gS2kQ5xm0P', 'cented',  'OUI', 120.00, 4),
-  ('9zLmQe7vN2qR8sT4wY6uA1cE5fH9jD0gS3kQ2xP1mQe7', 'decu',    'OUI',  75.00, 6),
-  ('Hh3sK2RvN2qR8sT4wY6uA1cE5fH9jD0gS3kQ2xP1mk2R', 'cooker',  'OUI', 500.00, 9),
-  ('7Gx2kQmFpZ9vN4tLd8sH3rWcA1eB6yU5oP0jK2nM9xVq', 'chester', 'OUI',  60.00, 15)
-) as w(wallet, kol_id, side, amount, ago)
-join public.markets m on m.slug = 'kol-top-profit-7d'
-join public.outcomes o on o.market_id = m.id and o.kol_id = w.kol_id
-where not exists (select 1 from public.trades t where t.market_id = m.id);
+-- Pas de mises de démo : les pots se remplissent avec les vraies mises (table bets, migration 0003).

@@ -17,8 +17,10 @@ type MarketRow = {
   id: string; slug: string; title: string; question: string; category: string; period: Period;
   challenge_no: number | null; starts_at: string; ends_at: string; closes_at: string; status: string;
   rules: string[]; featured: boolean;
-  outcomes: { id: string; kol_id: string; position: number; prob: number; change_24h: number }[];
+  outcomes: { id: string; kol_id: string; position: number }[];
 };
+type PoolRow = { outcome_id: string; pool_micro: number };
+type RecentRow = { id: string; market_id: string; kol_id: string; amount_micro: number; created_at: string; wallet_short: string };
 type StatsRow = { market_id: string; volume_usd: number; pool_usd: number; traders: number };
 
 const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
@@ -75,26 +77,35 @@ export async function getMarkets(): Promise<Market[]> {
   const sb = supabase();
   if (!sb) return MARKETS;
   try {
-    const [kols, markets, stats] = await Promise.all([
+    const [kols, markets, stats, pools, recent] = await Promise.all([
       getKols(),
       sb.from("markets")
-        .select("id,slug,title,question,category,period,challenge_no,starts_at,ends_at,closes_at,status,rules,featured,outcomes(id,kol_id,position,prob,change_24h)")
+        .select("id,slug,title,question,category,period,challenge_no,starts_at,ends_at,closes_at,status,rules,featured,outcomes!outcomes_market_id_fkey(id,kol_id,position)")
         .neq("status", "DRAFT")
         .order("challenge_no"),
       sb.from("market_stats").select("market_id,volume_usd,pool_usd,traders"),
+      sb.from("outcome_pools").select("outcome_id,pool_micro"),
+      sb.from("recent_bets").select("id,market_id,kol_id,amount_micro,created_at,wallet_short").order("created_at", { ascending: false }).limit(200),
     ]);
     if (markets.error || !markets.data?.length) throw markets.error ?? new Error("aucun marché");
+    if (pools.error || recent.error) throw pools.error ?? recent.error;
+    const poolOf = new Map((pools.data as PoolRow[]).map((p) => [p.outcome_id, num(p.pool_micro) / 1e6]));
     const kolById = new Map(kols.map((k) => [k.id, k]));
     const statFor = (id: string) => (stats.data as StatsRow[] | null)?.find((s) => s.market_id === id);
 
     return (markets.data as unknown as MarketRow[]).map((m) => {
       const st = statFor(m.id);
-      const pot = num(st?.pool_usd);
-      // Pot commun : `prob` = part du pot misée sur le KOL, `pool` = montant correspondant.
-      const outcomes: Outcome[] = m.outcomes
-        .map((o) => ({ kol: kolById.get(o.kol_id), prob: num(o.prob), pool: Math.round(num(o.prob) * pot), change24h: num(o.change_24h) }))
-        .filter((o): o is Outcome => Boolean(o.kol))
-        .sort((a, b) => b.prob - a.prob);
+      // Pot commun, à partir des vraies mises : `pool` = misé sur le KOL, `prob` = sa part du pot.
+      const rows = m.outcomes.map((o) => ({ o, pool: poolOf.get(o.id) ?? 0 }));
+      const pot = rows.reduce((s, r) => s + r.pool, 0);
+      const outcomes: Outcome[] = rows
+        .sort((a, b) => b.pool - a.pool || a.o.position - b.o.position)
+        .map(({ o, pool }) => ({ kol: kolById.get(o.kol_id), prob: pot > 0 ? pool / pot : 0, pool, change24h: 0 }))
+        .filter((o): o is Outcome => Boolean(o.kol));
+      const activity = (recent.data as RecentRow[])
+        .filter((r) => r.market_id === m.id)
+        .slice(0, 20)
+        .map((r) => ({ id: r.id, who: r.wallet_short, kolId: r.kol_id, amount: num(r.amount_micro) / 1e6, at: r.created_at }));
       return {
         slug: m.slug,
         title: m.title,
@@ -111,6 +122,7 @@ export async function getMarkets(): Promise<Market[]> {
         rules: m.rules ?? [],
         featured: m.featured,
         outcomes,
+        activity,
       };
     });
   } catch (e) {

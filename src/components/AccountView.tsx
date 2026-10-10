@@ -7,6 +7,7 @@ import { useWallet } from "@/lib/wallet";
 import { DEPOSIT_CAP, depositRoom } from "@/lib/limits";
 import { payoutOf } from "@/lib/pot";
 import { useNow } from "@/lib/useNow";
+import { CLUSTER } from "@/lib/cluster";
 import { fmtOdds, shortWallet, usd } from "@/lib/format";
 import { CopyButton } from "./CopyButton";
 
@@ -27,12 +28,12 @@ export function AccountView({ markets }: { markets: Market[] }) {
     );
   }
 
-  // Gain estimé de chaque mise avec le pot actuel. Les mises de démo ne sont pas dans les pots
-  // venus du serveur : on les y ajoute pour que le calcul reste juste.
+  // Gain estimé de chaque mise avec le pot actuel. En démo, les mises du joueur ne sont pas dans les pots
+  // venus du serveur : on les y ajoute pour que le calcul reste juste. En réel, elles y sont déjà.
   const rows = w.bets.map((b) => {
     const m = markets.find((x) => x.slug === b.marketSlug);
     const o = m?.outcomes.find((x) => x.kol.id === b.kolId);
-    const mine = w.bets.filter((x) => x.marketSlug === b.marketSlug);
+    const mine = w.live ? [] : w.bets.filter((x) => x.marketSlug === b.marketSlug);
     const pot = (m?.pool ?? 0) + mine.reduce((s, x) => s + x.amount, 0);
     const pool = (o?.pool ?? 0) + mine.filter((x) => x.kolId === b.kolId).reduce((s, x) => s + x.amount, 0);
     const closed = m ? (now ?? 0) >= Date.parse(m.closesAt) : true;
@@ -68,9 +69,15 @@ export function AccountView({ markets }: { markets: Market[] }) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
         <div className="card p-5" style={{ background: "linear-gradient(135deg,#fff,#fff6d6)" }}>
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted">
-            Solde disponible <span className="pill-muted py-0 normal-case tracking-normal">démo</span>
+            Solde disponible
+            {w.live ? (
+              CLUSTER === "devnet" && <span className="pill-gold py-0 normal-case tracking-normal">devnet</span>
+            ) : (
+              <span className="pill-muted py-0 normal-case tracking-normal">démo</span>
+            )}
           </div>
           <div className="mono mt-1 text-3xl font-bold">{usd(w.balance)}</div>
+          {w.excess > 0 && <div className="mt-1 text-xs text-muted">+ {usd(w.excess)} à retirer (au-delà du plafond)</div>}
           <div className="mt-3 flex gap-2">
             <button onClick={() => w.openModal("deposit")} className="btn-gold flex-1 py-2"><ArrowDownToLine size={14} /> Déposer</button>
             <button onClick={() => w.openModal("withdraw")} className="btn-ghost flex-1 py-2"><ArrowUpFromLine size={14} /> Retirer</button>
@@ -155,8 +162,11 @@ export function AccountView({ markets }: { markets: Market[] }) {
         <ShieldCheck size={18} className="shrink-0 text-up" />
         <p>
           Tes USDC déposés sont gardés dans le coffre de Marketcoins et ne peuvent repartir que vers le wallet connecté
-          ({shortWallet(w.address!)}). Marketcoins n&apos;a jamais accès à ton wallet ni à ses clés. Pour l&apos;instant, le solde et les
-          mises sont une démo : aucun USDC ne bouge. <Link href="/conditions" className="underline">Conditions d&apos;utilisation</Link>.
+          ({shortWallet(w.address!)}). Marketcoins n&apos;a jamais accès à ton wallet ni à ses clés.{" "}
+          {w.live
+            ? CLUSTER === "devnet" && "Réseau de test (devnet) : USDC de test uniquement. "
+            : "Pour l'instant, le solde et les mises sont une démo : aucun USDC ne bouge. "}
+          <Link href="/conditions" className="underline">Conditions d&apos;utilisation</Link>.
         </p>
       </div>
     </div>
