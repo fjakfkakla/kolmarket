@@ -8,6 +8,9 @@ export type Bet = {
   kolName: string;
   amount: number;
   createdAt: number;
+  /** Mises terminées : gagnée, perdue ou remboursée, et ce qu'elle a rapporté. */
+  status?: "OPEN" | "WON" | "LOST" | "REFUNDED";
+  payout?: number | null;
 };
 
 export type Activity = {
@@ -26,6 +29,8 @@ export type AccountData = {
   /** Misé sur des marchés pas encore résolus. */
   inPlay: number;
   bets: Bet[];
+  /** Mises des défis terminés, les plus récentes d'abord. */
+  settled: Bet[];
   activity: Activity[];
   /** Dépôts USDC branchés (Alchemy, coffre, payeur des frais configurés). */
   depositsEnabled: boolean;

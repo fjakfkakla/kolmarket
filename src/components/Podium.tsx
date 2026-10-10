@@ -2,7 +2,7 @@ import { Crown } from "lucide-react";
 import type { Kol } from "@/data/kols";
 import type { Period } from "@/data/markets";
 import { Avatar } from "./Avatar";
-import { usd } from "@/lib/format";
+import { pnlClass, usd } from "@/lib/format";
 
 type PnlKey = "pnl7d" | "pnl30d";
 
@@ -35,10 +35,10 @@ function Card({ k, rank, first, pnlKey: key }: { k: Kol; rank: 1 | 2 | 3; first:
             </a>
           </div>
         </div>
-        <div className="mono mt-3 text-2xl font-bold text-up">{usd(k[key], { compact: true, sign: true })}</div>
+        <div className={`mono mt-3 text-2xl font-bold ${pnlClass(k[key])}`}>{usd(k[key], { compact: true, sign: true })}</div>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-muted">
           <span className="pill-muted py-0.5">Vol {usd(k.volume7d, { compact: true })}</span>
-          <span className="pill-muted py-0.5">WR {k.winRate}%</span>
+          <span className="pill-muted py-0.5" title="Part des jours de trading finis en positif">{Math.round(k.winRate)}% jours +</span>
           {rank !== 1 && <span className="pill-down py-0.5">{usd(gap, { compact: true })} vs n°1</span>}
         </div>
       </div>

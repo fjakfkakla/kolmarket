@@ -9,6 +9,8 @@ const usd = (micro: number | string | null) => Number(micro ?? 0) / MICRO;
 type BetRow = {
   id: string;
   amount_micro: number;
+  status: Bet["status"];
+  payout_micro: number | null;
   created_at: string;
   markets: { slug: string; title: string } | null;
   outcomes: { kol_id: string; kols: { name: string } | null } | null;
@@ -42,6 +44,7 @@ const KIND: Record<string, Activity["type"]> = {
 
 const LABEL: Record<string, string> = {
   WITHDRAWAL: "Retrait USDC vers ton wallet",
+  BET: "Mise",
   PAYOUT: "Gain",
   REFUND: "Remboursement",
   ADJUSTMENT: "Ajustement",
@@ -53,11 +56,10 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
     db.rpc("account_balance", { p_account: accountId }).single<{ play_micro: number; excess_micro: number; in_play_micro: number }>(),
     db
       .from("bets")
-      .select("id, amount_micro, created_at, markets(slug, title), outcomes(kol_id, kols(name))")
+      .select("id, amount_micro, status, payout_micro, created_at, markets(slug, title), outcomes(kol_id, kols(name))")
       .eq("account_id", accountId)
-      .eq("status", "OPEN")
       .order("created_at", { ascending: false })
-      .limit(200),
+      .limit(300),
     db
       .from("ledger_entries")
       .select("id, kind, bucket, amount_micro, created_at, bet_id, withdrawal_id")
@@ -69,7 +71,7 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
   const err = bal.error ?? bets.error ?? ledger.error ?? withdrawals.error;
   if (err) throw new Error(`compte : ${err.message}`);
 
-  const betList: Bet[] = ((bets.data ?? []) as unknown as BetRow[]).map((b) => ({
+  const allBets: Bet[] = ((bets.data ?? []) as unknown as BetRow[]).map((b) => ({
     id: b.id,
     marketSlug: b.markets?.slug ?? "",
     marketTitle: b.markets?.title ?? "",
@@ -77,8 +79,11 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
     kolName: b.outcomes?.kols?.name ?? b.outcomes?.kol_id ?? "",
     amount: usd(b.amount_micro),
     createdAt: Date.parse(b.created_at),
+    status: b.status,
+    payout: b.payout_micro === null ? null : usd(b.payout_micro),
   }));
-  const betById = new Map(betList.map((b) => [b.id, b]));
+  const betList = allBets.filter((b) => b.status === "OPEN");
+  const betById = new Map(allBets.map((b) => [b.id, b]));
   const withdrawalState = new Map((withdrawals.data ?? []).map((w) => [w.id as string, WITHDRAWAL_STATE[w.status as string] ?? w.status]));
 
   const activity: Activity[] = ((ledger.data ?? []) as LedgerRow[]).map((l) => {
@@ -88,13 +93,13 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
         ? l.bucket === "EXCESS"
           ? "Dépôt USDC au-delà du plafond (à retirer)"
           : "Dépôt USDC"
-        : l.kind === "BET"
-          ? bet
-            ? `${bet.kolName} · ${bet.marketTitle}`
-            : "Mise"
-          : l.kind === "WITHDRAWAL" && l.withdrawal_id
-            ? `${LABEL.WITHDRAWAL} · ${withdrawalState.get(l.withdrawal_id) ?? "en attente"}`
-            : (LABEL[l.kind] ?? l.kind);
+        : (l.kind === "BET" || l.kind === "PAYOUT" || l.kind === "REFUND") && bet
+          ? `${l.kind === "BET" ? "" : `${LABEL[l.kind]} · `}${bet.kolName} · ${bet.marketTitle}`
+          : l.kind === "REFUND" && l.withdrawal_id
+            ? "Retrait annulé : montant recrédité"
+            : l.kind === "WITHDRAWAL" && l.withdrawal_id
+              ? `${LABEL.WITHDRAWAL} · ${withdrawalState.get(l.withdrawal_id) ?? "en attente"}`
+              : (LABEL[l.kind] ?? l.kind);
     return { id: String(l.id), type: KIND[l.kind] ?? "AJUSTEMENT", label, amount: usd(l.amount_micro), at: Date.parse(l.created_at) };
   });
 
@@ -103,6 +108,7 @@ export async function accountSummary(db: SupabaseClient, accountId: string, depo
     excess: usd(bal.data?.excess_micro ?? 0),
     inPlay: usd(bal.data?.in_play_micro ?? 0),
     bets: betList,
+    settled: allBets.filter((b) => b.status !== "OPEN").slice(0, 50),
     activity,
     depositsEnabled,
   };

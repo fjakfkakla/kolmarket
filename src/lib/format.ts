@@ -1,13 +1,16 @@
-export const usd = (n: number, opts: { compact?: boolean; sign?: boolean } = {}) => {
-  const { compact = false, sign = false } = opts;
+export const usd = (n: number, opts: { compact?: boolean; sign?: boolean; cents?: boolean } = {}) => {
+  const { compact = false, sign = false, cents = false } = opts;
   const abs = Math.abs(n);
   let body: string;
   if (compact && abs >= 1_000_000) body = `${(abs / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
   else if (compact && abs >= 1000) body = `${(abs / 1000).toFixed(1).replace(/\.0$/, "")}K`;
-  else body = abs.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+  else body = abs.toLocaleString("fr-FR", { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: 2 });
   const prefix = n < 0 ? "−" : sign ? "+" : "";
   return `${prefix}$${body}`;
 };
+
+/** Couleur d'un PnL : vert s'il est positif ou nul, rouge sinon. */
+export const pnlClass = (n: number) => (n >= 0 ? "text-up" : "text-down");
 
 export const pct = (p: number) => `${Math.round(p * 100)}%`;
 export const cents = (p: number) => `${Math.round(p * 100)}¢`;

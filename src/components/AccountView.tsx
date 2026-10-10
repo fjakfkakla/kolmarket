@@ -8,8 +8,26 @@ import { DEPOSIT_CAP, depositRoom } from "@/lib/limits";
 import { payoutOf } from "@/lib/pot";
 import { useNow } from "@/lib/useNow";
 import { CLUSTER } from "@/lib/cluster";
+import { marketPhase } from "@/lib/challenge-calendar";
 import { fmtOdds, shortWallet, usd } from "@/lib/format";
 import { CopyButton } from "./CopyButton";
+
+/** Où en est une mise encore en jeu, d'après l'étape de son défi. */
+function betState(m: Market | undefined, kolId: string, now: number | null) {
+  if (!m) return "En attente du résultat";
+  switch (marketPhase(m, now ?? 0)) {
+    case "betting":
+      return "Mises ouvertes";
+    case "live":
+      return "Défi en cours";
+    case "counting":
+      return "Résultat en préparation";
+    case "proposed":
+      return m.winnerId === kolId ? "Gagnant proposé : paiement sous 24 h" : "Résultat proposé : autre KOL";
+    default:
+      return "Paiement en cours";
+  }
+}
 
 export function AccountView({ markets }: { markets: Market[] }) {
   const w = useWallet();
@@ -36,8 +54,7 @@ export function AccountView({ markets }: { markets: Market[] }) {
     const mine = w.live ? [] : w.bets.filter((x) => x.marketSlug === b.marketSlug);
     const pot = (m?.pool ?? 0) + mine.reduce((s, x) => s + x.amount, 0);
     const pool = (o?.pool ?? 0) + mine.filter((x) => x.kolId === b.kolId).reduce((s, x) => s + x.amount, 0);
-    const closed = m ? (now ?? 0) >= Date.parse(m.closesAt) : true;
-    return { bet: b, cote: pool > 0 ? pot / pool : null, payout: payoutOf(pot, pool, b.amount), closed };
+    return { bet: b, cote: pool > 0 ? pot / pool : null, payout: payoutOf(pot, pool, b.amount), state: betState(m, b.kolId, now) };
   });
   // Meilleur cas : sur chaque marché, le KOL qui rapporterait le plus parmi ceux misés.
   const best = Object.values(
@@ -124,14 +141,14 @@ export function AccountView({ markets }: { markets: Market[] }) {
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ bet, cote, payout, closed }) => (
+                {rows.map(({ bet, cote, payout, state }) => (
                   <tr key={bet.id} className="border-t border-line">
                     <td className="max-w-[260px] truncate px-5 py-3"><Link href={`/market/${bet.marketSlug}`} className="font-medium hover:text-gold-3">{bet.marketTitle}</Link></td>
                     <td className="px-3 py-3"><span className="pill-gold">{bet.kolName}</span></td>
                     <td className="mono px-3 py-3 text-right">{usd(bet.amount)}</td>
                     <td className="mono px-3 py-3 text-right">{fmtOdds(cote)}</td>
                     <td className="mono px-3 py-3 text-right font-semibold text-up">{usd(Math.floor(payout * 100) / 100)}</td>
-                    <td className="px-5 py-3 text-right text-xs text-muted">{closed ? "En attente du résultat" : "Mises ouvertes"}</td>
+                    <td className="px-5 py-3 text-right text-xs text-muted">{state}</td>
                   </tr>
                 ))}
               </tbody>
@@ -139,6 +156,31 @@ export function AccountView({ markets }: { markets: Market[] }) {
           </div>
         )}
       </section>
+
+      {w.settled.length > 0 && (
+        <section className="card fade-up">
+          <h2 className="px-5 py-4 font-bold">Mises terminées</h2>
+          <ul className="border-t border-line">
+            {w.settled.map((b) => {
+              const gain = (b.payout ?? 0) - b.amount;
+              return (
+                <li key={b.id} className="flex items-center gap-3 border-b border-line px-5 py-3 text-sm last:border-b-0">
+                  <span className={`pill py-0.5 ${b.status === "WON" ? "bg-up-soft text-up" : "bg-cream-2 text-muted"}`}>
+                    {b.status === "WON" ? "GAGNÉE" : b.status === "LOST" ? "PERDUE" : "REMBOURSÉE"}
+                  </span>
+                  <Link href={`/market/${b.marketSlug}`} className="flex-1 truncate hover:text-gold-3">
+                    {b.kolName} · {b.marketTitle}
+                  </Link>
+                  <span className="mono text-xs text-muted">mise {usd(b.amount)}</span>
+                  <span className={`mono w-24 text-right font-semibold ${b.status === "WON" ? "text-up" : b.status === "LOST" ? "text-down" : "text-muted"}`}>
+                    {b.status === "REFUNDED" ? "±0 $" : usd(b.status === "WON" ? gain : -b.amount, { sign: true })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <section className="card fade-up">
         <h2 className="px-5 py-4 font-bold">Historique</h2>

@@ -1,6 +1,8 @@
 import { KOLS, type Kol } from "./kols";
+import { type Period, challengeSpec } from "@/lib/challenge-calendar";
+import type { MarketStatus } from "@/lib/challenge-calendar";
 
-export type Period = "7D" | "30D";
+export type { MarketStatus, Period } from "@/lib/challenge-calendar";
 
 export type Outcome = {
   kol: Kol;
@@ -35,6 +37,18 @@ export type Market = {
   featured?: boolean;
   /** Dernières vraies mises ; absent avec les données mock. */
   activity?: MarketActivity[];
+  status: MarketStatus;
+  /** Premier et dernier jour UTC comptés dans le défi. */
+  dataStart?: string;
+  dataEnd?: string;
+  /** KOL gagnant, proposé (PROPOSED) ou définitif (RESOLVED). */
+  winnerId?: string | null;
+  proposedAt?: string | null;
+  resolvedAt?: string | null;
+  resolutionNote?: string | null;
+  /** PnL réalisé de chaque KOL sur la période du défi : en direct pendant le défi, définitif ensuite. */
+  scores?: { kolId: string; pnl: number | null }[];
+  scoresFinal?: boolean;
 };
 
 /** Répartition mock du pot : le meilleur PnL attire le plus de mises. */
@@ -47,57 +61,33 @@ function outcomesFromPnl(period: Period, pot: number): Outcome[] {
     .sort((a, b) => b.prob - a.prob);
 }
 
-/** Règles communes à tous les défis en pot commun. */
-export const POT_RULES = [
-  "Pot commun, 0 frais : ceux qui ont misé sur le KOL gagnant se partagent 100 % du pot, au prorata de leur mise. Si personne n'a misé sur le gagnant, tout le monde est remboursé.",
-  "Les mises ferment au début de la période. Pas de revente : chaque mise reste en jeu jusqu'au résultat. Le gain affiché avant la fermeture est une estimation.",
-  "Mise maximale : 1000 $ par compte sur ce marché.",
-];
+/** Données de démonstration (sans base) : les deux premiers défis, au format des vrais. */
+function mockMarket(spec: ReturnType<typeof challengeSpec>, challenge: number, pool: number, traders: number, featured: boolean): Market {
+  return {
+    slug: spec.slug,
+    title: spec.title,
+    question: spec.question,
+    category: "KOL",
+    period: spec.period,
+    challenge,
+    startsAt: spec.startsAt,
+    endsAt: spec.endsAt,
+    closesAt: spec.closesAt,
+    dataStart: spec.dataStart,
+    dataEnd: spec.dataEnd,
+    status: "OPEN",
+    volume: pool,
+    pool,
+    traders,
+    featured,
+    rules: spec.rules,
+    outcomes: outcomesFromPnl(spec.period, pool),
+  };
+}
 
 export const MARKETS: Market[] = [
-  {
-    slug: "kol-top-profit-7d",
-    title: "Quel KOL fera le plus de profit sur 7 jours ?",
-    question: "Quel KOL fera le plus de profit ?",
-    category: "KOL",
-    period: "7D",
-    challenge: 1,
-    startsAt: "2026-10-13T00:00:00+02:00",
-    endsAt: "2026-10-19T20:00:00+02:00",
-    closesAt: "2026-10-13T00:00:00+02:00",
-    volume: 31940,
-    pool: 31940,
-    traders: 312,
-    featured: true,
-    rules: [
-      "Le KOL gagnant est celui dont le wallet Solana listé affiche le PnL réalisé le plus élevé entre le lundi 13 octobre 00:00 et le dimanche 19 octobre 20:00 (heure de Paris).",
-      "Le PnL est mesuré en USD sur les ventes effectivement réalisées, hors positions ouvertes. Source : données on-chain publiques du wallet.",
-      ...POT_RULES,
-      "En cas d'égalité, de wallet changé ou de données indisponibles, le marché est annulé et toutes les mises sont remboursées.",
-    ],
-    outcomes: outcomesFromPnl("7D", 31940),
-  },
-  {
-    slug: "kol-top-profit-30d",
-    title: "Quel KOL fera le plus de profit sur 30 jours ?",
-    question: "Quel KOL fera le plus de profit ?",
-    category: "KOL",
-    period: "30D",
-    challenge: 2,
-    startsAt: "2026-10-13T00:00:00+02:00",
-    endsAt: "2026-11-11T20:00:00+01:00",
-    closesAt: "2026-10-13T00:00:00+02:00",
-    volume: 12300,
-    pool: 12300,
-    traders: 141,
-    rules: [
-      "Le KOL gagnant est celui dont le wallet Solana listé affiche le PnL réalisé le plus élevé sur 30 jours, du 13 octobre 00:00 au 11 novembre 20:00 (heure de Paris).",
-      "Le PnL est mesuré en USD sur les ventes réalisées, hors positions ouvertes.",
-      ...POT_RULES,
-      "En cas d'égalité ou de données indisponibles, le marché est annulé et remboursé.",
-    ],
-    outcomes: outcomesFromPnl("30D", 12300),
-  },
+  mockMarket(challengeSpec("7D", "2026-10-12"), 1, 31940, 312, true),
+  mockMarket(challengeSpec("30D", "2026-11-01"), 2, 12300, 141, false),
 ];
 
 export const marketBySlug = (slug: string) => MARKETS.find((m) => m.slug === slug);

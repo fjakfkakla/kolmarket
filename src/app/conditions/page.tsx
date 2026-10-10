@@ -44,11 +44,12 @@ const SECTIONS: { id: string; title: string; body: string[] }[] = [
   },
   {
     id: "resolution",
-    title: "5. Résolution et contestation",
+    title: "5. Résolution et correction",
     body: [
-      "Le résultat est proposé par le comité de résolution (multisignature) à partir des données on-chain publiques des wallets listés, puis soumis à une période de contestation de 24 heures.",
-      "En cas d'égalité, de changement de wallet d'un KOL, d'indisponibilité des données ou de manipulation avérée, le marché est annulé et toutes les mises sont remboursées sans frais.",
-      "Les décisions du comité de résolution, prises conformément à la règle publiée, sont définitives.",
+      "Le PnL réalisé de chaque wallet listé est compté en journées UTC, d'après les données de Solana Tracker. Environ 12 heures après la fin du défi, le résultat est publié avec le PnL de chaque KOL.",
+      "Le pot est payé automatiquement 24 heures après la publication. Pendant ce délai, Marketcoins peut corriger le résultat en cas d'erreur manifeste des données ; le délai de 24 heures repart alors.",
+      "En cas d'égalité, de changement de wallet d'un KOL, de données indisponibles ou incohérentes, ou de manipulation avérée, le marché est annulé et toutes les mises sont remboursées sans frais.",
+      "Les décisions prises conformément à la règle publiée sont définitives.",
     ],
   },
   {

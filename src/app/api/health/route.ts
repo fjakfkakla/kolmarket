@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { allowedOrigins, managedHost } from "@/lib/auth";
 import { CLUSTER } from "@/lib/cluster";
 import { hotBalanceMicro, solanaConfig } from "@/lib/solana";
+import { readState } from "@/lib/app-state";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -29,6 +30,15 @@ export async function GET(req: NextRequest) {
     const { error } = await db.rpc("liabilities_micro");
     return error ? `manquante (${error.code ?? error.message})` : "ok";
   };
+  const lastPnl = async () => {
+    if (!db) return null;
+    try {
+      const s = await readState<{ at: string; ok: boolean }>(db, "pnl_sync");
+      return s ? { le: s.at, reussie: s.ok } : "jamais";
+    } catch {
+      return "table app_state manquante (migration 0005)";
+    }
+  };
   const secret = process.env.SESSION_SECRET ?? "";
   const solana = await solanaConfig();
 
@@ -44,6 +54,15 @@ export async function GET(req: NextRequest) {
       table_accounts_0002: await table("accounts"),
       registre_0003: await rpc(),
     },
+    defis: {
+      migration_0005: await table("market_results"),
+      SOLANATRACKER_API_KEY: process.env.SOLANATRACKER_API_KEY ? "ok" : "manquant (PnL des KOLs et résultats en pause)",
+      planificateur:
+        (process.env.SCHEDULER?.trim().toLowerCase() ?? (process.env.RAILWAY_ENVIRONMENT_ID ? "on" : "off")) === "on"
+          ? "actif : toutes les 10 minutes"
+          : "inactif (SCHEDULER=on pour l'activer, ou appeler /api/cron/sync)",
+      derniere_synchro_pnl: await lastPnl(),
+    },
     depots: {
       reseau: CLUSTER,
       ALCHEMY_API: process.env.ALCHEMY_API ? "ok" : "manquant",
@@ -57,7 +76,7 @@ export async function GET(req: NextRequest) {
       reserve_retraits_USDC: solana ? Number(await hotBalanceMicro(solana)) / 1e6 : null,
       compte_usdc_du_coffre: solana?.vaultAta ?? null,
       ALCHEMY_WEBHOOK_SIGNING_KEY: process.env.ALCHEMY_WEBHOOK_SIGNING_KEY ? "ok" : "manquant (facultatif au début)",
-      CRON_SECRET: process.env.CRON_SECRET ? "ok" : "manquant",
+      CRON_SECRET: process.env.CRON_SECRET ? "ok" : "manquant (facultatif : le planificateur intégré suffit sur Railway)",
     },
   };
   return NextResponse.json(checks, { headers: { "Cache-Control": "no-store" } });

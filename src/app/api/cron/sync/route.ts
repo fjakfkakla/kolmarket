@@ -1,16 +1,14 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { fail } from "@/lib/auth";
-import { checkSolvency, syncVault } from "@/lib/deposits";
-import { solanaConfig } from "@/lib/solana";
-import { processOpenWithdrawals } from "@/lib/withdrawals";
-import { supabaseAdmin } from "@/lib/supabase";
+import { runScheduledJobs } from "@/lib/jobs";
 
 export const maxDuration = 60;
 
 /**
- * Filet de sécurité planifié : rattrape les dépôts manqués, fait avancer les retraits, contrôle le coffre.
- * Appel : Authorization: Bearer <CRON_SECRET> (Vercel Cron l'envoie tout seul).
+ * Lance les tâches planifiées à la demande : défis, PnL des KOLs, résultats, paiements,
+ * dépôts manqués, retraits, contrôle du coffre. Sur Railway, le planificateur intégré le fait
+ * déjà toutes les 10 minutes. Appel : Authorization: Bearer <CRON_SECRET>.
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -18,23 +16,6 @@ export async function GET(req: NextRequest) {
   const expected = Buffer.from(`Bearer ${secret}`);
   if (!secret || given.length !== expected.length || !timingSafeEqual(given, expected)) return fail(401, "Non autorisé.");
 
-  const cfg = await solanaConfig();
-  const db = supabaseAdmin();
-  if (!cfg || !db) return fail(503, "Dépôts non configurés.");
-  // La synchro peut être interrompue (limite de requêtes) : le contrôle du coffre passe quand même.
-  const sync = await syncVault(cfg, db).catch((e: Error) => {
-    console.error("[cron] synchro :", e.message);
-    return { error: "synchro interrompue" };
-  });
-  const withdrawals = await processOpenWithdrawals(cfg, db).catch((e: Error) => {
-    console.error("[cron] retraits :", e.message);
-    return { error: "retraits interrompus" };
-  });
-  try {
-    const solvency = await checkSolvency(cfg, db);
-    return NextResponse.json({ ok: solvency.ok, sync, withdrawals, solvency });
-  } catch (e) {
-    console.error("[cron] contrôle du coffre :", (e as Error).message);
-    return fail(500, "Contrôle du coffre impossible.");
-  }
+  const result = await runScheduledJobs();
+  return NextResponse.json(result, { status: result.ok ? 200 : 500, headers: { "Cache-Control": "no-store" } });
 }

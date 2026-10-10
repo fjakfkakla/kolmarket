@@ -37,6 +37,8 @@ type WalletState = {
   /** Total misé, encore en jeu. */
   inPlay: number;
   bets: Bet[];
+  /** Mises des défis terminés (gagnées, perdues, remboursées). */
+  settled: Bet[];
   activity: Activity[];
   depositsEnabled: boolean;
   modal: Modal;
@@ -159,6 +161,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       excess: live ? account.excess : 0,
       inPlay,
       bets,
+      settled: live ? (account.settled ?? []) : [],
       activity: live ? account.activity : demo.activity,
       depositsEnabled: live ? account.depositsEnabled : true,
       modal,

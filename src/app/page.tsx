@@ -5,15 +5,22 @@ import { BinaryCard } from "@/components/BinaryCard";
 import { MarketCard } from "@/components/MarketCard";
 import { Countdown } from "@/components/Countdown";
 import { BINARY_MARKETS } from "@/data/markets";
-import { getKols, getMarkets } from "@/lib/data";
-import { usd } from "@/lib/format";
+import { getKols, getMarkets, requestTime } from "@/lib/data";
+import { pnlClass, usd } from "@/lib/format";
+import { currentChallenge, currentMarkets } from "@/lib/market-select";
+import { marketPhase } from "@/lib/challenge-calendar";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ period?: string; cat?: string }> }) {
-  const [sp, MARKETS, KOLS] = await Promise.all([searchParams, getMarkets(), getKols()]);
+  const [sp, ALL, KOLS] = await Promise.all([searchParams, getMarkets(), getKols()]);
+  const now = requestTime();
   const period = sp.period === "7D" || sp.period === "30D" ? sp.period : null;
-  const featured = MARKETS.find((m) => m.featured) ?? MARKETS[0];
+  // Défis à mises ouvertes, en cours, ou terminés depuis moins d'une semaine
+  const MARKETS = currentMarkets(ALL, now);
+  const featured = currentChallenge(ALL, "7D", now) ?? MARKETS[0] ?? ALL[0];
+  const heroTitle = featured.title.split("profit");
+  const featuredOpen = marketPhase(featured, now) === "betting";
   const KOL_SIDEBAR = KOLS.slice(0, 7);
   const SIDEBAR = [
     { label: "Tous", count: MARKETS.length + BINARY_MARKETS.length, icon: LayoutGrid, href: "/" },
@@ -33,12 +40,16 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="pill-gold"><Flame size={12} /> Premier défi</span>
+              <span className="pill-gold"><Flame size={12} /> Défi #{featured.challenge}</span>
               <span className="pill-muted">Catégorie KOL</span>
               <span className="pill-muted">7D · 30D</span>
             </div>
             <h1 className="text-3xl font-bold leading-tight md:text-4xl">
-              Quel KOL fera le plus de <span className="text-gold-3">profit</span> cette semaine ?
+              {heroTitle[1] === undefined ? (
+                featured.title
+              ) : (
+                <>{heroTitle[0]}<span className="text-gold-3">profit</span>{heroTitle[1]}</>
+              )}
             </h1>
             <p className="mt-2 max-w-xl text-muted">
               7 KOLs, 7 wallets Solana publics, un seul gagnant : celui qui réalise le plus gros PnL sur la période.
@@ -46,7 +57,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <Link href={`/market/${featured.slug}`} className="btn-gold px-5 py-3 text-base">
-                Parier maintenant <ArrowRight size={16} />
+                {featuredOpen ? "Parier maintenant" : "Voir le défi"} <ArrowRight size={16} />
               </Link>
               <Link href="/comment-ca-marche" className="btn-ghost py-3">Comment ça marche</Link>
               <div className="ml-1 flex -space-x-2">
@@ -88,7 +99,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             {KOL_SIDEBAR.map((k) => (
               <Link key={k.id} href={`/market/${featured.slug}`} className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm font-semibold text-muted transition hover:bg-cream-2 hover:text-ink">
                 <Avatar kol={k} size={22} /> <span className="flex-1 truncate">{k.name}</span>
-                <span className="mono text-xs text-up">{usd(k.pnl7d, { compact: true, sign: true })}</span>
+                <span className={`mono text-xs ${pnlClass(k.pnl7d)}`}>{usd(k.pnl7d, { compact: true, sign: true })}</span>
               </Link>
             ))}
           </div>
@@ -106,7 +117,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 stagger">
-              {markets.map((m) => <MarketCard key={m.slug} market={m} />)}
+              {markets.map((m) => <MarketCard key={m.slug} market={m} now={now} />)}
             </div>
           </section>
 

@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: "Comment ça marche" };
 const STEPS = [
   { icon: Wallet, title: "Connecte ton wallet", text: "Phantom, Solflare, Backpack ou n'importe quel wallet Solana. Une signature gratuite crée ton compte, ta clé ne quitte jamais ton wallet." },
   { icon: Coins, title: "Dépose des USDC", text: "Jusqu'à 1000 $ sur ton compte, 0 frais : on paie le réseau pour toi. Tu retires quand tu veux, vers ton wallet." },
-  { icon: Vote, title: "Mise sur ton KOL", text: "Choisis celui qui fera le plus de profit. Le % affiché = la part du pot misée sur lui. Maximum 1000 $ par marché." },
-  { icon: Gavel, title: "Le gagnant prend le pot", text: "À la fin, ceux qui ont misé sur le KOL au meilleur PnL se partagent tout le pot, au prorata de leur mise." },
+  { icon: Vote, title: "Mise sur ton KOL", text: "Choisis celui qui fera le plus de profit. Le % affiché = la part du pot misée sur lui. Les mises ferment au départ du défi. Maximum 1000 $ par marché." },
+  { icon: Gavel, title: "Le gagnant prend le pot", text: "Un défi chaque semaine, du lundi au dimanche (heure UTC), et un chaque mois. Le résultat est publié le lendemain de la fin vers 12:00 UTC ; 24 h plus tard, ceux qui ont misé sur le KOL au meilleur PnL se partagent tout le pot, au prorata de leur mise." },
 ];
 
 export default function HowPage() {
@@ -60,12 +60,12 @@ export default function HowPage() {
         <div className="card p-5">
           <ShieldCheck className="mb-2 text-up" />
           <h3 className="font-bold">Fonds protégés</h3>
-          <p className="mt-1 text-sm text-muted">Les dépôts sont gardés dans un coffre multisig et ne repartent que vers ton propre wallet. On ne touche jamais à ton wallet.</p>
+          <p className="mt-1 text-sm text-muted">Les dépôts sont gardés dans le coffre de Marketcoins et ne repartent que vers ton propre wallet. On ne touche jamais à ton wallet.</p>
         </div>
         <div className="card p-5">
           <Gavel className="mb-2 text-gold-3" />
           <h3 className="font-bold">Résolution transparente</h3>
-          <p className="mt-1 text-sm text-muted">Règle publiée à l&apos;avance, données publiques, comité multisig et 24 h de contestation.</p>
+          <p className="mt-1 text-sm text-muted">Règle publiée à l&apos;avance. Le PnL de chaque KOL vient de Solana Tracker et il est publié chiffre par chiffre. Le pot est payé 24 h plus tard, le temps de corriger une éventuelle erreur.</p>
         </div>
         <div className="card p-5">
           <Coins className="mb-2 text-blue" />

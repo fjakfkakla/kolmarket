@@ -4,10 +4,21 @@ import type { Market } from "@/data/markets";
 import { Avatar } from "./Avatar";
 import { odds } from "@/lib/pot";
 import { fmtOdds, pct, usd } from "@/lib/format";
+import { type Phase, marketPhase } from "@/lib/challenge-calendar";
 
-export function MarketCard({ market }: { market: Market }) {
+const PHASE: Record<Phase, { label: string; dot: string; text: string }> = {
+  betting: { label: "MISES OUVERTES", dot: "bg-up live-dot", text: "text-up" },
+  live: { label: "EN DIRECT", dot: "bg-down live-dot", text: "text-down" },
+  counting: { label: "RÉSULTAT EN COURS", dot: "bg-gold", text: "text-gold-3" },
+  proposed: { label: "RÉSULTAT PROPOSÉ", dot: "bg-gold", text: "text-gold-3" },
+  resolved: { label: "TERMINÉ", dot: "bg-muted", text: "text-muted" },
+  cancelled: { label: "ANNULÉ · REMBOURSÉ", dot: "bg-muted", text: "text-muted" },
+};
+
+export function MarketCard({ market, now }: { market: Market; now: number }) {
   const top = market.outcomes.slice(0, 4);
   const leader = market.outcomes[0];
+  const phase = PHASE[marketPhase(market, now)];
   return (
     <Link href={`/market/${market.slug}`} className="card card-hover group block p-4">
       <div className="mb-3 flex items-start gap-3">
@@ -51,8 +62,8 @@ export function MarketCard({ market }: { market: Market }) {
 
       <div className="mt-3 flex items-center justify-between text-xs text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-down live-dot" />
-          <span className="font-semibold text-down">EN DIRECT</span>
+          <span className={`h-1.5 w-1.5 rounded-full ${phase.dot}`} />
+          <span className={`font-semibold ${phase.text}`}>{phase.label}</span>
           <span>· pot {usd(market.pool, { compact: true })} · 0 frais</span>
         </span>
         <span className="flex items-center gap-2">

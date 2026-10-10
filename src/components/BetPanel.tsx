@@ -56,51 +56,55 @@ export function BetPanel({ market, outcome, open }: { market: Market; outcome: O
         <span className="mono font-semibold">{pct(outcome.prob)} · {usd(outcome.pool, { compact: true })} misés</span>
       </div>
 
-      <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted">
-        <span>Ta mise</span>
-        {w.connected && <span className="mono normal-case tracking-normal">Solde {usd(w.balance)}</span>}
-      </div>
-      <div className="relative mb-2">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xl font-bold text-muted">$</span>
-        <input
-          type="number"
-          min={1}
-          max={MAX_STAKE_PER_MARKET}
-          value={amount}
-          onChange={(e) => setAmount(Math.max(0, Math.min(MAX_STAKE_PER_MARKET, Number(e.target.value) || 0)))}
-          className="input mono pl-8 text-2xl font-bold"
-        />
-      </div>
-      <div className="mb-4 grid grid-cols-4 gap-2">
-        {[10, 50, 100].map((v) => (
-          <button key={v} onClick={() => setAmount((a) => Math.min(MAX_STAKE_PER_MARKET, a + v))} className="btn-ghost py-1.5">+${v}</button>
-        ))}
-        <button onClick={() => setAmount(Math.floor(Math.min(w.balance, left)))} className="btn-ghost py-1.5">Max</button>
-      </div>
-
-      <div className="mb-4 rounded-xl bg-cream-2 p-3 text-sm">
-        <div className="flex justify-between py-0.5">
-          <span className="text-muted">Cote après ta mise</span>
-          <span className="mono font-semibold">{fmtOdds(after)}</span>
-        </div>
-        <div className="flex justify-between py-0.5">
-          <span className="text-muted">Frais</span>
-          <span className="mono font-semibold text-up">0 $</span>
-        </div>
-        {w.connected && (
-          <div className="flex justify-between py-0.5">
-            <span className="text-muted">Déjà misé sur ce marché</span>
-            <span className="mono font-semibold">{usd(staked)} / {usd(MAX_STAKE_PER_MARKET)}</span>
+      {open && (
+        <>
+          <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted">
+            <span>Ta mise</span>
+            {w.connected && <span className="mono normal-case tracking-normal">Solde {usd(w.balance)}</span>}
           </div>
-        )}
-        <div className="mt-1 flex justify-between border-t border-line pt-2">
-          <span className="font-semibold">Si {outcome.kol.name} gagne</span>
-          <span className="mono font-bold text-up">
-            ≈ {usd(Math.floor(payout * 100) / 100)}{" "}
-            <span className="text-xs">({payout >= amount ? "+" : ""}{usd(Math.floor((payout - amount) * 100) / 100)})</span>
-          </span>
-        </div>
-      </div>
+          <div className="relative mb-2">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xl font-bold text-muted">$</span>
+            <input
+              type="number"
+              min={1}
+              max={MAX_STAKE_PER_MARKET}
+              value={amount}
+              onChange={(e) => setAmount(Math.max(0, Math.min(MAX_STAKE_PER_MARKET, Number(e.target.value) || 0)))}
+              className="input mono pl-8 text-2xl font-bold"
+            />
+          </div>
+          <div className="mb-4 grid grid-cols-4 gap-2">
+            {[10, 50, 100].map((v) => (
+              <button key={v} onClick={() => setAmount((a) => Math.min(MAX_STAKE_PER_MARKET, a + v))} className="btn-ghost py-1.5">+${v}</button>
+            ))}
+            <button onClick={() => setAmount(Math.floor(Math.min(w.balance, left)))} className="btn-ghost py-1.5">Max</button>
+          </div>
+
+          <div className="mb-4 rounded-xl bg-cream-2 p-3 text-sm">
+            <div className="flex justify-between py-0.5">
+              <span className="text-muted">Cote après ta mise</span>
+              <span className="mono font-semibold">{fmtOdds(after)}</span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span className="text-muted">Frais</span>
+              <span className="mono font-semibold text-up">0 $</span>
+            </div>
+            {w.connected && (
+              <div className="flex justify-between py-0.5">
+                <span className="text-muted">Déjà misé sur ce marché</span>
+                <span className="mono font-semibold">{usd(staked)} / {usd(MAX_STAKE_PER_MARKET)}</span>
+              </div>
+            )}
+            <div className="mt-1 flex justify-between border-t border-line pt-2">
+              <span className="font-semibold">Si {outcome.kol.name} gagne</span>
+              <span className="mono font-bold text-up">
+                ≈ {usd(Math.floor(payout * 100) / 100)}{" "}
+                <span className="text-xs">({payout >= amount ? "+" : ""}{usd(Math.floor((payout - amount) * 100) / 100)})</span>
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
       {msg && <p className={`mb-3 text-sm ${msg.ok ? "text-up" : "text-down"}`}>{msg.text}</p>}
 
