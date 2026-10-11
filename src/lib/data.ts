@@ -61,7 +61,8 @@ export async function getKols(): Promise<Kol[]> {
         name: k.name,
         handle: k.handle,
         wallet: k.wallet,
-        avatar: k.avatar_url,
+        // Sans photo en base, on prend celle livrée avec le site (public/kols) si on l'a.
+        avatar: k.avatar_url ?? KOLS.find((m) => m.id === k.id)?.avatar ?? null,
         color: k.color,
         pnl7d: num(s7?.pnl_usd),
         pnl30d: num(s30?.pnl_usd),
