@@ -62,5 +62,12 @@ RLS : lecture publique des données de marché, aucune écriture côté client, 
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL | oui |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon public | oui |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role | **non, serveur uniquement** |
+| `CHRONO` | `NO`, `NOW` ou une date ISO (voir ci-dessous) | non |
 
-Sans ces variables, le site fonctionne avec les données mock.
+**Chrono** (variable `CHRONO` dans Railway) :
+- `NO` : chrono figé sur la durée du défi (7 j / 30 j).
+- `NOW` : le défi démarre au moment où Railway redéploie et le chrono défile. L'heure de lancement est écrite dans les logs (`[chrono] CHRONO=NOW → lancé le …`). Attention : tout redéploiement ou redémarrage relance le chrono à zéro ; remplacer `NOW` par la date des logs pour la figer.
+- une date ISO (ex. `2026-10-20T20:00:00+02:00`) : le défi démarre à cette date.
+- absente : dates de la base (ou du mock).
+
+Sans les variables Supabase, le site fonctionne avec les données mock.

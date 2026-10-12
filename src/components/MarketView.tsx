@@ -79,7 +79,7 @@ export function MarketView({ market, kols: KOLS, sibling }: { market: Market; ko
               <div className="mono mt-1 text-xl font-bold">{usd(market.pool, { compact: true })}</div>
             </div>
           </div>
-          <Countdown to={market.closesAt} />
+          <Countdown to={market.closesAt} frozenMs={market.chronoFrozenMs} />
         </div>
 
         {/* Chart */}

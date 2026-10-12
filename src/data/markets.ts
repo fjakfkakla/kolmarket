@@ -27,6 +27,8 @@ export type Market = {
   rules: string[];
   outcomes: Outcome[];
   featured?: boolean;
+  /** Chrono figé (CHRONO=NO) : durée affichée en ms, sans défilement */
+  chronoFrozenMs?: number;
 };
 
 function probsFromPnl(period: Period): Outcome[] {

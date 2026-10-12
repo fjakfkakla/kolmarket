@@ -26,11 +26,23 @@ function parts(ms: number) {
   };
 }
 
-export function Countdown({ to, label = "Fermeture des mises", compact = false }: { to: string; label?: string; compact?: boolean }) {
+export function Countdown({
+  to,
+  label = "Access opens in:",
+  compact = false,
+  frozenMs,
+}: {
+  to: string;
+  label?: string;
+  compact?: boolean;
+  /** Si défini, affiche cette durée fixe au lieu de décompter (chrono pas encore lancé). */
+  frozenMs?: number;
+}) {
   const target = new Date(to).getTime();
   const now = useSyncExternalStore(subscribe, getNow, getServerNow);
-  const p = parts(now === null ? 0 : target - now);
-  const closed = now !== null && now >= target;
+  const frozen = frozenMs !== undefined;
+  const p = parts(frozen ? frozenMs : now === null ? 0 : target - now);
+  const closed = !frozen && now !== null && now >= target;
 
   if (compact) {
     return (
