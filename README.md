@@ -69,3 +69,5 @@ RLS : lecture publique des données de marché, aucune écriture côté client, 
 - `NOW` : le défi démarre au moment où Railway redéploie et le chrono défile. L'heure de lancement est écrite dans les logs (`[chrono] CHRONO=NOW → lancé le …`). Attention : tout redéploiement ou redémarrage relance le chrono à zéro ; remplacer `NOW` par la date des logs pour la figer.
 - une date ISO (ex. `2026-10-20T20:00:00+02:00`) : le défi démarre à cette date.
 - absente : dates de la base (ou du mock).
+
+Sans les variables Supabase, le site fonctionne avec les données mock.
