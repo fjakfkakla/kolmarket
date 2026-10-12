@@ -56,7 +56,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
             </div>
           </div>
           <div className="card p-5 md:w-64">
-            <Countdown to={featured.closesAt} />
+            <Countdown to={featured.closesAt} frozenMs={featured.chronoFrozenMs} />
             <div className="mt-4 flex justify-between border-t border-line pt-3 text-sm">
               <span className="text-muted">Pool</span>
               <span className="mono font-bold">{usd(featured.pool, { compact: true })}</span>
