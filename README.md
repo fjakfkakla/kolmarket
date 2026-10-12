@@ -62,5 +62,8 @@ RLS : lecture publique des données de marché, aucune écriture côté client, 
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL | oui |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon public | oui |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role | **non, serveur uniquement** |
+| `LAUNCH_AT` | Date de lancement, ex. `2026-10-20T20:00:00+02:00` | non |
+
+**Chrono de lancement** : `LAUNCH_AT` devient le début des défis et la fin du chrono (fermeture des mises) ; la fin de chaque défi est décalée d'autant pour garder sa durée. Sans elle, ce sont les dates de la base (ou du mock) qui s'appliquent. Une valeur invalide est ignorée (voir les logs).
 
 Sans ces variables, le site fonctionne avec les données mock.

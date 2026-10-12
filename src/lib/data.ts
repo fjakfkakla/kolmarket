@@ -1,6 +1,7 @@
 import "server-only";
 import { KOLS, type Kol } from "@/data/kols";
 import { MARKETS, type Market, type Outcome, type Period } from "@/data/markets";
+import { applyLaunch } from "./launch";
 import { supabase } from "./supabase";
 
 /**
@@ -72,6 +73,10 @@ export async function getKols(): Promise<Kol[]> {
 }
 
 export async function getMarkets(): Promise<Market[]> {
+  return applyLaunch(await loadMarkets());
+}
+
+async function loadMarkets(): Promise<Market[]> {
   const sb = supabase();
   if (!sb) return MARKETS;
   try {
