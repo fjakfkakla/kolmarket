@@ -2,6 +2,11 @@
 
 # Marketcoins : consignes de travail
 
+> **RÈGLE N°1 : toujours pousser sur `main`.** `main` est la prod. Au début d'une tâche,
+> partir du `main` à jour (`git fetch origin main`), jamais d'une vieille branche.
+> À la fin : `git push origin HEAD:main` (plus la branche de travail s'il y en a une).
+> Pas de PR, pas besoin de demander : une tâche n'est pas finie tant qu'elle n'est pas sur `main`.
+
 Marché de prédiction memecoins (KOLs et coins), USDC sur Solana, 0 % de frais.
 Next.js 16 (App Router), Tailwind v4, Supabase, Solana. On répond et on commit en français.
 
