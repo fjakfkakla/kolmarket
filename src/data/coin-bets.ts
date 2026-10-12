@@ -5,9 +5,11 @@ import type { CoinOutcome } from "./coins";
  * hausse ou baisse, face-à-face, x2, record… Toujours sur les 4 coins de la course (vrais logos).
  * Même règle partout : pot commun, 0 frais. `prob` = part du pot misée sur ce résultat.
  *
- * Prix de référence (10-12 oct. 2026) : $ANSEM ≈ 0,137 $ (136,6 M$), $CATE ≈ 0,054 $ (54,2 M$),
- * $BATON ≈ 0,0166 $ (16,6 M$), $FONE ≈ 0,0056 $ (5,5 M$), $QI ≈ 0,0018 $ (1,7 M$).
- * CASHCAT et AI se lisent en market cap.
+ * Les seuils et tranches partent des prix réels du 12 oct. 2026 (Jupiter, DexScreener) :
+ * $ANSEM 0,141 $ (140 M$), $CATE 0,057 $ (55 M$), $BATON 0,0167 $ (16,7 M$), $FONE 0,0055 $ (5,5 M$),
+ * $QI 0,0018 $ (1,7 M$), $CASHCAT 0,121 $ (119 M$), $AI 0,10 $ (102 M$) (ces deux-là sur Robinhood Chain).
+ * Volume 24 h ce jour-là : BATON 7,2 M$, ANSEM 2,1 M$, QI 2,1 M$, CATE 1,5 M$, AI 0,5 M$, FONE 0,4 M$, CASHCAT 0,3 M$.
+ * Les parts du pot et les montants misés restent des exemples (rien n'est encore misé).
  */
 
 /**
@@ -35,7 +37,7 @@ export const EXTRA_COINS: CoinOutcome[] = [
 export type BetKind = "range" | "binary" | "updown" | "versus" | "multi";
 
 /** Clés des titres dans t.landing.markets.titles */
-export type BetTitle = "price" | "above" | "below" | "upDown" | "versus" | "double" | "ath" | "mcapOn" | "volume" | "flip";
+export type BetTitle = "price" | "above" | "below" | "upDown" | "versus" | "double" | "mcapOn" | "volume" | "flip";
 
 export type BetChoice = {
   /** Libellé neutre (prix, ticker) ; vide pour Oui / Non / Hausse / Baisse, traduits à l'affichage. */
@@ -110,7 +112,7 @@ FEATURED_BET.series = FEATURED_BET.choices.slice(0, 3).map((c, i) => walk(c.prob
 
 /** Les deux cartes à côté de la une, puis la grille : les 7 coins mélangés. */
 export const COIN_BETS: CoinBet[] = [
-  { id: "fone-above-001", kind: "binary", title: "above", params: { ticker: "FONE", price: "$0.01" }, coin: "fone", closesAt: OCT31, pool: 38_420, isNew: true, choices: yesNo(0.31) },
+  { id: "fone-above-001", kind: "binary", title: "above", params: { ticker: "FONE", price: "$0.01" }, coin: "fone", closesAt: OCT31, pool: 38_420, isNew: true, choices: yesNo(0.22) },
   {
     id: "qi-updown-week", kind: "updown", title: "upDown", params: { ticker: "QI" }, coin: "qi", closesAt: SUNDAY, pool: 21_760,
     choices: [{ label: "", word: "up", prob: 0.46 }, { label: "", word: "down", prob: 0.54 }],
@@ -120,13 +122,13 @@ export const COIN_BETS: CoinBet[] = [
     choices: [{ label: "$BATON", coin: "baton", prob: 0.55 }, { label: "$FONE", coin: "fone", prob: 0.45 }],
   },
   {
-    id: "volume-sunday", kind: "multi", title: "volume", params: {}, coin: "ansem", closesAt: SUNDAY, pool: 31_400,
+    id: "volume-sunday", kind: "multi", title: "volume", params: {}, coin: "baton", closesAt: SUNDAY, pool: 31_400,
     choices: [
-      { label: "$ANSEM", coin: "ansem", prob: 0.38 },
-      { label: "$BATON", coin: "baton", prob: 0.27 },
-      { label: "$CASHCAT", coin: "cashcat", prob: 0.19 },
-      { label: "$FONE", coin: "fone", prob: 0.1 },
-      { label: "$AI", coin: "ai", prob: 0.06 },
+      { label: "$BATON", coin: "baton", prob: 0.51 },
+      { label: "$ANSEM", coin: "ansem", prob: 0.2 },
+      { label: "$QI", coin: "qi", prob: 0.15 },
+      { label: "$CATE", coin: "cate", prob: 0.1 },
+      { label: "$FONE", coin: "fone", prob: 0.04 },
     ],
   },
   { id: "qi-2x-nov30", kind: "binary", title: "double", params: { ticker: "QI" }, coin: "qi", closesAt: NOV30, pool: 11_940, isNew: true, choices: yesNo(0.24) },
@@ -139,7 +141,7 @@ export const COIN_BETS: CoinBet[] = [
       { label: "> $10M", prob: 0.2 },
     ],
   },
-  { id: "cashcat-ath-oct", kind: "binary", title: "ath", params: { ticker: "CASHCAT" }, coin: "cashcat", closesAt: OCT31, pool: 19_090, choices: yesNo(0.27) },
+  { id: "cashcat-above-015", kind: "binary", title: "above", params: { ticker: "CASHCAT", price: "$0.15" }, coin: "cashcat", closesAt: OCT31, pool: 19_090, choices: yesNo(0.23) },
   { id: "qi-flips-fone", kind: "binary", title: "flip", params: { a: "QI", b: "FONE" }, coin: "qi", coin2: "fone", closesAt: NOV30, pool: 8_730, isNew: true, choices: yesNo(0.14) },
-  { id: "cate-below-005", kind: "binary", title: "below", params: { ticker: "CATE", price: "$0.05" }, coin: "cate", closesAt: OCT31, pool: 18_240, choices: yesNo(0.44) },
+  { id: "cate-below-005", kind: "binary", title: "below", params: { ticker: "CATE", price: "$0.05" }, coin: "cate", closesAt: OCT31, pool: 18_240, choices: yesNo(0.34) },
 ];
