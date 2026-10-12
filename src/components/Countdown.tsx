@@ -28,7 +28,7 @@ function parts(ms: number) {
 
 export function Countdown({
   to,
-  label = "Fermeture des mises",
+  label = "Access opens in:",
   compact = false,
   frozenMs,
 }: {
@@ -54,7 +54,7 @@ export function Countdown({
 
   return (
     <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{frozen ? "Le défi démarre bientôt" : closed ? "Mises fermées" : label}</div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{closed ? "Mises fermées" : label}</div>
       <div className="flex items-start gap-3">
         <Cell v={p.d} u="jours" />
         <span className="mt-1 text-xl font-bold text-muted">:</span>
