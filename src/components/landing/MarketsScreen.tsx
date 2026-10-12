@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Flame, TrendingDown, TrendingUp } from "lucide-react";
 import { COIN_MARKETS, type CoinOutcome } from "@/data/coins";
-import { COIN_BETS, FEATURED_BET, type BetChoice, type CoinBet } from "@/data/coin-bets";
+import { COIN_BETS, EXTRA_COINS, FEATURED_BET, type BetChoice, type CoinBet } from "@/data/coin-bets";
 import { OutcomeCoin } from "../Coin";
 import { LineChart } from "../LineChart";
 import { fmtDate, fmtOdds, pct, usd } from "@/lib/format";
@@ -12,7 +12,7 @@ import { useI18n } from "@/i18n/client";
 import { AppLink } from "./AppLink";
 import { BrowserBar, MiniAppNav } from "./KolScreen";
 
-const COINS = new Map(COIN_MARKETS[0].outcomes.filter((o) => o.ticker).map((o) => [o.id, o]));
+const COINS = new Map([...COIN_MARKETS[0].outcomes.filter((o) => o.ticker), ...EXTRA_COINS].map((o) => [o.id, o]));
 const coin = (id?: string) => (id ? COINS.get(id) : undefined) as CoinOutcome | undefined;
 const LINES = ["#1652f0", "#1fc46f", "#8b6cf0"];
 
