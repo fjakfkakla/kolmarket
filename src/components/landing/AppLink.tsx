@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { LaunchCountdown } from "../LaunchCountdown";
 import { Logo } from "../Logo";
+import { useI18n } from "@/i18n/client";
 
 /**
  * Avant le lancement public, les liens de la landing vers l'app n'y mènent pas :
@@ -14,6 +15,7 @@ type Lock = { locked: boolean; show: () => void };
 const LockContext = createContext<Lock>({ locked: false, show: () => {} });
 
 export function LockProvider({ locked, at, serverNow, children }: { locked: boolean; at: number | null; serverNow: number; children: React.ReactNode }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -31,7 +33,7 @@ export function LockProvider({ locked, at, serverNow, children }: { locked: bool
       {children}
       {locked && open && (
         <div className="fade-up fixed inset-0 z-[100] flex flex-col items-center justify-center gap-12 bg-white px-4" role="dialog" aria-modal="true">
-          <button onClick={() => setOpen(false)} className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full text-muted transition hover:bg-paper-2 hover:text-ink md:right-8 md:top-6" aria-label="Close">
+          <button onClick={() => setOpen(false)} className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full text-muted transition hover:bg-paper-2 hover:text-ink md:right-8 md:top-6" aria-label={t.landing.countdown.close}>
             <X size={22} />
           </button>
           <Logo size={26} href="/" />

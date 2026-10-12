@@ -32,6 +32,7 @@ function setOn(el: Element | null | undefined, on: boolean) {
 export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]; coins: CoinOutcome[] }) {
   const { t } = useI18n();
   const L = t.landing.hero;
+  const T = t.landing.titles;
   const track = useRef<HTMLElement>(null);
   const plank = useRef<HTMLDivElement>(null);
   const planet = useRef<PlanetState>(defaultPlanet());
@@ -237,7 +238,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
   });
 
   return (
-    <section ref={track} id="top" className="relative" style={{ height: "780vh" }} aria-label="The future of memecoins">
+    <section ref={track} id="top" className="relative" style={{ height: "780vh" }} aria-label={T.hero[0]}>
       <span id="kol-anchor" className="absolute left-0" style={{ top: "392vh" }} aria-hidden />
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div ref={plank} className="planche on-plank absolute inset-x-2 bottom-2 top-[68px] rounded-[26px] md:inset-x-5 md:bottom-4 md:top-[84px] md:rounded-[34px]">
@@ -263,8 +264,8 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
           {/* 1. Le héros */}
           <div ref={heroText} className="absolute inset-x-0 top-[6%] z-[5] px-5 text-center md:inset-x-auto md:left-[6%] md:top-1/2 md:max-w-[min(44%,620px)] md:-translate-y-1/2 md:px-0 md:text-left">
             <h1 className="display mx-auto max-w-[14ch] text-[clamp(38px,4.6vw,80px)] text-white md:mx-0">
-              The future of memecoins.
-              <span className="block text-blue-sky">Trade the future.</span>
+              {T.hero[0]}
+              <span className="block text-blue-sky">{T.hero[1]}</span>
             </h1>
             <p className="mx-auto mt-4 max-w-[38ch] text-[15px] font-medium leading-relaxed text-white/70 md:mx-0 md:mt-6 md:text-[18px]">
               {L.subtitle}
@@ -302,7 +303,7 @@ export function HeroScene({ market, kols, coins }: { market: Market; kols: Kol[]
           <div className="pointer-events-none absolute inset-0 z-[6] flex flex-col gap-4 p-4 pt-5 md:p-8 xl:flex-row xl:items-center xl:gap-10 xl:p-12">
             <div ref={kolText} className="pointer-events-auto shrink-0 xl:w-[340px]" style={{ opacity: 0, visibility: "hidden" }}>
               <h2 className="display text-[clamp(38px,5vw,78px)] text-white">
-                Trade <span className="text-blue-sky">the KOL.</span>
+                {T.kol[0]} <span className="text-blue-sky">{T.kol[1]}</span>
               </h2>
               <div className="scrollbar-none -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:mt-4 md:flex-wrap md:overflow-visible md:px-0 xl:mt-7 xl:flex-col xl:items-start">
                 {STEPS.map((st, i) => (

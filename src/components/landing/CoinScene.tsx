@@ -31,6 +31,7 @@ function setOn(el: Element | null | undefined, on: boolean) {
 export function CoinScene({ market }: { market: CoinMarket }) {
   const { t, intl } = useI18n();
   const L = t.landing.coins;
+  const T = t.landing.titles;
   const track = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const glass = useRef<HTMLDivElement>(null);
@@ -192,12 +193,12 @@ export function CoinScene({ market }: { market: CoinMarket }) {
   });
 
   return (
-    <section ref={track} id="coins" className="relative" style={{ height: "520vh" }} aria-label="Trade the potential of your favorite coin">
+    <section ref={track} id="coins" className="relative" style={{ height: "520vh" }} aria-label={T.coin.join(" ")}>
       <div className="sticky top-0 h-[100svh] overflow-hidden pt-[68px] md:pt-[84px]">
         <div className="on-paper mx-auto flex h-full max-w-[1440px] flex-col gap-4 px-4 pb-4 pt-3 md:px-8 xl:flex-row xl:items-center xl:gap-12 xl:px-12">
           <div ref={titleRef} className="shrink-0 xl:w-[400px]">
             <h2 className="display text-[clamp(30px,4.4vw,70px)]">
-              Trade the <span className="text-blue">potential</span> of your favorite coin.
+              {T.coin[0]} <span className="text-blue">{T.coin[1]}</span> {T.coin[2]}
             </h2>
             <div className="scrollbar-none -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:mt-4 md:flex-wrap md:overflow-visible md:px-0 xl:mt-7 xl:flex-col xl:items-start">
               {STEPS.map((st, i) => (
