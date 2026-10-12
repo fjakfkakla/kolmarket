@@ -4,6 +4,7 @@ import { CoinScene } from "@/components/landing/CoinScene";
 import { FeesSection } from "@/components/landing/FeesSection";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { HeroScene } from "@/components/landing/HeroScene";
+import { MarketsScreen } from "@/components/landing/MarketsScreen";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { LockProvider } from "@/components/landing/AppLink";
 import { COIN_MARKETS } from "@/data/coins";
@@ -31,6 +32,7 @@ export default async function Landing() {
       <main className="flex-1">
         <HeroScene market={kolMarket} kols={kols} coins={coinMarket.outcomes} />
         <CoinScene market={coinMarket} />
+        <MarketsScreen />
         <FeesSection />
         <FinalCta kols={kols} kolMarket={kolMarket} coinMarket={coinMarket} />
       </main>
