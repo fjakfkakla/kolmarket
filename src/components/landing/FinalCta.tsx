@@ -39,7 +39,7 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
         </div>
         <div className="relative z-[2] flex flex-col items-center px-5 pt-16 text-center md:pt-24">
           <h2 className="display text-[clamp(48px,8vw,128px)] text-white">
-            The future is <span className="text-blue-sky">tradable.</span>
+            {t.landing.titles.final[0]} <span className="text-blue-sky">{t.landing.titles.final[1]}</span>
           </h2>
           <AppLink href="/app" className="pill-white mt-8">
             {t.landing.nav.launchLong} <ArrowRight size={18} />
@@ -51,7 +51,7 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
                   <Avatar key={k.id} kol={k} size={38} className="ring-[3px] ring-white" />
                 ))}
               </div>
-              <span className="flex-1 font-display text-[19px] font-extrabold tracking-[-0.02em]">Trade the KOL</span>
+              <span className="flex-1 font-display text-[19px] font-extrabold tracking-[-0.02em]">{t.landing.titles.tradeKol}</span>
               <ArrowRight size={18} className="text-blue" />
             </AppLink>
             <AppLink href={`/market/${coinMarket.slug}`} className="card card-hover flex items-center gap-3 p-4 text-left text-ink">
@@ -62,7 +62,7 @@ export function FinalCta({ kols, kolMarket, coinMarket }: { kols: Kol[]; kolMark
                   </span>
                 ))}
               </div>
-              <span className="flex-1 font-display text-[19px] font-extrabold tracking-[-0.02em]">Trade the coin</span>
+              <span className="flex-1 font-display text-[19px] font-extrabold tracking-[-0.02em]">{t.landing.titles.tradeCoin}</span>
               <ArrowRight size={18} className="text-blue" />
             </AppLink>
           </div>

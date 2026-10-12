@@ -200,7 +200,7 @@ export function MarketsScreen() {
       <div className="mx-auto max-w-[1240px]">
         <div className={`mx-auto mb-10 max-w-3xl text-center ${seen ? "fade-up" : "opacity-0"}`}>
           <h2 className="display text-[clamp(36px,5vw,76px)]">
-            Every move is a <span className="text-blue">market.</span>
+            {t.landing.titles.markets[0]} <span className="text-blue">{t.landing.titles.markets[1]}</span>
           </h2>
         </div>
 

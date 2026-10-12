@@ -6,7 +6,7 @@ import { Logo } from "../Logo";
 export async function LandingNav() {
   const { t } = await getI18n();
   const LINKS = [
-    { label: "Trade the KOL", href: "#kol-anchor" },
+    { label: t.landing.nav.kols, href: "#kol-anchor" },
     { label: t.landing.nav.memecoins, href: "#coins" },
     { label: t.landing.nav.markets, href: "#markets" },
     { label: t.landing.nav.fees, href: "#fees" },

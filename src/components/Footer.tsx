@@ -34,7 +34,7 @@ export async function Footer() {
         <div>
           <Logo size={24} href="/" />
           <p className="display mt-6 text-[clamp(2.1rem,4.2vw,3.4rem)]">
-            Trade <span className="text-blue">the future.</span>
+            {t.landing.titles.footer[0]} <span className="text-blue">{t.landing.titles.footer[1]}</span>
           </p>
         </div>
         {COLS.map((c) => (

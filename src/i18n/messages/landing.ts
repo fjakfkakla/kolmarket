@@ -1,13 +1,27 @@
 import { defineMessages } from "./types";
 
-/**
- * La page d'accueil publique. Les grands titres en anglais (« Trade the future », « Trade the KOL »,
- * « The future is tradable. »…) font partie de la marque : ils restent en anglais dans toutes les langues.
- */
+/** La page d'accueil publique : tout est traduit, grands titres compris. */
 export const landing = defineMessages({
   en: {
     zeroPct: "0%",
+    titles: {
+      hero: ["The future of memecoins.", "Trade the future."],
+      kol: ["Trade", "the KOL."],
+      coin: ["Trade the", "potential", "of your favorite coin."],
+      markets: ["Every move is a", "market."],
+      final: ["The future is", "tradable."],
+      footer: ["Trade", "the future."],
+      tradeKol: "Trade the KOL",
+      tradeCoin: "Trade the coin",
+    },
+    countdown: {
+      label: "Access countdown",
+      opens: "Access opens in:",
+      units: ["days", "hours", "min", "sec", "ms"],
+      close: "Close",
+    },
     nav: {
+      kols: "Trade the KOL",
       sections: "Sections",
       memecoins: "Memecoins",
       markets: "All markets",
@@ -111,7 +125,24 @@ export const landing = defineMessages({
   },
   fr: {
     zeroPct: "0 %",
+    titles: {
+      hero: ["Le futur des memecoins.", "Parie sur le futur."],
+      kol: ["Parie sur", "le KOL."],
+      coin: ["Parie sur le", "potentiel", "de ton coin préféré."],
+      markets: ["Chaque mouvement est un", "marché."],
+      final: ["Le futur,", "ça se parie."],
+      footer: ["Parie sur", "le futur."],
+      tradeKol: "Parier sur un KOL",
+      tradeCoin: "Parier sur un coin",
+    },
+    countdown: {
+      label: "Compte à rebours avant l'ouverture",
+      opens: "Ouverture dans :",
+      units: ["jours", "heures", "min", "s", "ms"],
+      close: "Fermer",
+    },
     nav: {
+      kols: "Les KOLs",
       sections: "Sections",
       memecoins: "Memecoins",
       markets: "Tous les marchés",
@@ -215,7 +246,24 @@ export const landing = defineMessages({
   },
   es: {
     zeroPct: "0%",
+    titles: {
+      hero: ["El futuro de las memecoins.", "Apuesta por el futuro."],
+      kol: ["Apuesta por", "el KOL."],
+      coin: ["Apuesta por el", "potencial", "de tu coin favorita."],
+      markets: ["Cada movimiento es un", "mercado."],
+      final: ["El futuro", "se apuesta."],
+      footer: ["Apuesta por", "el futuro."],
+      tradeKol: "Apostar por un KOL",
+      tradeCoin: "Apostar por una coin",
+    },
+    countdown: {
+      label: "Cuenta atrás para la apertura",
+      opens: "El acceso abre en:",
+      units: ["días", "horas", "min", "seg", "ms"],
+      close: "Cerrar",
+    },
     nav: {
+      kols: "Los KOLs",
       sections: "Secciones",
       memecoins: "Memecoins",
       markets: "Todos los mercados",
