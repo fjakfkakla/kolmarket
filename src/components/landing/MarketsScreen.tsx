@@ -199,11 +199,9 @@ export function MarketsScreen() {
     <section ref={ref} id="markets" className="relative px-4 py-20 md:px-8 md:py-28" aria-label={t.landing.nav.markets}>
       <div className="mx-auto max-w-[1240px]">
         <div className={`mx-auto mb-10 max-w-3xl text-center ${seen ? "fade-up" : "opacity-0"}`}>
-          <span className="chip-blue h-7 text-[13px]">{M.kicker}</span>
-          <h2 className="display mt-4 text-[clamp(36px,5vw,76px)]">
+          <h2 className="display text-[clamp(36px,5vw,76px)]">
             Every move is a <span className="text-blue">market.</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-[56ch] text-[17px] font-medium leading-relaxed text-ink-2">{M.subtitle}</p>
         </div>
 
         <div className={`glass p-2.5 md:p-3 ${seen ? "fade-up" : "opacity-0"}`}>

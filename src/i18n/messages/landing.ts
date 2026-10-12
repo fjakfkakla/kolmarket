@@ -64,8 +64,6 @@ export const landing = defineMessages({
       weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     },
     markets: {
-      kicker: "Memecoins · all markets",
-      subtitle: "Price on a date, above or below, up or down, head-to-head, 2x, new highs… Pick the call you believe in, on the coins you already trade.",
       tabs: ["Trending", "Price", "Market cap", "Up or down", "Head-to-head", "New"],
       titles: {
         price: "${ticker} price on {date}?",
@@ -170,8 +168,6 @@ export const landing = defineMessages({
       weekdays: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
     },
     markets: {
-      kicker: "Memecoins · tous les marchés",
-      subtitle: "Prix à une date, au-dessus ou en dessous, hausse ou baisse, face-à-face, x2, nouveaux records… Choisis le pari auquel tu crois, sur les coins que tu trades déjà.",
       tabs: ["Tendances", "Prix", "Market cap", "Hausse ou baisse", "Face-à-face", "Nouveaux"],
       titles: {
         price: "Prix de ${ticker} le {date} ?",
@@ -276,8 +272,6 @@ export const landing = defineMessages({
       weekdays: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
     },
     markets: {
-      kicker: "Memecoins · todos los mercados",
-      subtitle: "Precio en una fecha, por encima o por debajo, sube o baja, cara a cara, x2, nuevos máximos… Elige la apuesta en la que crees, con las monedas que ya tradeas.",
       tabs: ["Tendencias", "Precio", "Market cap", "Sube o baja", "Cara a cara", "Nuevos"],
       titles: {
         price: "¿Precio de ${ticker} el {date}?",
