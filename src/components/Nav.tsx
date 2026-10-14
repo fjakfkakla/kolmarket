@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CircleHelp, Search } from "lucide-react";
 import { Logo } from "./Logo";
+import { CaPill } from "./CaPill";
 import { LanguageSelect } from "./LanguageSelect";
 import { useI18n } from "@/i18n/client";
 import { useWallet } from "@/lib/wallet";
@@ -18,7 +19,7 @@ const CATEGORIES = [
   { key: "race500m", href: "/market/premier-500m-mcap" },
 ] as const;
 
-export function Nav() {
+export function Nav({ ca }: { ca?: string | null }) {
   const w = useWallet();
   const pathname = usePathname();
   const { t } = useI18n();
@@ -35,6 +36,11 @@ export function Nav() {
         </label>
 
         <nav className="ml-auto flex items-center gap-2">
+          {ca && (
+            <span className="hidden sm:block">
+              <CaPill ca={ca} />
+            </span>
+          )}
           <Link href="/how-it-works" className="round h-10 w-10" title={t.common.howItWorks} aria-label={t.common.howItWorks}>
             <CircleHelp size={18} />
           </Link>

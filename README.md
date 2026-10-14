@@ -46,6 +46,8 @@ Le chrono se règle uniquement par une variable Railway, aucune page à trouver 
 
 Pour le lancer tout de suite : Railway → Variables → `LAUNCH_START` = l'heure actuelle en UTC → redéploiement.
 
+**CA du coin** : Railway → Variables → `CA` = l'adresse du coin → redéploiement. Une pilule « CA » apparaît dans la barre du haut (landing et app) ; un clic copie l'adresse complète. Absente : rien ne s'affiche. Changer `CA` ne touche pas au chrono (`LAUNCH_START` est une date fixe).
+
 ## Pages
 
 | Route | Contenu |
