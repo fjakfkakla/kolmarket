@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Landing() {
   const [markets, kols, { t }] = await Promise.all([getMarkets(), getKols(), getI18n()]);
-  const launch = await getLaunch();
+  const launch = getLaunch();
   const ca = getCa();
   const raw = markets.find((m) => m.period === "7D") ?? markets[0];
   const kolMarket = localizeMarket(raw, t);

@@ -8,10 +8,9 @@ import { getLaunch } from "@/lib/launch";
  */
 const PUBLIC_FILE = /^\/(kols|coins)\/[\w.-]+\.(jpg|png|webp)$|^\/favicon\.ico$/;
 
-export async function proxy(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (pathname === "/" || PUBLIC_FILE.test(pathname)) return NextResponse.next();
-  if ((await getLaunch()).open) return NextResponse.next();
+  if (pathname === "/" || PUBLIC_FILE.test(pathname) || getLaunch().open) return NextResponse.next();
   if (pathname.startsWith("/api/")) return new NextResponse(null, { status: 404 });
   return NextResponse.redirect(new URL("/", req.url));
 }
