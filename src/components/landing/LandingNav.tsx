@@ -2,12 +2,9 @@ import { AppLink } from "./AppLink";
 import { ArrowRight } from "lucide-react";
 import { getI18n } from "@/i18n/server";
 import { Logo } from "../Logo";
-import { CaPill } from "../CaPill";
-import { getCa } from "@/lib/ca";
 
 export async function LandingNav() {
   const { t } = await getI18n();
-  const ca = getCa();
   const LINKS = [
     { label: t.landing.nav.kols, href: "#kol-anchor" },
     { label: t.landing.nav.memecoins, href: "#coins" },
@@ -25,14 +22,11 @@ export async function LandingNav() {
             </a>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2 lg:ml-0 md:gap-3">
-          {ca && <CaPill ca={ca} />}
-          <AppLink href="/app" className="plaque h-11 px-5 text-[15px] md:h-12 md:px-6">
-            <span className="sm:hidden">{t.common.launchApp}</span>
-            <span className="hidden sm:inline">{t.landing.nav.launchLong}</span>
-            <ArrowRight size={17} />
-          </AppLink>
-        </div>
+        <AppLink href="/app" className="plaque ml-auto h-11 px-5 text-[15px] lg:ml-0 md:h-12 md:px-6">
+          <span className="sm:hidden">{t.common.launchApp}</span>
+          <span className="hidden sm:inline">{t.landing.nav.launchLong}</span>
+          <ArrowRight size={17} />
+        </AppLink>
       </div>
     </header>
   );

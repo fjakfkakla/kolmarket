@@ -37,16 +37,23 @@ Avant l'ouverture, **seule la landing (`/`) répond** : toute autre adresse (app
 renvoie vers `/` (404 pour une API). Personne n'entre, admin compris. La landing n'a plus aucun lien vers l'app
 et chaque lien vers l'app ouvre « Access opens in: » et le chrono en plein écran, sur la landing même. Voir `src/proxy.ts` et `src/lib/launch.ts`.
 
-Le chrono se règle uniquement par une variable Railway, aucune page à trouver :
+Le chrono se règle uniquement par la variable Railway `CHRONO`, aucune page à trouver :
 
-| `LAUNCH_START` | Effet |
+| `CHRONO` | Effet |
 |---|---|
-| absente | tout fermé, chrono figé sur 7 jours |
-| `2026-10-12T18:00:00Z` | le chrono part à cette heure (UTC), l'accès ouvre 7 jours plus tard |
+| absente | état de base : tout fermé, chrono figé sur 7 jours |
+| `GO` | le chrono part ; l'accès ouvre 7 jours plus tard |
+| `RESET` | retour à l'état de base (chrono figé sur 7 jours, rien ne démarre) ; remettre `GO` le relance de zéro |
 
-Pour le lancer tout de suite : Railway → Variables → `LAUNCH_START` = l'heure actuelle en UTC → redéploiement.
+Avec `GO`, l'heure de départ est enregistrée dans Supabase (`app_state`, clé `launch_start`) au premier
+démarrage : un redéploiement (changer `CA`, par exemple) ne relance pas le chrono. Elle est écrite dans
+les logs (`[chrono] CHRONO=GO → lancé le …`). Sans Supabase, `GO` repart à chaque redéploiement.
+Ancien réglage toujours lu si `CHRONO` est absente : `LAUNCH_START=<date ISO>`.
 
-**CA du coin** : Railway → Variables → `CA` = l'adresse du coin → redéploiement. Une pilule « CA » apparaît dans la barre du haut (landing et app) ; un clic copie l'adresse complète. Absente : rien ne s'affiche. Changer `CA` ne touche pas au chrono (`LAUNCH_START` est une date fixe).
+**CA du coin** : Railway → Variables → `CA` = l'adresse du coin → redéploiement. Une fenêtre flottante
+« Contract address » apparaît en haut à droite (landing et app ; en bas à droite sur mobile), avec un
+bouton Copier qui copie l'adresse complète ; la croix la replie en pastille « CA ». Vide ou absente :
+rien ne s'affiche.
 
 ## Pages
 
